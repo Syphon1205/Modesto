@@ -2,6 +2,7 @@
   <img src="assets/modesto-icon.png" width="112" alt="Modesto icon" />
   <h1>Modesto</h1>
   <p><strong>One native workspace for the coding agents you already use.</strong></p>
+  <p><strong>Current stable release: v0.1.2</strong></p>
   <p>
     <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download Modesto</strong></a>
     ·
@@ -32,7 +33,24 @@ Modesto brings Codex, Claude, Cursor, Gemini, Grok, Factory Droid, Kilo, OpenCod
 | macOS 12+ · Intel | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.dmg) |
 | Windows 10/11 · x64 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.exe) |
 
+The macOS builds are Developer ID signed and notarized by Apple. Release builds
+include update metadata, so existing Modesto installations can discover and install
+v0.1.2 through the in-app updater.
+
 This repository distributes official Modesto desktop binaries and release notes. Application source code is not published here.
+
+## What's new in v0.1.2
+
+- **WSL2 support on Windows** for Linux-backed projects, commands, provider CLIs,
+  development, and testing.
+- **Stable release updates** for Windows, Apple Silicon, and Intel Mac builds.
+- **Clearer update status** and a fix for the update-check error that could show
+  `Cannot read properties of undefined`.
+- **A cleaner desktop experience** across providers, review tools, editor
+  navigation, terminal appearance, and app information.
+
+See the [v0.1.2 release](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.2)
+for release notes and every available artifact.
 
 ## First launch
 
@@ -51,7 +69,7 @@ Only download Modesto from this repository's Releases page.
 
 ## Current release
 
-`v0.1.2` is the latest public preview. Expect sharp edges while the workspace evolves.
+`v0.1.2` is the latest stable public release.
 
 ---
 
