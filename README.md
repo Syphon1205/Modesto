@@ -1,78 +1,105 @@
 <div align="center">
-  <img src="assets/modesto-icon.png" width="112" alt="Modesto icon" />
+  <img src="assets/modesto-icon.png" width="104" alt="Modesto app icon" />
+
   <h1>Modesto</h1>
-  <p><strong>One native workspace for the coding agents you already use.</strong></p>
-  <p><strong>Current stable release: v0.1.2</strong></p>
+
+  <p><strong>Your coding agents. One focused workspace.</strong></p>
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download Modesto</strong></a>
-    ·
-    <a href="https://github.com/Syphon1205/Modesto/releases">Release history</a>
+    Work with Codex, Claude, Cursor, Gemini, Grok, and more—without
+    rebuilding your workflow every time you switch.
+  </p>
+
+  <p>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.2</strong></a>
+    &nbsp;·&nbsp;
+    <a href="#whats-new">What's new</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/Syphon1205/Modesto/releases">All releases</a>
+  </p>
+
+  <p>
+    <img alt="Latest release" src="https://img.shields.io/badge/release-v0.1.2-6d5dfc?style=flat-square" />
+    <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-22c55e?style=flat-square" />
+    <img alt="Platforms: macOS and Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-64748b?style=flat-square" />
   </p>
 </div>
 
+<br />
+
 ![Modesto workspace](assets/modesto-app.png)
 
-## Meet Modesto
+## A calmer way to work with coding agents
 
-Modesto brings Codex, Claude, Cursor, Gemini, Grok, Factory Droid, Kilo, OpenCode, and Pi into one focused desktop workspace. Start a task with the right model, watch edits happen live, review every file change, and keep the browser, terminal, project files, and context usage beside the conversation.
+Modesto brings your conversations, project files, terminal, browser, diffs, and
+provider tools into one desktop app. Start with the agent that fits the task,
+follow its work live, and review the result without losing context.
 
-### Built for real coding work
-
-- **All your agents, one interface** — switch providers and models without rebuilding your workflow.
-- **Live code changes** — follow files as they are edited, then inspect additions and deletions in the Changes panel.
-- **Context that stays visible** — see token usage and session context without leaving the task.
-- **Integrated tools** — open files, terminals, browser tabs, and diffs in the workspace sidebar.
-- **Projects and automations** — organize long-running work and recurring tasks in the same app.
-- **Fast first launch** — supported provider CLIs are bundled and configured once by Modesto.
+| Work your way | Stay in control |
+| --- | --- |
+| **Multiple providers** — choose the right agent or model for each task. | **Live changes** — inspect file edits and diffs as work happens. |
+| **Connected workspace** — keep code, terminal, browser, and conversation together. | **Visible context** — track session activity and usage without leaving the task. |
+| **Projects and automations** — organize ongoing and recurring work. | **Integrated tools** — install and use supported provider CLIs from the app. |
 
 ## Download
 
-| Platform | Installer |
-| --- | --- |
-| macOS 12+ · Apple Silicon | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-arm64.dmg) |
-| macOS 12+ · Intel | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.dmg) |
-| Windows 10/11 · x64 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.exe) |
+Choose the installer that matches your computer:
 
-The macOS builds are Developer ID signed and notarized by Apple. Release builds
-include update metadata, so existing Modesto installations can discover and install
-v0.1.2 through the in-app updater.
+| Platform | Requirements | Installer |
+| --- | --- | --- |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.2/Modesto-0.1.2-x64.exe) |
 
-This repository distributes official Modesto desktop binaries and release notes. Application source code is not published here.
+macOS releases are Developer ID signed and notarized by Apple. Stable builds include
+update metadata, allowing Modesto to find and install future releases from the app.
 
-## What's new in v0.1.2
+> Only download Modesto from this repository's
+> [Releases](https://github.com/Syphon1205/Modesto/releases) page.
 
-- **WSL2 support on Windows** for Linux-backed projects, commands, provider CLIs,
-  development, and testing.
-- **Stable release updates** for Windows, Apple Silicon, and Intel Mac builds.
-- **Clearer update status** and a fix for the update-check error that could show
-  `Cannot read properties of undefined`.
-- **A cleaner desktop experience** across providers, review tools, editor
+## What's new
+
+### v0.1.2
+
+- **WSL2 support** — use Linux-backed projects, commands, and provider CLIs from
+  the Windows build.
+- **Stable in-app updates** — release metadata now covers Windows, Apple Silicon,
+  and Intel Mac.
+- **A cleaner update experience** — clearer status messaging and a fix for the
+  update-check error shown in earlier builds.
+- **Desktop UX refinements** — improved provider setup, review tools, editor
   navigation, terminal appearance, and app information.
 
-See the [v0.1.2 release](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.2)
-for release notes and every available artifact.
+[Read the complete v0.1.2 release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.2)
 
-## First launch
+## Getting started
 
-Modesto installs its bundled provider launchers into its private application data directory the first time it opens. Later launches reuse that installation; it refreshes only when the bundled runtime changes.
+1. Download the installer for your platform.
+2. Install and open Modesto.
+3. Choose a provider and sign in to your own provider account when prompted.
+4. Open a project and start a task.
 
-Some providers still require you to sign in to your own account before their models become available.
+Modesto prepares its bundled provider launchers in its private application data
+directory on first launch. Later launches reuse that installation and refresh it
+only when the bundled runtime changes.
 
-### Security prompts
+<details>
+<summary><strong>Windows SmartScreen</strong></summary>
 
-macOS Gatekeeper or Windows SmartScreen may ask you to confirm that you want to open the app.
+Windows may ask you to confirm a newly downloaded app. Choose **More info**, verify
+that the app name is Modesto, then choose **Run anyway**.
 
-- **macOS:** Control-click Modesto, choose **Open**, then confirm.
-- **Windows:** Choose **More info**, verify the app name is Modesto, then choose **Run anyway**.
+</details>
 
-Only download Modesto from this repository's Releases page.
+## About this repository
 
-## Current release
-
-`v0.1.2` is the latest stable public release.
+This repository distributes official Modesto desktop binaries and release notes.
+Application source code is not published here.
 
 ---
 
 <div align="center">
-  <sub>Built by Tanner Davidson. Modesto is an independent desktop application. Provider names and trademarks belong to their respective owners.</sub>
+  <sub>
+    Built by Tanner Davidson. Modesto is an independent desktop application.
+    Provider names and trademarks belong to their respective owners.
+  </sub>
 </div>
