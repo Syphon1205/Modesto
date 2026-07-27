@@ -31,7 +31,7 @@ If you do open a PR, explain:
 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
-- [License](LICENSE) (MIT)
+- [License](LICENSE) (Proprietary — Copyright © 2026 Tanner Davidson)
 
 ## Attribution
 
