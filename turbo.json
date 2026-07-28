@@ -1,0 +1,45 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "PORT",
+    "VITE_WS_URL",
+    "VITE_DEV_SERVER_URL",
+    "ELECTRON_RENDERER_PORT",
+    "MODESTO_HOME",
+    "MODESTO_DESKTOP_WS_URL",
+    "MODESTO_BROWSER_USE_PIPE_PATH",
+    "MODESTO_BROWSER_PERF",
+    "MODESTO_PROVIDER_RUNTIME_IDLE_STOP_MS",
+    "MODESTO_GROK_ACP_DEBUG",
+    "MODESTO_WEB_SOURCEMAP",
+    "MODESTO_SERVER_SOURCEMAP",
+    "MODESTO_DESKTOP_SOURCEMAP",
+    "MODESTO_MODE",
+    "MODESTO_PORT",
+    "MODESTO_NO_BROWSER",
+    "MODESTO_AUTH_TOKEN",
+    "MODESTO_LOG_WS_EVENTS",
+    "MODESTO_HOST",
+    "MODESTO_AUTO_BOOTSTRAP_PROJECT_FROM_CWD"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "dist-electron/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck"],
+      "outputs": [],
+      "cache": false
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "outputs": []
+    }
+  }
+}

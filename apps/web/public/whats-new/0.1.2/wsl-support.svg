@@ -1,0 +1,112 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- WSL mark: Microsoft Corporation, vectorized by PantheraLeo1359531, MIT/Expat. -->
+  <defs>
+    <linearGradient id="bg" x1="70" y1="24" x2="1130" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17191F"/>
+      <stop offset=".54" stop-color="#0D0F14"/>
+      <stop offset="1" stop-color="#08090C"/>
+    </linearGradient>
+    <linearGradient id="bridge" x1="350" y1="0" x2="850" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F7F8"/>
+      <stop offset=".42" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#1D9BF0"/>
+    </linearGradient>
+    <radialGradient id="leftGlow">
+      <stop stop-color="#A78BFA" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#A78BFA" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rightGlow">
+      <stop stop-color="#167CD8" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#167CD8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="30" flood-color="#000" flood-opacity=".42"/>
+    </filter>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="25"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" rx="34" fill="url(#bg)"/>
+  <circle cx="242" cy="348" r="245" fill="url(#leftGlow)" filter="url(#blur)"/>
+  <circle cx="958" cy="348" r="245" fill="url(#rightGlow)" filter="url(#blur)"/>
+  <path d="M54 148H1146M54 571H1146" stroke="#FFFFFF" stroke-opacity=".035"/>
+
+  <text x="600" y="91" fill="#F8F8FA" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="44" font-weight="680" text-anchor="middle" letter-spacing="-1.3">Modesto meets WSL2</text>
+  <text x="600" y="132" fill="#969AA5" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="18" text-anchor="middle">A consistent Linux development workspace, right inside Windows.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="139" y="200" width="318" height="292" rx="32" fill="#15171D" stroke="#30333C"/>
+    <rect x="743" y="200" width="318" height="292" rx="32" fill="#15171D" stroke="#30333C"/>
+  </g>
+
+  <circle cx="298" cy="318" r="78" fill="#0E1014" stroke="#353943"/>
+  <g transform="translate(248 268)" stroke="#F7F7F8" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 32H39C42 32 43.5 30.5 45 28L55 12"/>
+    <path d="M66 20L60 32C58 36 59 39 62 42L81 58"/>
+    <path d="M14 45L35 51C39 52 41 55 41 59V80"/>
+    <path d="M57 58L70 70"/>
+  </g>
+  <text x="298" y="431" fill="#F7F7F8" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="27" font-weight="650" text-anchor="middle">Modesto</text>
+  <text x="298" y="460" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="14" text-anchor="middle">Agent workspace</text>
+
+  <circle cx="902" cy="318" r="78" fill="#101218" stroke="#353943"/>
+  <svg x="853.75" y="254" width="96.5" height="128" viewBox="0 0 193 256">
+    <defs>
+      <linearGradient id="wsl-blue" x1="20.89856" y1="28.70122" x2="160.51789" y2="270.52899" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#0078D3"/>
+        <stop offset="1" stop-color="#0C5AA5"/>
+      </linearGradient>
+      <radialGradient id="wsl-beak-shadow" cx="96.61321" cy="162.92136" r="40.58323" gradientTransform="translate(-28.32862 259.53456) rotate(-90) scale(1 .76688)" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#C86508"/>
+        <stop offset="1" stop-color="#BF6009"/>
+      </radialGradient>
+      <radialGradient id="wsl-beak" cx="96.5" cy="154.76035" r="40.36821" gradientTransform="translate(-2.6625 251.26035) rotate(-90) scale(1 .64075)" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#EF8506"/>
+        <stop offset="1" stop-color="#ED7E03"/>
+      </radialGradient>
+      <radialGradient id="wsl-belly" cx="96.95112" cy="129.9307" r="103.07409" gradientTransform="translate(-11.25307 226.88182) rotate(-90) scale(1 .83279)" gradientUnits="userSpaceOnUse">
+        <stop offset=".0784" stop-color="#FFC700"/>
+        <stop offset="1" stop-color="#FFC700"/>
+      </radialGradient>
+      <filter id="wsl-shadow" x="40.5" y="102" width="112" height="113" filterUnits="userSpaceOnUse">
+        <feOffset dy="7"/>
+        <feGaussianBlur result="blur" stdDeviation="8"/>
+        <feFlood flood-color="#000" flood-opacity=".4"/>
+        <feComposite in2="blur" operator="in"/>
+        <feComposite in="SourceGraphic"/>
+      </filter>
+    </defs>
+    <path fill="url(#wsl-blue)" d="M96.49981 0H96.5C149.7598 0 193 43.2402 193 96.5V246c0 5.51915-4.48085 10-10 10H10c-5.51915 0-10-4.48085-10-10V96.49981C0 43.24011 43.24011 0 96.49981 0Z"/>
+    <circle fill="#FFF" cx="56.5" cy="87.11" r="32"/>
+    <circle fill="#FFF" cx="136.5" cy="87.11" r="32"/>
+    <path fill="#FFF" d="M88.5 87.11H24.5v80.77687c0 35.23677 28.56505 63.80182 63.80182 63.80182h.19818V87.11Z"/>
+    <path fill="#FFF" d="M104.5 87.11h64v80.77687c0 35.23677-28.56505 63.80182-63.80182 63.80182h-.19818V87.11Z"/>
+    <rect fill="#FFF" x="75.96226" y="178.00943" width="40.75472" height="48.45283"/>
+    <circle fill="#000" cx="56.5" cy="96.10999" r="16.3019" transform="rotate(-80.78253 56.5 96.10999)"/>
+    <circle fill="#000" cx="136.5" cy="96.11" r="16.30189"/>
+    <circle fill="url(#wsl-beak-shadow)" filter="url(#wsl-shadow)" cx="96.5" cy="151.91" r="32"/>
+    <path fill="url(#wsl-beak)" d="M64.5 149.48114c0-14.94339 13.16492-29.21021 32-29.37115 19.08282-.16306 32 16.88058 32 29.37115 0 0-11.54718 7.62885-32 7.62885s-32-7.62885-32-7.62885Z"/>
+    <path fill="url(#wsl-belly)" d="M24.5 160.25473c0 19.28659-2.59474 71.85527 71.95556 71.85527s72.04444-50.83755 72.04444-72.35057c0 0-14.9004 53.93208-72.04444 53.93208s-71.95556-53.43678-71.95556-53.43678Z"/>
+  </svg>
+  <text x="902" y="431" fill="#F7F7F8" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="27" font-weight="650" text-anchor="middle">WSL2</text>
+  <text x="902" y="460" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="14" text-anchor="middle">Windows Subsystem for Linux</text>
+
+  <path d="M479 331H721" stroke="#292D36" stroke-width="2"/>
+  <path d="M505 331H695" stroke="url(#bridge)" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="505" cy="331" r="7" fill="#F7F7F8"/>
+  <circle cx="600" cy="331" r="8" fill="#A78BFA"/>
+  <circle cx="695" cy="331" r="7" fill="#1D9BF0"/>
+  <path d="M586 300L600 286L614 300M586 362L600 376L614 362" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g transform="translate(438 527)">
+    <rect width="324" height="58" rx="29" fill="#14171D" stroke="#2B2F38"/>
+    <circle cx="34" cy="29" r="6" fill="#60D394"/>
+    <text x="56" y="35" fill="#C3C6CE" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="17">bun run dev</text>
+    <path d="M222 29H270" stroke="#5A5F6B" stroke-width="2" stroke-linecap="round"/>
+    <path d="M260 20L270 29L260 38" stroke="#8D92A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="286" y="35" fill="#8D92A0" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="15">✓</text>
+  </g>
+
+  <text x="600" y="625" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="15" text-anchor="middle">Linux-native tools · Windows localhost forwarding · WSLg desktop development</text>
+</svg>

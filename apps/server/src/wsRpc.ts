@@ -1,0 +1,1902 @@
+import { execFile, spawn } from "node:child_process";
+
+import {
+  CommandId,
+  DEFAULT_TERMINAL_ID,
+  ORCHESTRATION_WS_METHODS,
+  ServerCustomModelEndpointError,
+  type ServerDeleteCustomModelEndpointInput,
+  type ServerSetCustomModelEndpointInput,
+  ThreadId,
+  WS_METHODS,
+  WsRpcError,
+  WsRpcGroup,
+  type GitActionProgressEvent,
+  type OrchestrationProject,
+  type OrchestrationEvent,
+  type ProfileCommit,
+  type ProjectDevServerEvent,
+  type OrchestrationShellStreamEvent,
+  type OrchestrationThreadStreamItem,
+  type ServerConfigStreamEvent,
+  type ServerDiagnosticsResult,
+  type ServerLifecycleStreamEvent,
+} from "@modesto/contracts";
+import { clamp } from "effect/Number";
+import { Effect, FileSystem, Layer, Option, Path, Queue, Schema, Stream } from "effect";
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
+import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
+
+import { AutomationService } from "./automation/Services/AutomationService";
+import { OpenClawService } from "./openclaw/Services/OpenClawService";
+import { ReviewService } from "./review/Services/ReviewService";
+import { authErrorResponse, makeEffectAuthRequest } from "./auth/http";
+import { ServerAuth } from "./auth/Services/ServerAuth";
+import { ServerSecretStore } from "./auth/Services/ServerSecretStore";
+import { SessionCredentialService } from "./auth/Services/SessionCredentialService";
+import { CheckpointDiffQuery } from "./checkpointing/Services/CheckpointDiffQuery";
+import { CheckpointStore } from "./checkpointing/Services/CheckpointStore";
+import {
+  captureAgentHandoffCheckpoint,
+  diffAgentHandoffCheckpoint,
+  restoreAgentHandoffCheckpoint,
+} from "./checkpointing/handoffCheckpoint";
+import { resolveThreadWorkspaceCwd } from "./checkpointing/Utils";
+import { parseGitHubDeviceCode } from "./git/githubDeviceCode";
+import { ServerConfig } from "./config";
+import { realpathNearestExisting } from "./realpathNearestExisting";
+import { listStudioThreadOutputs } from "./studioOutputs";
+import {
+  ensureStudioWorkspaceInstructionsFiles,
+  STUDIO_WORKSPACE_SUBDIRECTORIES,
+} from "./studioWorkspaceScaffold";
+import { DevServerManager, findProjectDevServerForLocalServer } from "./devServerManager";
+import { GitCore, type GitCoreShape } from "./git/Services/GitCore";
+import { GitManager } from "./git/Services/GitManager";
+import { GitStatusBroadcaster } from "./git/Services/GitStatusBroadcaster";
+import { TextGeneration } from "./git/Services/TextGeneration";
+import { Keybindings } from "./keybindings";
+import { createLocalPreviewGrant } from "./localImageFiles";
+import { listLocalServers, stopLocalServer } from "./localServerMonitor";
+import { Open, resolveAvailableEditors } from "./open";
+import { makeDispatchCommandNormalizer } from "./orchestration/dispatchCommandNormalization";
+import { makeImportThreadHandler } from "./orchestration/importThreadRoute";
+import {
+  applyRepoMemoryWrite,
+  detectRepoMemoryFiles,
+  suggestDurableWritebacks,
+} from "./repoMemory";
+import { OrchestrationEngineService } from "./orchestration/Services/OrchestrationEngine";
+import { ProjectionSnapshotQuery } from "./orchestration/Services/ProjectionSnapshotQuery";
+import { shouldPublishThreadShellForEvent } from "./orchestration/threadShellEvents";
+import {
+  customModelEndpointSecretName,
+  slugifyCustomModelEndpointId,
+  uniqueCustomModelEndpointId,
+} from "./provider/customModelEndpoints";
+import { ProviderDiscoveryService } from "./provider/Services/ProviderDiscoveryService";
+import { discoverSkillsCatalog, modestoSkillsDir } from "./provider/skillsCatalog";
+import { ProviderAdapterRegistry } from "./provider/Services/ProviderAdapterRegistry";
+import { ProviderHealth } from "./provider/Services/ProviderHealth";
+import { ProviderService } from "./provider/Services/ProviderService";
+import { listProviderUsage } from "./providerUsage";
+import { getProviderUsageSnapshot } from "./providerUsageSnapshot";
+import { ProfileStatsQuery } from "./profileStats";
+import { ServerEnvironment } from "./environment/Services/ServerEnvironment";
+import { ServerLifecycleEvents } from "./serverLifecycleEvents";
+import { ServerRuntimeStartup } from "./serverRuntimeStartup";
+import { ServerSettingsService } from "./serverSettings";
+import { TerminalManager } from "./terminal/Services/Manager";
+import { TerminalThreadTitleTracker } from "./terminal/terminalThreadTitleTracker";
+import { WorkspaceEntries } from "./workspace/Services/WorkspaceEntries";
+import { WorkspaceFileSystem } from "./workspace/Services/WorkspaceFileSystem";
+import { shouldRejectUntrustedRequestOrigin } from "./trustedOrigins";
+import { bufferLiveUiStream, type LiveUiStreamDropReport } from "./wsStreamBackpressure";
+import {
+  listAgentRules,
+  listHooks,
+  listMcpServers,
+  removeMcp,
+  setHook,
+  setMcpEnabled,
+  upsertMcp,
+} from "./agentTooling";
+
+const MAX_DIAGNOSTIC_CHILD_PROCESSES = 80;
+const MAX_DIAGNOSTIC_ARGS_CHARS = 500;
+
+// Relative subdirectories scaffolded under a freshly created chat container workspace root.
+// The Studio layout lives in studioWorkspaceScaffold.ts alongside its instruction files.
+const CHAT_WORKSPACE_SUBDIRECTORIES = ["work", "outputs"] as const;
+
+interface ProcessTableRow {
+  readonly pid: number;
+  readonly ppid: number;
+  readonly rssBytes: number;
+  readonly virtualSizeBytes: number;
+  readonly command: string;
+  readonly args: string;
+}
+
+// Normalizes supported GitHub remote URL forms into `owner/repo` for browser-panel links.
+function parseGitHubRepositoryNameWithOwnerFromRemoteUrl(url: string | null): string | null {
+  const trimmed = url?.trim() ?? "";
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  const match =
+    /^(?:git@github\.com:|ssh:\/\/git@github\.com\/|https:\/\/github\.com\/|git:\/\/github\.com\/)([^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/i.exec(
+      trimmed,
+    );
+  const repositoryNameWithOwner = match?.[1]?.trim() ?? "";
+  return repositoryNameWithOwner.length > 0 ? repositoryNameWithOwner : null;
+}
+
+function normalizeGitRemoteName(value: string | null): string | null {
+  const normalized = value?.trim() ?? "";
+  return normalized.length > 0 && normalized !== "." ? normalized : null;
+}
+
+function uniqueRemoteCandidates(candidates: ReadonlyArray<string | null>): string[] {
+  const unique = new Set<string>();
+  for (const candidate of candidates) {
+    const normalized = normalizeGitRemoteName(candidate);
+    if (normalized) {
+      unique.add(normalized);
+    }
+  }
+  return [...unique];
+}
+
+function readGitStdoutOrNull(
+  git: GitCoreShape,
+  cwd: string,
+  operation: string,
+  args: ReadonlyArray<string>,
+) {
+  return git
+    .execute({
+      operation,
+      cwd,
+      args,
+      allowNonZeroExit: true,
+      maxOutputBytes: 16_384,
+    })
+    .pipe(
+      Effect.map((result) => {
+        if (result.code !== 0) {
+          return null;
+        }
+        const trimmed = result.stdout.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      }),
+      Effect.catch(() => Effect.succeed(null)),
+    );
+}
+
+function parseGitRemoteNames(stdout: string | null): string[] {
+  if (!stdout) {
+    return [];
+  }
+  return stdout
+    .split(/\r?\n/g)
+    .map((line) => normalizeGitRemoteName(line))
+    .filter((remoteName): remoteName is string => remoteName !== null);
+}
+
+// Resolves the GitHub repository link from Git config without running the full status path.
+function resolveGitHubRepository(git: GitCoreShape, cwd: string) {
+  return Effect.gen(function* () {
+    const branch = yield* readGitStdoutOrNull(git, cwd, "WsRpc.githubRepository.currentBranch", [
+      "branch",
+      "--show-current",
+    ]);
+    const remoteNames = parseGitRemoteNames(
+      yield* readGitStdoutOrNull(git, cwd, "WsRpc.githubRepository.remotes", ["remote"]),
+    );
+    const branchRemote = branch ? yield* git.readConfigValue(cwd, `branch.${branch}.remote`) : null;
+    const pushDefaultRemote = yield* git.readConfigValue(cwd, "remote.pushDefault");
+
+    for (const remoteName of uniqueRemoteCandidates([
+      branchRemote,
+      pushDefaultRemote,
+      "origin",
+      ...remoteNames,
+    ])) {
+      const remoteUrl = yield* git.readConfigValue(cwd, `remote.${remoteName}.url`);
+      const nameWithOwner = parseGitHubRepositoryNameWithOwnerFromRemoteUrl(remoteUrl);
+      if (nameWithOwner) {
+        return {
+          repository: {
+            nameWithOwner,
+            url: `https://github.com/${nameWithOwner}`,
+          },
+        };
+      }
+    }
+
+    return { repository: null };
+  });
+}
+
+function truncateDiagnosticText(value: string, limit: number): string {
+  return value.length > limit ? `${value.slice(0, Math.max(0, limit - 15))}... [truncated]` : value;
+}
+
+function redactProcessArgs(args: string): string {
+  const redacted = args
+    .replace(
+      /(--?(?:api[-_]?key|auth|authorization|key|password|secret|token)(?:=|\s+))(\S+)/gi,
+      "$1[redacted]",
+    )
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]+/gi, "$1[redacted]")
+    .replace(/\bsk-[A-Za-z0-9_-]{8,}\b/g, "[redacted]");
+  return truncateDiagnosticText(redacted, MAX_DIAGNOSTIC_ARGS_CHARS);
+}
+
+function parseProcessTable(output: string): ProcessTableRow[] {
+  const rows: ProcessTableRow[] = [];
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\S+)(?:\s+(.*))?$/);
+    if (!match) {
+      continue;
+    }
+    rows.push({
+      pid: Number(match[1]),
+      ppid: Number(match[2]),
+      rssBytes: Number(match[3]) * 1024,
+      virtualSizeBytes: Number(match[4]) * 1024,
+      command: match[5] ?? "",
+      args: redactProcessArgs(match[6] ?? ""),
+    });
+  }
+  return rows;
+}
+
+function collectDescendantProcesses(
+  rows: readonly ProcessTableRow[],
+  rootPid: number,
+): ProcessTableRow[] {
+  const childrenByParent = new Map<number, ProcessTableRow[]>();
+  for (const row of rows) {
+    const children = childrenByParent.get(row.ppid) ?? [];
+    children.push(row);
+    childrenByParent.set(row.ppid, children);
+  }
+
+  const descendants: ProcessTableRow[] = [];
+  const stack = [...(childrenByParent.get(rootPid) ?? [])];
+  while (stack.length > 0) {
+    const row = stack.pop()!;
+    descendants.push(row);
+    stack.push(...(childrenByParent.get(row.pid) ?? []));
+  }
+  return descendants.toSorted((left, right) => right.rssBytes - left.rssBytes);
+}
+
+function readDescendantProcesses(rootPid: number): Promise<ProcessTableRow[]> {
+  if (process.platform === "win32") {
+    return Promise.resolve([]);
+  }
+  return new Promise((resolve) => {
+    execFile(
+      "ps",
+      ["-axo", "pid=,ppid=,rss=,vsz=,comm=,args="],
+      { maxBuffer: 2 * 1024 * 1024 },
+      (_error, stdout) => {
+        resolve(collectDescendantProcesses(parseProcessTable(stdout), rootPid));
+      },
+    );
+  });
+}
+
+function runGitHubCli(
+  args: ReadonlyArray<string>,
+): Promise<{ ok: boolean; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    execFile("gh", [...args], { maxBuffer: 512 * 1024, timeout: 10_000 }, (error, stdout, stderr) =>
+      resolve({ ok: error === null, stdout: stdout.trim(), stderr: stderr.trim() }),
+    );
+  });
+}
+
+const PROFILE_COMMIT_LIMIT = 20;
+
+function parseWorkspaceProfileCommits(
+  stdout: string,
+  project: OrchestrationProject,
+): ProfileCommit[] {
+  return stdout
+    .split("\x1e")
+    .map((record) => record.trim())
+    .filter((record) => record.length > 0)
+    .flatMap((record) => {
+      const [sha, shortSha, author, committedAt, message] = record.split("\x1f");
+      if (!sha || !shortSha || !author || !committedAt || !message) {
+        return [];
+      }
+      return [
+        {
+          source: "workspace" as const,
+          sha,
+          shortSha,
+          message,
+          author,
+          committedAt,
+          repository: project.title,
+          url: null,
+        },
+      ];
+    });
+}
+
+function readWorkspaceProfileCommits(
+  git: GitCoreShape,
+  projects: ReadonlyArray<OrchestrationProject>,
+) {
+  const uniqueProjects = [
+    ...new Map(
+      projects
+        .filter((project) => project.kind === "project" && project.deletedAt === null)
+        .map((project) => [project.workspaceRoot, project]),
+    ).values(),
+  ];
+
+  return Effect.all(
+    uniqueProjects.map((project) =>
+      git
+        .execute({
+          operation: "WsRpc.profileCommitActivity.workspace",
+          cwd: project.workspaceRoot,
+          args: [
+            "log",
+            "--all",
+            "--no-merges",
+            `--max-count=${PROFILE_COMMIT_LIMIT}`,
+            "--format=%H%x1f%h%x1f%an%x1f%aI%x1f%s%x1e",
+          ],
+          allowNonZeroExit: true,
+          maxOutputBytes: 128 * 1024,
+        })
+        .pipe(
+          Effect.map((result) =>
+            result.code === 0 ? parseWorkspaceProfileCommits(result.stdout, project) : [],
+          ),
+          Effect.catch(() => Effect.succeed([] as ProfileCommit[])),
+        ),
+    ),
+    { concurrency: 4 },
+  ).pipe(
+    Effect.map((commitsByProject) => {
+      const uniqueCommits = new Map<string, ProfileCommit>();
+      for (const commit of commitsByProject.flat()) {
+        uniqueCommits.set(`${commit.repository}:${commit.sha}`, commit);
+      }
+      return [...uniqueCommits.values()]
+        .toSorted(
+          (left, right) =>
+            new Date(right.committedAt).getTime() - new Date(left.committedAt).getTime(),
+        )
+        .slice(0, PROFILE_COMMIT_LIMIT);
+    }),
+  );
+}
+
+interface GitHubCommitSearchResponse {
+  readonly items?: ReadonlyArray<{
+    readonly sha?: string;
+    readonly html_url?: string;
+    readonly repository?: { readonly full_name?: string };
+    readonly commit?: {
+      readonly message?: string;
+      readonly author?: { readonly name?: string; readonly date?: string } | null;
+      readonly committer?: { readonly name?: string; readonly date?: string } | null;
+    };
+  }>;
+}
+
+async function readGitHubProfileCommits() {
+  const auth = await readGitHubAuthStatus();
+  if (!auth.authenticated || !auth.login) {
+    return {
+      github: [] as ProfileCommit[],
+      githubInstalled: auth.installed,
+      githubAuthenticated: auth.authenticated,
+      githubFetchFailed: false,
+      githubLogin: auth.login,
+    };
+  }
+
+  const response = await runGitHubCli([
+    "api",
+    "--method",
+    "GET",
+    "/search/commits",
+    "-f",
+    `q=author:${auth.login}`,
+    "-f",
+    "sort=author-date",
+    "-f",
+    "order=desc",
+    "-f",
+    `per_page=${PROFILE_COMMIT_LIMIT}`,
+  ]);
+
+  let parsed: GitHubCommitSearchResponse = {};
+  let githubFetchFailed = !response.ok;
+  if (response.ok) {
+    try {
+      parsed = JSON.parse(response.stdout) as GitHubCommitSearchResponse;
+    } catch {
+      parsed = {};
+      githubFetchFailed = true;
+    }
+  }
+
+  const github = (parsed.items ?? []).flatMap((item): ProfileCommit[] => {
+    const sha = item.sha?.trim();
+    const repository = item.repository?.full_name?.trim();
+    const message = item.commit?.message?.split(/\r?\n/, 1)[0]?.trim();
+    const committedAt = item.commit?.author?.date ?? item.commit?.committer?.date;
+    if (!sha || !repository || !message || !committedAt) {
+      return [];
+    }
+    return [
+      {
+        source: "github",
+        sha,
+        shortSha: sha.slice(0, 7),
+        message,
+        author:
+          item.commit?.author?.name?.trim() || item.commit?.committer?.name?.trim() || auth.login!,
+        committedAt,
+        repository,
+        url: item.html_url?.trim() || null,
+      },
+    ];
+  });
+
+  return {
+    github,
+    githubInstalled: true,
+    githubAuthenticated: true,
+    githubFetchFailed,
+    githubLogin: auth.login,
+  };
+}
+
+async function readGitHubAuthStatus() {
+  const version = await runGitHubCli(["--version"]);
+  if (!version.ok) {
+    return {
+      installed: false,
+      authenticated: false,
+      login: null,
+      name: null,
+      avatarUrl: null,
+    };
+  }
+  const user = await runGitHubCli(["api", "user", "--jq", "{login, name, avatarUrl: .avatar_url}"]);
+  let account: { login?: unknown; name?: unknown; avatarUrl?: unknown } = {};
+  if (user.ok) {
+    try {
+      account = JSON.parse(user.stdout) as typeof account;
+    } catch {
+      account = {};
+    }
+  }
+  const login = typeof account.login === "string" ? account.login.trim() : "";
+  const name = typeof account.name === "string" ? account.name.trim() : "";
+  const avatarUrl = typeof account.avatarUrl === "string" ? account.avatarUrl.trim() : "";
+  return {
+    installed: true,
+    authenticated: user.ok && login.length > 0,
+    login: login || null,
+    name: name || null,
+    avatarUrl: avatarUrl || null,
+  };
+}
+
+// `gh` prefers GH_TOKEN/GITHUB_TOKEN over any stored credential (documented in
+// `gh help environment`: "takes precedence over previously stored credentials").
+// `gh auth logout` only clears the stored credential — it can't unset an env var —
+// so a session backed by one of these stays authenticated after "sign out" appears
+// to succeed. Surface that explicitly instead of reporting a false success.
+function githubEnvTokenOverrideName(): string | null {
+  if (process.env.GH_TOKEN?.trim()) return "GH_TOKEN";
+  if (process.env.GITHUB_TOKEN?.trim()) return "GITHUB_TOKEN";
+  return null;
+}
+
+async function signOutGitHub() {
+  const status = await readGitHubAuthStatus();
+  if (!status.authenticated || !status.login) {
+    return { signedOut: true };
+  }
+  const result = await runGitHubCli([
+    "auth",
+    "logout",
+    "--hostname",
+    "github.com",
+    "--user",
+    status.login,
+  ]);
+  if (!result.ok) {
+    throw new Error(result.stderr || "GitHub CLI sign-out failed.");
+  }
+
+  // `gh auth logout` reported success — confirm the account is actually signed out
+  // rather than trusting the exit code, since a still-active env token or another
+  // stored account can leave `gh` authenticated regardless.
+  const afterStatus = await readGitHubAuthStatus();
+  if (afterStatus.authenticated) {
+    const envToken = githubEnvTokenOverrideName();
+    throw new Error(
+      envToken
+        ? `Removed the stored GitHub credential, but this machine's ${envToken} environment variable still authenticates \`gh\`. Unset ${envToken} to fully sign out.`
+        : `GitHub still shows as signed in after logout${afterStatus.login ? ` (as @${afterStatus.login})` : ""}. Another stored account may still be active — run \`gh auth logout\` again in a terminal to remove it.`,
+    );
+  }
+  return { signedOut: true };
+}
+
+function startGitHubSignIn() {
+  return new Promise<{ started: boolean; userCode: string | null }>((resolve, reject) => {
+    const child = spawn(
+      "gh",
+      [
+        "auth",
+        "login",
+        "--hostname",
+        "github.com",
+        "--git-protocol",
+        "https",
+        "--web",
+        "--clipboard",
+      ],
+      { detached: true, stdio: ["ignore", "pipe", "pipe"], env: process.env },
+    );
+    let output = "";
+    let settled = false;
+    const finish = (userCode: string | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(codeTimeout);
+      child.unref();
+      resolve({ started: true, userCode });
+    };
+    const capture = (chunk: Buffer | string) => {
+      output = `${output}${chunk.toString()}`.slice(-16_384);
+      const userCode = parseGitHubDeviceCode(output);
+      if (userCode) finish(userCode);
+    };
+    const codeTimeout = setTimeout(() => finish(null), 8_000);
+    codeTimeout.unref();
+
+    child.stdout?.on("data", capture);
+    child.stderr?.on("data", capture);
+    child.once("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(codeTimeout);
+      reject(error);
+    });
+    child.once("exit", (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(codeTimeout);
+      reject(
+        new Error(
+          output.trim() ||
+            `GitHub CLI sign-in exited before producing a device code (code ${code ?? "unknown"}).`,
+        ),
+      );
+    });
+  });
+}
+
+function toWsRpcError(cause: unknown, fallbackMessage: string) {
+  return Schema.is(WsRpcError)(cause)
+    ? cause
+    : new WsRpcError({
+        message:
+          cause instanceof Error && cause.message.length > 0 ? cause.message : fallbackMessage,
+        cause,
+      });
+}
+
+const failLiveUiStreamForSnapshotResync = (report: LiveUiStreamDropReport) =>
+  Effect.fail(
+    new WsRpcError({
+      message: `${report.message}; restarting stream to refresh snapshot.`,
+    }),
+  );
+
+// Must mirror the cases of toShellStreamEvent: events rejected here are dropped
+// before the live-UI buffer so the sliding window only holds events that can
+// actually project to a shell update.
+function isShellRelevantEvent(event: OrchestrationEvent): boolean {
+  switch (event.type) {
+    case "project.created":
+    case "project.meta-updated":
+    case "project.deleted":
+    case "thread.deleted":
+      return true;
+    default:
+      return event.aggregateKind === "thread" && shouldPublishThreadShellForEvent(event);
+  }
+}
+
+function isThreadDetailEvent(event: OrchestrationEvent): event is Extract<
+  OrchestrationEvent,
+  {
+    type:
+      | "thread.message-sent"
+      | "thread.proposed-plan-upserted"
+      | "thread.activity-appended"
+      | "thread.turn-diff-completed"
+      | "thread.reverted"
+      | "thread.conversation-rolled-back"
+      | "thread.session-set"
+      | "thread.meta-updated"
+      | "thread.pinned-message-added"
+      | "thread.pinned-message-removed"
+      | "thread.pinned-message-done-set"
+      | "thread.pinned-message-label-set"
+      | "thread.marker-added"
+      | "thread.marker-removed"
+      | "thread.marker-done-set"
+      | "thread.marker-label-set"
+      | "thread.archived"
+      | "thread.unarchived";
+  }
+> {
+  return (
+    event.type === "thread.message-sent" ||
+    event.type === "thread.proposed-plan-upserted" ||
+    event.type === "thread.activity-appended" ||
+    event.type === "thread.turn-diff-completed" ||
+    event.type === "thread.reverted" ||
+    event.type === "thread.conversation-rolled-back" ||
+    event.type === "thread.session-set" ||
+    event.type === "thread.meta-updated" ||
+    event.type === "thread.pinned-message-added" ||
+    event.type === "thread.pinned-message-removed" ||
+    event.type === "thread.pinned-message-done-set" ||
+    event.type === "thread.pinned-message-label-set" ||
+    event.type === "thread.marker-added" ||
+    event.type === "thread.marker-removed" ||
+    event.type === "thread.marker-done-set" ||
+    event.type === "thread.marker-label-set" ||
+    event.type === "thread.archived" ||
+    event.type === "thread.unarchived"
+  );
+}
+
+export const makeWsRpcLayer = () =>
+  WsRpcGroup.toLayer(
+    Effect.gen(function* () {
+      const checkpointDiffQuery = yield* CheckpointDiffQuery;
+      const checkpointStore = yield* CheckpointStore;
+      const automationService = yield* AutomationService;
+      const openClawService = yield* OpenClawService;
+      const reviewService = yield* ReviewService;
+      const config = yield* ServerConfig;
+      const devServerManager = yield* DevServerManager;
+      const fileSystem = yield* FileSystem.FileSystem;
+      const git = yield* GitCore;
+      const gitManager = yield* GitManager;
+      const gitStatusBroadcaster = yield* GitStatusBroadcaster;
+      const keybindings = yield* Keybindings;
+      const open = yield* Open;
+      const orchestrationEngine = yield* OrchestrationEngineService;
+      const path = yield* Path.Path;
+      const profileStatsQuery = yield* ProfileStatsQuery;
+      const projectionReadModelQuery = yield* ProjectionSnapshotQuery;
+      const providerAdapterRegistry = yield* ProviderAdapterRegistry;
+      const providerDiscoveryService = yield* ProviderDiscoveryService;
+      const providerHealth = yield* ProviderHealth;
+      const providerService = yield* ProviderService;
+      const lifecycleEvents = yield* ServerLifecycleEvents;
+      const runtimeStartup = yield* ServerRuntimeStartup;
+      const secretStore = yield* ServerSecretStore;
+      const serverEnvironment = yield* ServerEnvironment;
+      const serverSettings = yield* ServerSettingsService;
+      const terminalManager = yield* TerminalManager;
+      const textGeneration = yield* TextGeneration;
+      const workspaceEntries = yield* WorkspaceEntries;
+      const workspaceFileSystem = yield* WorkspaceFileSystem;
+
+      const canonicalizeProjectWorkspaceRoot = Effect.fnUntraced(function* (
+        workspaceRoot: string,
+        options: { readonly createIfMissing?: boolean } = {},
+      ) {
+        const rawWorkspaceRoot = workspaceRoot.trim();
+        const expandedWorkspaceRoot =
+          rawWorkspaceRoot === "~"
+            ? config.homeDir
+            : rawWorkspaceRoot.startsWith("~/") || rawWorkspaceRoot.startsWith("~\\")
+              ? path.join(config.homeDir, rawWorkspaceRoot.slice(2))
+              : rawWorkspaceRoot;
+        const normalizedWorkspaceRoot = path.resolve(expandedWorkspaceRoot);
+        let workspaceStat = yield* fileSystem
+          .stat(normalizedWorkspaceRoot)
+          .pipe(Effect.catch(() => Effect.succeed(null)));
+        if (!workspaceStat) {
+          if (!options.createIfMissing) {
+            return yield* new WsRpcError({
+              message: `Project directory does not exist: ${normalizedWorkspaceRoot}`,
+            });
+          }
+          yield* fileSystem.makeDirectory(normalizedWorkspaceRoot, { recursive: true }).pipe(
+            Effect.mapError(
+              (cause) =>
+                new WsRpcError({
+                  message: `Failed to create project directory: ${normalizedWorkspaceRoot}`,
+                  cause,
+                }),
+            ),
+          );
+          workspaceStat = yield* fileSystem
+            .stat(normalizedWorkspaceRoot)
+            .pipe(Effect.catch(() => Effect.succeed(null)));
+          if (!workspaceStat) {
+            return yield* new WsRpcError({
+              message: `Failed to create project directory: ${normalizedWorkspaceRoot}`,
+            });
+          }
+        }
+        if (workspaceStat.type !== "Directory") {
+          return yield* new WsRpcError({
+            message: `Project path is not a directory: ${normalizedWorkspaceRoot}`,
+          });
+        }
+        return yield* realpathNearestExisting(normalizedWorkspaceRoot).pipe(
+          Effect.provideService(FileSystem.FileSystem, fileSystem),
+          Effect.provideService(Path.Path, path),
+        );
+      });
+      // One mkdir loop shared by every container kind; the relative directory set is the
+      // only thing that varies (general chats scaffold work/outputs, Studio mirrors the
+      // Claude Outbox layout). Keeping a single implementation keeps error handling and
+      // idempotency identical across kinds.
+      const prepareWorkspaceSubdirectories = Effect.fnUntraced(function* (
+        workspaceRoot: string,
+        relativeDirnames: readonly string[],
+      ) {
+        for (const dirname of relativeDirnames) {
+          const childPath = path.join(workspaceRoot, dirname);
+          yield* fileSystem.makeDirectory(childPath, { recursive: true }).pipe(
+            Effect.mapError(
+              (cause) =>
+                new WsRpcError({
+                  message: `Failed to create workspace directory: ${childPath}`,
+                  cause,
+                }),
+            ),
+          );
+        }
+      });
+      const prepareChatWorkspaceRoot = (workspaceRoot: string) =>
+        prepareWorkspaceSubdirectories(workspaceRoot, CHAT_WORKSPACE_SUBDIRECTORIES);
+      // Instruction files are best-effort: they steer agents toward the Outbox layout but
+      // must never fail (or retry-loop) the container create that scaffolds the folders.
+      const prepareStudioWorkspaceRoot = (workspaceRoot: string) =>
+        prepareWorkspaceSubdirectories(workspaceRoot, STUDIO_WORKSPACE_SUBDIRECTORIES).pipe(
+          Effect.andThen(
+            ensureStudioWorkspaceInstructionsFiles(workspaceRoot).pipe(
+              Effect.catch((cause) =>
+                Effect.logWarning("failed to write studio workspace instructions", {
+                  workspaceRoot,
+                  cause,
+                }),
+              ),
+              Effect.provideService(FileSystem.FileSystem, fileSystem),
+              Effect.provideService(Path.Path, path),
+            ),
+          ),
+        );
+
+      const normalizeDispatchCommand = makeDispatchCommandNormalizer<WsRpcError>({
+        attachmentsDir: config.attachmentsDir,
+        chatWorkspaceRoot: config.chatWorkspaceRoot,
+        studioWorkspaceRoot: config.studioWorkspaceRoot,
+        fileSystem,
+        path,
+        canonicalizeProjectWorkspaceRoot,
+        prepareChatWorkspaceRoot,
+        prepareStudioWorkspaceRoot,
+      });
+
+      const importThread = makeImportThreadHandler({
+        fileSystem,
+        orchestrationEngine,
+        path,
+        platform: process.platform,
+        projectionSnapshotQuery: projectionReadModelQuery,
+        providerAdapterRegistry,
+        providerService,
+      });
+
+      // Terminal-first threads are created with the generic "New terminal" placeholder.
+      // The tracker buffers per-terminal input and, once a meaningful command is submitted,
+      // surfaces a safe title used to auto-rename the thread on its first command.
+      const terminalTitleTracker = new TerminalThreadTitleTracker();
+      const resetTerminalTitleBuffer = (threadId: string, terminalId: string | null) =>
+        Effect.sync(() => terminalTitleTracker.reset(threadId, terminalId));
+      // Terminal auto-titles are best-effort metadata and must never block or fail terminal writes.
+      const maybeAutoRenameTerminalThread = Effect.fnUntraced(function* (input: {
+        threadId: string;
+        terminalId: string;
+        data: string;
+      }) {
+        const readModel = yield* orchestrationEngine.getReadModel();
+        const thread = readModel.threads.find((entry) => entry.id === input.threadId);
+        if (!thread) {
+          return;
+        }
+        const nextTitle = terminalTitleTracker.consumeWrite({
+          currentTitle: thread.title,
+          data: input.data,
+          terminalId: input.terminalId,
+          threadId: input.threadId,
+        });
+        if (!nextTitle) {
+          return;
+        }
+        yield* orchestrationEngine.dispatch({
+          type: "thread.meta.update",
+          commandId: CommandId.makeUnsafe(`server:terminal-title-rename:${crypto.randomUUID()}`),
+          threadId: ThreadId.makeUnsafe(input.threadId),
+          title: nextTitle,
+        });
+      });
+
+      const stopLocalServerAndTrackedProjectRun = Effect.fnUntraced(function* (input: {
+        pid: number;
+        port: number;
+      }) {
+        const localServerSnapshot = yield* Effect.promise(() => listLocalServers());
+        const localServer =
+          localServerSnapshot.servers.find(
+            (server) => server.pid === input.pid && server.ports.includes(input.port),
+          ) ?? null;
+        const result = yield* Effect.promise(() => stopLocalServer(input, localServer));
+        if (localServer?.isStoppable) {
+          const devServers = yield* devServerManager.list;
+          const trackedServer = findProjectDevServerForLocalServer({
+            localServer,
+            devServers: devServers.servers,
+          });
+          if (trackedServer) {
+            yield* devServerManager
+              .stop({ projectId: trackedServer.projectId })
+              .pipe(Effect.catch(() => Effect.void));
+          }
+        }
+        return result;
+      });
+
+      const toCustomModelEndpointError = (cause: unknown) =>
+        new ServerCustomModelEndpointError({
+          reason: cause instanceof Error ? cause.message : String(cause),
+        });
+
+      // Enriches each persisted definition with a derived `apiKeyConfigured` flag —
+      // the raw key never leaves ServerSecretStore.
+      const listCustomModelEndpointStatuses = Effect.gen(function* () {
+        const settings = yield* serverSettings.getSettings.pipe(
+          Effect.mapError(toCustomModelEndpointError),
+        );
+        return yield* Effect.forEach(
+          settings.customModelEndpoints,
+          (endpoint) =>
+            secretStore.get(customModelEndpointSecretName(endpoint.id)).pipe(
+              Effect.map((bytes) => ({
+                ...endpoint,
+                apiKeyConfigured: Boolean(bytes && bytes.length > 0),
+              })),
+              Effect.orElseSucceed(() => ({ ...endpoint, apiKeyConfigured: false })),
+            ),
+          { concurrency: "unbounded" },
+        );
+      });
+
+      const setCustomModelEndpoint = Effect.fn("setCustomModelEndpoint")(function* (
+        input: ServerSetCustomModelEndpointInput,
+      ) {
+        try {
+          const parsedBaseUrl = new URL(input.baseUrl);
+          if (parsedBaseUrl.protocol !== "http:" && parsedBaseUrl.protocol !== "https:") {
+            throw new Error("unsupported protocol");
+          }
+        } catch {
+          return yield* new ServerCustomModelEndpointError({
+            reason: `"${input.baseUrl}" is not a valid URL.`,
+          });
+        }
+
+        const settings = yield* serverSettings.getSettings.pipe(
+          Effect.mapError(toCustomModelEndpointError),
+        );
+        const existingIds = new Set(settings.customModelEndpoints.map((entry) => entry.id));
+        const isUpdate = input.id !== undefined && existingIds.has(input.id);
+        const id =
+          input.id ??
+          uniqueCustomModelEndpointId(slugifyCustomModelEndpointId(input.label), existingIds);
+
+        const nextEndpoint = {
+          id,
+          label: input.label,
+          baseUrl: input.baseUrl,
+          wireApi: input.wireApi,
+          models: [...input.models],
+        };
+        const nextEndpoints = isUpdate
+          ? settings.customModelEndpoints.map((entry) => (entry.id === id ? nextEndpoint : entry))
+          : [...settings.customModelEndpoints, nextEndpoint];
+
+        yield* serverSettings
+          .updateSettings({ customModelEndpoints: nextEndpoints })
+          .pipe(Effect.mapError(toCustomModelEndpointError));
+
+        if (input.apiKey) {
+          yield* secretStore
+            .set(customModelEndpointSecretName(id), new TextEncoder().encode(input.apiKey))
+            .pipe(Effect.mapError(toCustomModelEndpointError));
+        }
+
+        return { customModelEndpoints: yield* listCustomModelEndpointStatuses };
+      });
+
+      const deleteCustomModelEndpoint = Effect.fn("deleteCustomModelEndpoint")(function* (
+        input: ServerDeleteCustomModelEndpointInput,
+      ) {
+        const settings = yield* serverSettings.getSettings.pipe(
+          Effect.mapError(toCustomModelEndpointError),
+        );
+        yield* serverSettings
+          .updateSettings({
+            customModelEndpoints: settings.customModelEndpoints.filter(
+              (entry) => entry.id !== input.id,
+            ),
+          })
+          .pipe(Effect.mapError(toCustomModelEndpointError));
+        yield* secretStore
+          .remove(customModelEndpointSecretName(input.id))
+          .pipe(Effect.mapError(toCustomModelEndpointError));
+
+        return { customModelEndpoints: yield* listCustomModelEndpointStatuses };
+      });
+
+      const loadServerConfig = Effect.gen(function* () {
+        const keybindingsConfig = yield* keybindings.loadConfigState;
+        const providerStatuses = yield* providerHealth.getStatuses;
+        const customModelEndpoints = yield* listCustomModelEndpointStatuses;
+        return {
+          cwd: config.cwd,
+          homeDir: config.homeDir,
+          chatWorkspaceRoot: config.chatWorkspaceRoot,
+          studioWorkspaceRoot: config.studioWorkspaceRoot,
+          worktreesDir: config.worktreesDir,
+          keybindingsConfigPath: config.keybindingsConfigPath,
+          keybindings: keybindingsConfig.keybindings,
+          issues: keybindingsConfig.issues,
+          providers: providerStatuses,
+          customModelEndpoints,
+          availableEditors: resolveAvailableEditors(),
+        };
+      });
+
+      const refreshGitStatus = (cwd: string) =>
+        gitStatusBroadcaster.refreshStatus(cwd).pipe(Effect.catchCause(() => Effect.void));
+
+      const toShellStreamEvent = (
+        event: OrchestrationEvent,
+      ): Effect.Effect<Option.Option<OrchestrationShellStreamEvent>, never> => {
+        switch (event.type) {
+          case "project.created":
+          case "project.meta-updated":
+            return projectionReadModelQuery.getProjectShellById(event.payload.projectId).pipe(
+              Effect.map((project) =>
+                Option.map(project, (nextProject) => ({
+                  kind: "project-upserted" as const,
+                  sequence: event.sequence,
+                  project: nextProject,
+                })),
+              ),
+              Effect.catch(() => Effect.succeed(Option.none())),
+            );
+          case "project.deleted":
+            return Effect.succeed(
+              Option.some({
+                kind: "project-removed" as const,
+                sequence: event.sequence,
+                projectId: event.payload.projectId,
+              }),
+            );
+          case "thread.deleted":
+            return Effect.succeed(
+              Option.some({
+                kind: "thread-removed" as const,
+                sequence: event.sequence,
+                threadId: event.payload.threadId,
+              }),
+            );
+          default:
+            if (event.aggregateKind !== "thread") return Effect.succeed(Option.none());
+            return projectionReadModelQuery
+              .getThreadShellById(ThreadId.makeUnsafe(String(event.aggregateId)))
+              .pipe(
+                Effect.map((thread) =>
+                  Option.map(thread, (nextThread) => ({
+                    kind: "thread-upserted" as const,
+                    sequence: event.sequence,
+                    thread: nextThread,
+                  })),
+                ),
+                Effect.catch(() => Effect.succeed(Option.none())),
+              );
+        }
+      };
+
+      const isThreadDetailEventFor = (threadId: ThreadId, event: OrchestrationEvent) =>
+        event.aggregateKind === "thread" &&
+        event.aggregateId === threadId &&
+        isThreadDetailEvent(event);
+
+      const rpcEffect = <A, E, R>(effect: Effect.Effect<A, E, R>, fallbackMessage: string) =>
+        effect.pipe(Effect.mapError((cause) => toWsRpcError(cause, fallbackMessage)));
+
+      return WsRpcGroup.of({
+        [ORCHESTRATION_WS_METHODS.dispatchCommand]: (command) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const { command: normalizedCommand, prepareWorkspaceRoot } =
+                yield* normalizeDispatchCommand({ command });
+              const result = yield* runtimeStartup.enqueueCommand(
+                orchestrationEngine.dispatch(normalizedCommand),
+              );
+              // Only scaffold managed workspace-root subdirectories (Inbox/Outbox/work/outputs)
+              // AFTER the decider has accepted the command. A rejected dispatch (e.g. a
+              // cross-kind workspace-root ownership conflict) must never mutate the filesystem.
+              if (prepareWorkspaceRoot) {
+                yield* prepareWorkspaceRoot;
+              }
+              return result;
+            }),
+            "Failed to dispatch orchestration command",
+          ),
+        [ORCHESTRATION_WS_METHODS.importThread]: (input) =>
+          rpcEffect(importThread(input), "Failed to import thread"),
+        [ORCHESTRATION_WS_METHODS.getSnapshot]: () =>
+          rpcEffect(
+            projectionReadModelQuery.getSnapshot(),
+            "Failed to load orchestration snapshot",
+          ),
+        [ORCHESTRATION_WS_METHODS.getShellSnapshot]: () =>
+          rpcEffect(
+            projectionReadModelQuery.getShellSnapshot(),
+            "Failed to load orchestration shell snapshot",
+          ),
+        [ORCHESTRATION_WS_METHODS.repairState]: () =>
+          rpcEffect(orchestrationEngine.repairState(), "Failed to repair orchestration state"),
+        [ORCHESTRATION_WS_METHODS.getTurnDiff]: (input) =>
+          rpcEffect(checkpointDiffQuery.getTurnDiff(input), "Failed to load turn diff"),
+        [ORCHESTRATION_WS_METHODS.getFullThreadDiff]: (input) =>
+          rpcEffect(
+            checkpointDiffQuery.getFullThreadDiff(input),
+            "Failed to load full thread diff",
+          ),
+        [ORCHESTRATION_WS_METHODS.captureHandoffCheckpoint]: (input) =>
+          rpcEffect(
+            captureAgentHandoffCheckpoint(checkpointStore, input),
+            "Failed to capture handoff checkpoint",
+          ),
+        [ORCHESTRATION_WS_METHODS.getHandoffCheckpointDiff]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const threadOption = yield* projectionReadModelQuery.getThreadShellById(
+                input.threadId,
+              );
+              const handoff = Option.getOrNull(
+                Option.map(threadOption, (thread) => thread.handoff),
+              );
+              return yield* diffAgentHandoffCheckpoint(checkpointStore, {
+                ...input,
+                handoff,
+              });
+            }),
+            "Failed to load handoff checkpoint diff",
+          ),
+        [ORCHESTRATION_WS_METHODS.restoreHandoffCheckpoint]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const threadOption = yield* projectionReadModelQuery.getThreadShellById(
+                input.threadId,
+              );
+              const handoff = Option.getOrNull(
+                Option.map(threadOption, (thread) => thread.handoff),
+              );
+              return yield* restoreAgentHandoffCheckpoint(checkpointStore, {
+                ...input,
+                handoff,
+              });
+            }),
+            "Failed to restore handoff checkpoint",
+          ),
+        [ORCHESTRATION_WS_METHODS.replayEvents]: (input) =>
+          rpcEffect(
+            Stream.runCollect(
+              orchestrationEngine.readEvents(
+                clamp(input.fromSequenceExclusive, {
+                  maximum: Number.MAX_SAFE_INTEGER,
+                  minimum: 0,
+                }),
+              ),
+            ).pipe(Effect.map((events) => Array.from(events))),
+            "Failed to replay orchestration events",
+          ),
+        [ORCHESTRATION_WS_METHODS.subscribeShell]: () =>
+          Stream.merge(
+            Stream.fromEffect(
+              projectionReadModelQuery.getShellSnapshot().pipe(
+                Effect.map((snapshot) => ({ kind: "snapshot" as const, snapshot })),
+                Effect.mapError((cause) => toWsRpcError(cause, "Failed to load shell snapshot")),
+              ),
+            ),
+            // Filter before buffering so the sliding window only evicts shell-relevant
+            // events; project after it so a stalled subscriber does not keep driving
+            // read-model queries for events it will never receive.
+            bufferLiveUiStream(
+              orchestrationEngine.streamDomainEvents.pipe(Stream.filter(isShellRelevantEvent)),
+              {
+                label: "orchestration.shell",
+                onDroppedEvents: failLiveUiStreamForSnapshotResync,
+              },
+            ).pipe(
+              Stream.mapEffect(toShellStreamEvent),
+              Stream.flatMap((event) =>
+                Option.isSome(event) ? Stream.succeed(event.value) : Stream.empty,
+              ),
+            ),
+          ),
+        [ORCHESTRATION_WS_METHODS.unsubscribeShell]: () => Effect.void,
+        [ORCHESTRATION_WS_METHODS.subscribeThread]: (input) =>
+          Stream.merge(
+            Stream.fromEffect(
+              projectionReadModelQuery.getThreadDetailSnapshotById(input.threadId).pipe(
+                Effect.map((snapshot) =>
+                  Option.map(snapshot, (value) => ({
+                    kind: "snapshot" as const,
+                    snapshot: value,
+                  })),
+                ),
+                Effect.mapError((cause) => toWsRpcError(cause, "Failed to load thread snapshot")),
+              ),
+            ).pipe(
+              Stream.flatMap((snapshot) =>
+                Option.isSome(snapshot) ? Stream.succeed(snapshot.value) : Stream.empty,
+              ),
+            ),
+            // Filter to this thread before buffering: otherwise a burst on another
+            // thread evicts this subscriber's own events from the sliding window.
+            bufferLiveUiStream(
+              orchestrationEngine.streamDomainEvents.pipe(
+                Stream.filter((event) => isThreadDetailEventFor(input.threadId, event)),
+              ),
+              {
+                label: "orchestration.thread-detail",
+                onDroppedEvents: failLiveUiStreamForSnapshotResync,
+              },
+            ).pipe(
+              Stream.map(
+                (event): OrchestrationThreadStreamItem => ({
+                  kind: "event",
+                  event,
+                }),
+              ),
+            ),
+          ),
+        [ORCHESTRATION_WS_METHODS.unsubscribeThread]: () => Effect.void,
+        [WS_METHODS.subscribeOrchestrationDomainEvents]: () =>
+          bufferLiveUiStream(orchestrationEngine.streamDomainEvents, {
+            label: "orchestration.domain-events",
+          }),
+
+        [WS_METHODS.projectsListDirectories]: (input) =>
+          rpcEffect(
+            workspaceEntries.listDirectories(input),
+            "Failed to list workspace directories",
+          ),
+        [WS_METHODS.projectsSearchEntries]: (input) =>
+          rpcEffect(workspaceEntries.search(input), "Failed to search workspace entries"),
+        [WS_METHODS.projectsDiscoverScripts]: (input) =>
+          rpcEffect(workspaceEntries.discoverScripts(input), "Failed to discover project scripts"),
+        [WS_METHODS.projectsSearchLocalEntries]: (input) =>
+          rpcEffect(workspaceEntries.searchLocal(input), "Failed to search local entries"),
+        [WS_METHODS.projectsReadFile]: (input) =>
+          rpcEffect(workspaceFileSystem.readFile(input), "Failed to read workspace file"),
+        [WS_METHODS.projectsCreateLocalFilePreviewGrant]: (input) =>
+          rpcEffect(
+            Effect.promise(() => createLocalPreviewGrant({ requestedPath: input.path })),
+            "Failed to create local file preview grant",
+          ),
+        [WS_METHODS.projectsWriteFile]: (input) =>
+          rpcEffect(workspaceFileSystem.writeFile(input), "Failed to write workspace file"),
+        [WS_METHODS.projectsRunDevServer]: (input) =>
+          rpcEffect(devServerManager.run(input), "Failed to start dev server"),
+        [WS_METHODS.projectsStopDevServer]: (input) =>
+          rpcEffect(devServerManager.stop(input), "Failed to stop dev server"),
+        [WS_METHODS.projectsListDevServers]: () =>
+          rpcEffect(devServerManager.list, "Failed to list dev servers"),
+        [WS_METHODS.subscribeProjectDevServerEvents]: () =>
+          Stream.concat(
+            Stream.fromEffect(
+              devServerManager.list.pipe(
+                Effect.map(
+                  (result): ProjectDevServerEvent => ({
+                    type: "snapshot",
+                    servers: result.servers,
+                  }),
+                ),
+              ),
+            ),
+            bufferLiveUiStream(devServerManager.stream, {
+              label: "projects.dev-servers",
+              onDroppedEvents: failLiveUiStreamForSnapshotResync,
+            }),
+          ),
+        [WS_METHODS.studioListThreadOutputs]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              // Self-heal the Studio folder tree: an accepted create whose deferred scaffold
+              // failed (crash, transient FS error) must not leave Studio without its Outbox
+              // forever. mkdir -p is idempotent and cheap, and this endpoint only fires while
+              // a Studio chat's environment panel is actually open. Failures degrade to the
+              // empty-list behavior.
+              yield* prepareStudioWorkspaceRoot(config.studioWorkspaceRoot).pipe(
+                Effect.catch(() => Effect.void),
+              );
+              // Checkpoints cover Git workspaces; file-change activities preserve the same
+              // attribution in the default non-Git Studio root. Unknown/non-Studio ids stay empty.
+              const context = yield* projectionReadModelQuery.getThreadCheckpointContext(
+                input.threadId,
+                { includeFileChangeActivityPayloads: true },
+              );
+              if (Option.isNone(context) || context.value.projectKind !== "studio") {
+                return { entries: [] };
+              }
+              const workspaceCwd = resolveThreadWorkspaceCwd({
+                thread: {
+                  projectId: context.value.projectId,
+                  envMode: context.value.envMode,
+                  worktreePath: context.value.worktreePath,
+                },
+                projects: [
+                  {
+                    id: context.value.projectId,
+                    kind: context.value.projectKind,
+                    workspaceRoot: context.value.workspaceRoot,
+                  },
+                ],
+              });
+              if (!workspaceCwd) {
+                return { entries: [] };
+              }
+              return yield* listStudioThreadOutputs({
+                workspaceRoot: workspaceCwd,
+                checkpoints: context.value.checkpoints,
+                ...(context.value.fileChangeActivityPayloads
+                  ? { fileChangeActivityPayloads: context.value.fileChangeActivityPayloads }
+                  : {}),
+              });
+            }),
+            "Failed to list studio thread outputs",
+          ),
+        [WS_METHODS.filesystemBrowse]: (input) =>
+          rpcEffect(workspaceEntries.browse(input), "Failed to browse filesystem"),
+        [WS_METHODS.repoMemoryList]: (input) =>
+          rpcEffect(
+            detectRepoMemoryFiles(input.workspaceRoot).pipe(Effect.map((files) => ({ files }))),
+            "Failed to list repo memory files",
+          ),
+        [WS_METHODS.repoMemorySuggest]: (input) =>
+          rpcEffect(
+            suggestDurableWritebacks({
+              workspaceRoot: input.workspaceRoot,
+              conversationNotes: input.conversationNotes,
+            }),
+            "Failed to suggest repo memory writebacks",
+          ),
+        [WS_METHODS.repoMemoryApplyWrite]: (input) =>
+          rpcEffect(applyRepoMemoryWrite(input), "Failed to apply repo memory write"),
+        [WS_METHODS.shellOpenInEditor]: (input) =>
+          rpcEffect(open.openInEditor(input), "Failed to open editor"),
+
+        [WS_METHODS.gitGithubRepository]: (input) =>
+          rpcEffect(resolveGitHubRepository(git, input.cwd), "Failed to resolve GitHub repository"),
+        [WS_METHODS.gitGithubAuthStatus]: () =>
+          rpcEffect(Effect.promise(readGitHubAuthStatus), "Failed to read GitHub sign-in status"),
+        [WS_METHODS.gitGithubSignIn]: () =>
+          rpcEffect(Effect.promise(startGitHubSignIn), "Failed to start GitHub sign-in"),
+        [WS_METHODS.gitGithubSignOut]: () =>
+          rpcEffect(Effect.promise(signOutGitHub), "Failed to sign out of GitHub"),
+        [WS_METHODS.gitStatus]: (input) =>
+          rpcEffect(gitStatusBroadcaster.getStatus(input), "Failed to read git status"),
+        [WS_METHODS.gitReadWorkingTreeDiff]: (input) =>
+          rpcEffect(gitManager.readWorkingTreeDiff(input), "Failed to read working tree diff"),
+        [WS_METHODS.gitSummarizeDiff]: (input) =>
+          rpcEffect(gitManager.summarizeDiff(input), "Failed to summarize diff"),
+        [WS_METHODS.gitPull]: (input) =>
+          rpcEffect(
+            git.pullCurrentBranch(input.cwd).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to pull branch",
+          ),
+        [WS_METHODS.gitRunStackedAction]: (input) =>
+          bufferLiveUiStream(
+            Stream.callback<GitActionProgressEvent, WsRpcError>((queue) =>
+              gitManager
+                .runStackedAction(input, {
+                  actionId: input.actionId,
+                  progressReporter: {
+                    publish: (event) => Queue.offer(queue, event).pipe(Effect.asVoid),
+                  },
+                })
+                .pipe(
+                  Effect.tap(() => refreshGitStatus(input.cwd)),
+                  Effect.matchCauseEffect({
+                    onFailure: (cause) =>
+                      Queue.fail(queue, toWsRpcError(cause, "Git action failed")),
+                    onSuccess: () => Queue.end(queue).pipe(Effect.asVoid),
+                  }),
+                ),
+            ),
+            { label: "git.stacked-action" },
+          ),
+        [WS_METHODS.gitResolvePullRequest]: (input) =>
+          rpcEffect(gitManager.resolvePullRequest(input), "Failed to resolve pull request"),
+        [WS_METHODS.gitPullRequestSnapshot]: (input) =>
+          rpcEffect(
+            gitManager.pullRequestSnapshot(input),
+            "Failed to load pull request checks and comments",
+          ),
+        [WS_METHODS.gitPreparePullRequestThread]: (input) =>
+          rpcEffect(
+            gitManager
+              .preparePullRequestThread(input)
+              .pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to prepare pull request thread",
+          ),
+        [WS_METHODS.gitListBranches]: (input) =>
+          rpcEffect(git.listBranches(input), "Failed to list branches"),
+        [WS_METHODS.gitCreateWorktree]: (input) =>
+          rpcEffect(
+            git.createWorktree(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to create worktree",
+          ),
+        [WS_METHODS.gitCreateDetachedWorktree]: (input) =>
+          rpcEffect(
+            git.createDetachedWorktree(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to create detached worktree",
+          ),
+        [WS_METHODS.gitRemoveWorktree]: (input) =>
+          rpcEffect(
+            git.removeWorktree(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to remove worktree",
+          ),
+        [WS_METHODS.gitCreateBranch]: (input) =>
+          rpcEffect(
+            git.createBranch(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to create branch",
+          ),
+        [WS_METHODS.gitCheckout]: (input) =>
+          rpcEffect(
+            Effect.scoped(git.checkoutBranch(input)).pipe(
+              Effect.tap(() => refreshGitStatus(input.cwd)),
+            ),
+            "Failed to checkout branch",
+          ),
+        [WS_METHODS.gitStashAndCheckout]: (input) =>
+          rpcEffect(
+            Effect.scoped(git.stashAndCheckout(input)).pipe(
+              Effect.tap(() => refreshGitStatus(input.cwd)),
+            ),
+            "Failed to stash and checkout",
+          ),
+        [WS_METHODS.gitStashDrop]: (input) =>
+          rpcEffect(
+            git.stashDrop(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to drop stash",
+          ),
+        [WS_METHODS.gitStashInfo]: (input) =>
+          rpcEffect(git.stashInfo(input), "Failed to read stash"),
+        [WS_METHODS.gitRemoveIndexLock]: (input) =>
+          rpcEffect(git.removeIndexLock(input), "Failed to remove Git index lock"),
+        [WS_METHODS.gitInit]: (input) =>
+          rpcEffect(
+            git.initRepo(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to initialize repository",
+          ),
+        [WS_METHODS.gitStageFiles]: (input) =>
+          rpcEffect(
+            git.stageFiles(input.cwd, input.paths).pipe(
+              Effect.tap(() => refreshGitStatus(input.cwd)),
+              Effect.as({ ok: true }),
+            ),
+            "Failed to stage files",
+          ),
+        [WS_METHODS.gitUnstageFiles]: (input) =>
+          rpcEffect(
+            git.unstageFiles(input.cwd, input.paths).pipe(
+              Effect.tap(() => refreshGitStatus(input.cwd)),
+              Effect.as({ ok: true }),
+            ),
+            "Failed to unstage files",
+          ),
+        [WS_METHODS.gitHandoffThread]: (input) =>
+          rpcEffect(
+            gitManager.handoffThread(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
+            "Failed to hand off thread",
+          ),
+
+        [WS_METHODS.terminalOpen]: (input) =>
+          rpcEffect(
+            resetTerminalTitleBuffer(input.threadId, input.terminalId ?? DEFAULT_TERMINAL_ID).pipe(
+              Effect.andThen(terminalManager.open(input)),
+            ),
+            "Failed to open terminal",
+          ),
+        [WS_METHODS.terminalWrite]: (input) =>
+          rpcEffect(
+            terminalManager.write(input).pipe(
+              Effect.tap(() =>
+                maybeAutoRenameTerminalThread({
+                  threadId: input.threadId,
+                  terminalId: input.terminalId ?? DEFAULT_TERMINAL_ID,
+                  data: input.data,
+                }).pipe(Effect.catch(() => Effect.void)),
+              ),
+            ),
+            "Failed to write terminal",
+          ),
+        [WS_METHODS.terminalAckOutput]: (input) =>
+          rpcEffect(terminalManager.ackOutput(input), "Failed to acknowledge terminal output"),
+        [WS_METHODS.terminalResize]: (input) =>
+          rpcEffect(terminalManager.resize(input), "Failed to resize terminal"),
+        [WS_METHODS.terminalClear]: (input) =>
+          rpcEffect(terminalManager.clear(input), "Failed to clear terminal"),
+        [WS_METHODS.terminalRestart]: (input) =>
+          rpcEffect(
+            resetTerminalTitleBuffer(input.threadId, input.terminalId ?? DEFAULT_TERMINAL_ID).pipe(
+              Effect.andThen(terminalManager.restart(input)),
+            ),
+            "Failed to restart terminal",
+          ),
+        [WS_METHODS.terminalClose]: (input) =>
+          rpcEffect(
+            resetTerminalTitleBuffer(input.threadId, input.terminalId ?? null).pipe(
+              Effect.andThen(terminalManager.close(input)),
+            ),
+            "Failed to close terminal",
+          ),
+        [WS_METHODS.subscribeTerminalEvents]: () =>
+          // Terminal output is an ordered byte stream with renderer ACK accounting.
+          // Keep this lossless: dropping chunks would create holes until reattach.
+          Stream.callback((queue) =>
+            Effect.gen(function* () {
+              const unsubscribe = yield* terminalManager.subscribe((event) => {
+                Effect.runFork(Queue.offer(queue, event).pipe(Effect.asVoid));
+              });
+              yield* Effect.addFinalizer(() => Effect.sync(unsubscribe));
+            }),
+          ),
+
+        [WS_METHODS.serverGetConfig]: () =>
+          rpcEffect(loadServerConfig, "Failed to load server config"),
+        [WS_METHODS.serverGetEnvironment]: () =>
+          rpcEffect(serverEnvironment.getDescriptor, "Failed to load server environment"),
+        [WS_METHODS.serverGetSettings]: () =>
+          rpcEffect(serverSettings.getSettings, "Failed to load server settings"),
+        [WS_METHODS.serverUpdateSettings]: (input) =>
+          rpcEffect(serverSettings.updateSettings(input), "Failed to update server settings"),
+        [WS_METHODS.serverListMcpServers]: () =>
+          rpcEffect(Effect.promise(listMcpServers), "Failed to list MCP servers"),
+        [WS_METHODS.serverSetMcpServerEnabled]: (input) =>
+          rpcEffect(Effect.promise(() => setMcpEnabled(input.name, input.enabled)), "Failed to update MCP server"),
+        [WS_METHODS.serverUpsertMcpServer]: (input) =>
+          rpcEffect(Effect.promise(() => upsertMcp(input)), "Failed to save MCP server"),
+        [WS_METHODS.serverRemoveMcpServer]: (input) =>
+          rpcEffect(Effect.promise(() => removeMcp(input.name)), "Failed to remove MCP server"),
+        [WS_METHODS.serverListHooks]: () =>
+          rpcEffect(Effect.promise(listHooks), "Failed to list hooks"),
+        [WS_METHODS.serverSetHook]: (input) =>
+          rpcEffect(Effect.promise(() => setHook(input)), "Failed to save hook"),
+        [WS_METHODS.serverListAgentRules]: () =>
+          rpcEffect(Effect.promise(listAgentRules), "Failed to list agent rules"),
+        [WS_METHODS.serverRefreshProviders]: () =>
+          rpcEffect(
+            providerHealth.refresh.pipe(Effect.map((providers) => ({ providers }))),
+            "Failed to refresh providers",
+          ),
+        [WS_METHODS.serverUpdateProvider]: (input) => providerHealth.updateProvider(input),
+        [WS_METHODS.serverSetProviderApiKey]: (input) => providerHealth.setApiKey(input),
+        [WS_METHODS.serverClearProviderApiKey]: (input) => providerHealth.clearApiKey(input),
+        [WS_METHODS.serverProviderSignIn]: (input) => providerHealth.signIn(input),
+        [WS_METHODS.serverSetCustomModelEndpoint]: (input) => setCustomModelEndpoint(input),
+        [WS_METHODS.serverDeleteCustomModelEndpoint]: (input) => deleteCustomModelEndpoint(input),
+        [WS_METHODS.serverListWorktrees]: () => Effect.succeed({ worktrees: [] }),
+        [WS_METHODS.serverListLocalServers]: () =>
+          rpcEffect(
+            Effect.promise(() => listLocalServers()),
+            "Failed to list local servers",
+          ),
+        [WS_METHODS.serverStopLocalServer]: (input) =>
+          rpcEffect(stopLocalServerAndTrackedProjectRun(input), "Failed to stop local server"),
+        [WS_METHODS.statsGetProfileStats]: (input) =>
+          rpcEffect(profileStatsQuery.getProfileStats(input), "Failed to load profile stats"),
+        [WS_METHODS.statsGetProfileTokenStats]: (input) =>
+          rpcEffect(
+            profileStatsQuery.getProfileTokenStats(input),
+            "Failed to load profile token stats",
+          ),
+        [WS_METHODS.statsGetProfileCommitActivity]: () =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const readModel = yield* orchestrationEngine.getReadModel();
+              const [workspace, github] = yield* Effect.all(
+                [
+                  readWorkspaceProfileCommits(git, readModel.projects),
+                  Effect.promise(readGitHubProfileCommits),
+                ] as const,
+                { concurrency: 2 },
+              );
+              return { workspace, ...github };
+            }),
+            "Failed to load profile commits",
+          ),
+        [WS_METHODS.serverGetProviderUsageSnapshot]: (input) =>
+          rpcEffect(getProviderUsageSnapshot(input), "Failed to load provider usage"),
+        [WS_METHODS.serverListProviderUsage]: (input) =>
+          rpcEffect(listProviderUsage(input), "Failed to load provider usage"),
+        [WS_METHODS.serverGetDiagnostics]: () =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const [projection, fullChildProcesses] = yield* Effect.all([
+                projectionReadModelQuery.getCounts(),
+                Effect.promise(() => readDescendantProcesses(process.pid)),
+              ]);
+              const childProcesses = fullChildProcesses.slice(0, MAX_DIAGNOSTIC_CHILD_PROCESSES);
+              const memory = process.memoryUsage();
+              const diagnostics: ServerDiagnosticsResult = {
+                generatedAt: new Date().toISOString(),
+                process: {
+                  pid: process.pid,
+                  uptimeSeconds: Math.max(0, Math.round(process.uptime())),
+                  memory: {
+                    rssBytes: Math.max(0, Math.round(memory.rss)),
+                    heapTotalBytes: Math.max(0, Math.round(memory.heapTotal)),
+                    heapUsedBytes: Math.max(0, Math.round(memory.heapUsed)),
+                    externalBytes: Math.max(0, Math.round(memory.external)),
+                    arrayBuffersBytes: Math.max(0, Math.round(memory.arrayBuffers)),
+                  },
+                },
+                childProcesses,
+                childProcessTotalCount: fullChildProcesses.length,
+                childProcessTotalRssBytes: fullChildProcesses.reduce(
+                  (total, processRow) => total + processRow.rssBytes,
+                  0,
+                ),
+                projection,
+              };
+              return diagnostics;
+            }),
+            "Failed to load server diagnostics",
+          ),
+        [WS_METHODS.serverTranscribeVoice]: (input) =>
+          rpcEffect(
+            providerAdapterRegistry
+              .getByProvider(input.provider)
+              .pipe(
+                Effect.flatMap((adapter) =>
+                  adapter.transcribeVoice
+                    ? adapter.transcribeVoice(input)
+                    : Effect.fail(
+                        new Error(
+                          `Voice transcription is unavailable for provider '${input.provider}'.`,
+                        ),
+                      ),
+                ),
+              ),
+            "Voice transcription failed",
+          ),
+        [WS_METHODS.serverGenerateThreadRecap]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const settings = yield* serverSettings.getSettings;
+              const modelSelection =
+                input.textGenerationModelSelection ?? settings.textGenerationModelSelection;
+              return yield* textGeneration.generateThreadRecap({
+                cwd: input.cwd,
+                newMaterial: input.newMaterial,
+                ...(input.previousRecap ? { previousRecap: input.previousRecap } : {}),
+                ...(input.currentState ? { currentState: input.currentState } : {}),
+                ...(input.codexHomePath ? { codexHomePath: input.codexHomePath } : {}),
+                model: input.textGenerationModel ?? modelSelection.model,
+                modelSelection,
+                ...(input.providerOptions ? { providerOptions: input.providerOptions } : {}),
+              });
+            }),
+            "Failed to generate thread recap",
+          ),
+        [WS_METHODS.serverGenerateAutomationIntent]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const settings = yield* serverSettings.getSettings;
+              const modelSelection =
+                input.textGenerationModelSelection ?? settings.textGenerationModelSelection;
+              return yield* textGeneration.generateAutomationIntent({
+                cwd: input.cwd,
+                message: input.message,
+                ...(input.defaultMode ? { defaultMode: input.defaultMode } : {}),
+                nowIso: input.nowIso,
+                ...(input.codexHomePath ? { codexHomePath: input.codexHomePath } : {}),
+                model: input.textGenerationModel ?? modelSelection.model,
+                modelSelection,
+                ...(input.providerOptions ? { providerOptions: input.providerOptions } : {}),
+              });
+            }),
+            "Failed to generate automation intent",
+          ),
+        [WS_METHODS.serverUpsertKeybinding]: (input) =>
+          rpcEffect(
+            keybindings
+              .upsertKeybindingRule(input)
+              .pipe(
+                Effect.map((keybindingsConfig) => ({ keybindings: keybindingsConfig, issues: [] })),
+              ),
+            "Failed to update keybinding",
+          ),
+        [WS_METHODS.subscribeServerLifecycle]: () =>
+          Stream.concat(
+            Stream.fromEffect(
+              lifecycleEvents.snapshot.pipe(
+                Effect.map((snapshot) =>
+                  Array.from(snapshot.events).toSorted(
+                    (left, right) => left.sequence - right.sequence,
+                  ),
+                ),
+              ),
+            ).pipe(Stream.flatMap(Stream.fromIterable)),
+            bufferLiveUiStream(lifecycleEvents.stream, {
+              label: "server.lifecycle",
+              onDroppedEvents: failLiveUiStreamForSnapshotResync,
+            }),
+          ).pipe(
+            Stream.map(
+              (event): ServerLifecycleStreamEvent =>
+                event.type === "welcome"
+                  ? { type: "welcome", payload: event.payload }
+                  : event.type === "ready"
+                    ? { type: "ready", payload: event.payload }
+                    : { type: "maintenance", payload: event.payload },
+            ),
+          ),
+        [WS_METHODS.subscribeServerConfig]: () =>
+          Stream.concat(
+            Stream.fromEffect(
+              loadServerConfig.pipe(
+                Effect.map(
+                  (config): ServerConfigStreamEvent => ({ type: "snapshot" as const, config }),
+                ),
+              ),
+            ),
+            Stream.merge(
+              bufferLiveUiStream(keybindings.streamChanges, {
+                label: "server.keybindings",
+                onDroppedEvents: failLiveUiStreamForSnapshotResync,
+              }).pipe(
+                Stream.map((event) => ({
+                  type: "configUpdated" as const,
+                  payload: { issues: event.issues, providers: [] },
+                })),
+              ),
+              Stream.merge(
+                bufferLiveUiStream(providerHealth.streamChanges, {
+                  label: "server.provider-statuses",
+                  onDroppedEvents: failLiveUiStreamForSnapshotResync,
+                }).pipe(
+                  Stream.map((providers) => ({
+                    type: "providerStatuses" as const,
+                    payload: { providers },
+                  })),
+                ),
+                bufferLiveUiStream(serverSettings.streamChanges, {
+                  label: "server.settings",
+                  onDroppedEvents: failLiveUiStreamForSnapshotResync,
+                }).pipe(
+                  Stream.map((settings) => ({
+                    type: "settingsUpdated" as const,
+                    payload: { settings },
+                  })),
+                ),
+              ),
+            ),
+          ).pipe(Stream.mapError((cause) => toWsRpcError(cause, "Server config stream failed"))),
+        [WS_METHODS.subscribeServerProviderStatuses]: () =>
+          Stream.concat(
+            Stream.fromEffect(
+              providerHealth.getStatuses.pipe(Effect.map((providers) => ({ providers }))),
+            ),
+            bufferLiveUiStream(providerHealth.streamChanges, {
+              label: "server.provider-statuses",
+              onDroppedEvents: failLiveUiStreamForSnapshotResync,
+            }).pipe(Stream.map((providers) => ({ providers }))),
+          ),
+        [WS_METHODS.subscribeServerSettings]: () =>
+          Stream.concat(
+            Stream.fromEffect(
+              serverSettings.getSettings.pipe(Effect.map((settings) => ({ settings }))),
+            ),
+            bufferLiveUiStream(serverSettings.streamChanges, {
+              label: "server.settings",
+              onDroppedEvents: failLiveUiStreamForSnapshotResync,
+            }).pipe(Stream.map((settings) => ({ settings }))),
+          ).pipe(Stream.mapError((cause) => toWsRpcError(cause, "Server settings stream failed"))),
+
+        [WS_METHODS.providerGetComposerCapabilities]: (input) =>
+          rpcEffect(
+            providerDiscoveryService.getComposerCapabilities(input),
+            "Failed to get composer capabilities",
+          ),
+        [WS_METHODS.providerCompactThread]: (input) =>
+          rpcEffect(providerService.compactThread(input), "Failed to compact thread"),
+        [WS_METHODS.providerListCommands]: (input) =>
+          rpcEffect(providerDiscoveryService.listCommands(input), "Failed to list commands"),
+        [WS_METHODS.providerListSkills]: (input) =>
+          rpcEffect(providerDiscoveryService.listSkills(input), "Failed to list skills"),
+        [WS_METHODS.providerListSkillsCatalog]: (input) =>
+          rpcEffect(
+            Effect.tryPromise(() =>
+              discoverSkillsCatalog({
+                cwd: input.cwd ?? null,
+                homeDir: config.homeDir,
+                modestoBaseDir: config.baseDir,
+                includeDuplicateOrigins: true,
+              }),
+            ).pipe(
+              Effect.map((skills) => ({
+                skills,
+                modestoSkillsDir: modestoSkillsDir(config.baseDir),
+              })),
+            ),
+            "Failed to list the skills catalog",
+          ),
+        [WS_METHODS.providerListPlugins]: (input) =>
+          rpcEffect(providerDiscoveryService.listPlugins(input), "Failed to list plugins"),
+        [WS_METHODS.providerReadPlugin]: (input) =>
+          rpcEffect(providerDiscoveryService.readPlugin(input), "Failed to read plugin"),
+        [WS_METHODS.providerSetPluginInstalled]: (input) =>
+          rpcEffect(
+            providerDiscoveryService.setPluginInstalled(input),
+            input.installed ? "Failed to install plugin" : "Failed to remove plugin",
+          ),
+        [WS_METHODS.providerListModels]: (input) =>
+          rpcEffect(providerDiscoveryService.listModels(input), "Failed to list models"),
+        [WS_METHODS.providerListAgents]: (input) =>
+          rpcEffect(providerDiscoveryService.listAgents(input), "Failed to list agents"),
+        [WS_METHODS.automationList]: (input) =>
+          rpcEffect(automationService.list(input), "Failed to list automations"),
+        [WS_METHODS.automationCreate]: (input) =>
+          rpcEffect(automationService.create(input), "Failed to create automation"),
+        [WS_METHODS.automationUpdate]: (input) =>
+          rpcEffect(automationService.update(input), "Failed to update automation"),
+        [WS_METHODS.automationDelete]: (input) =>
+          rpcEffect(automationService.delete(input), "Failed to delete automation"),
+        [WS_METHODS.automationRunNow]: (input) =>
+          rpcEffect(automationService.runNow(input), "Failed to run automation"),
+        [WS_METHODS.automationCancelRun]: (input) =>
+          rpcEffect(automationService.cancelRun(input), "Failed to cancel automation run"),
+        [WS_METHODS.automationMarkRunRead]: (input) =>
+          rpcEffect(automationService.markRunRead(input), "Failed to update automation run"),
+        [WS_METHODS.automationArchiveRun]: (input) =>
+          rpcEffect(automationService.archiveRun(input), "Failed to update automation run"),
+        [WS_METHODS.subscribeAutomationEvents]: () =>
+          Stream.merge(
+            Stream.fromEffect(
+              automationService.list({}).pipe(
+                Effect.map(({ definitions, runs }) => ({
+                  type: "snapshot" as const,
+                  definitions,
+                  runs,
+                })),
+              ),
+            ),
+            automationService.streamEvents,
+          ).pipe(Stream.mapError((cause) => toWsRpcError(cause, "Automation event stream failed"))),
+        [WS_METHODS.openClawGetSnapshot]: () =>
+          rpcEffect(openClawService.getSnapshot, "Failed to load OpenClaw"),
+        [WS_METHODS.openClawUpdateConfig]: (input) =>
+          rpcEffect(openClawService.updateConfig(input), "Failed to update OpenClaw"),
+        [WS_METHODS.openClawSetup]: (input) =>
+          rpcEffect(openClawService.setup(input), "Failed to set up OpenClaw"),
+        [WS_METHODS.openClawTestConnection]: () =>
+          rpcEffect(openClawService.testConnection, "Failed to test OpenClaw"),
+        [WS_METHODS.subscribeOpenClawEvents]: () =>
+          openClawService.streamEvents.pipe(
+            Stream.mapError((cause) => toWsRpcError(cause, "OpenClaw event stream failed")),
+          ),
+        [WS_METHODS.reviewProviders]: () =>
+          rpcEffect(reviewService.providers(), "Failed to list review providers"),
+        [WS_METHODS.reviewInstall]: (input) =>
+          rpcEffect(reviewService.install(input), "Failed to install review provider"),
+        [WS_METHODS.reviewList]: (input) =>
+          rpcEffect(reviewService.list(input), "Failed to list reviews"),
+        [WS_METHODS.reviewStart]: (input) =>
+          rpcEffect(reviewService.start(input), "Failed to start review"),
+        [WS_METHODS.reviewCancel]: (input) =>
+          rpcEffect(reviewService.cancel(input), "Failed to cancel review"),
+        [WS_METHODS.reviewIgnoreFinding]: (input) =>
+          rpcEffect(reviewService.ignoreFinding(input), "Failed to update review finding"),
+        [WS_METHODS.subscribeReviewEvents]: () =>
+          reviewService.streamEvents.pipe(
+            Stream.mapError((cause) => toWsRpcError(cause, "Review event stream failed")),
+          ),
+      });
+    }),
+  );
+
+const makeRpcWebSocketHttpEffect = RpcServer.toHttpEffectWebsocket(WsRpcGroup, {
+  spanPrefix: "ws.rpc",
+  spanAttributes: {
+    "rpc.transport": "websocket",
+    "rpc.system": "effect-rpc",
+  },
+  // JSON keeps the wire format symmetric with any web build. A serialization
+  // mismatch on this single multiplexed socket is a hard connect failure, and the
+  // desktop/dev setup routinely runs server and web on independently-built copies.
+}).pipe(Effect.provide(makeWsRpcLayer().pipe(Layer.provideMerge(RpcSerialization.layerJson))));
+
+export const websocketRpcRouteLayer = Layer.effectDiscard(
+  Effect.gen(function* () {
+    const rpcWebSocketHttpEffect = yield* makeRpcWebSocketHttpEffect;
+    const router = yield* HttpRouter.HttpRouter;
+    yield* router.add(
+      "GET",
+      "/ws",
+      Effect.gen(function* () {
+        const request = yield* HttpServerRequest.HttpServerRequest;
+        const config = yield* ServerConfig;
+        const serverAuth = yield* ServerAuth;
+        const sessions = yield* SessionCredentialService;
+        const url = HttpServerRequest.toURL(request);
+        if (
+          !url ||
+          shouldRejectUntrustedRequestOrigin({
+            rawOrigin: request.headers.origin,
+            requestOrigin: url.origin,
+            config,
+          })
+        ) {
+          return HttpServerResponse.text("Forbidden", { status: 403 });
+        }
+        const legacyToken = url.searchParams.get("token");
+        const authenticatedSession =
+          !config.authToken || legacyToken === config.authToken
+            ? null
+            : yield* serverAuth.authenticateWebSocketUpgrade(makeEffectAuthRequest(request));
+
+        if (!authenticatedSession) {
+          return yield* rpcWebSocketHttpEffect;
+        }
+
+        return yield* Effect.acquireUseRelease(
+          sessions.markConnected(authenticatedSession.sessionId),
+          () => rpcWebSocketHttpEffect,
+          () => sessions.markDisconnected(authenticatedSession.sessionId),
+        );
+      }).pipe(Effect.catchTag("AuthError", (error) => Effect.succeed(authErrorResponse(error)))),
+    );
+  }),
+);

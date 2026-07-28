@@ -1,0 +1,747 @@
+import type {
+  AgentRulesResult,
+  HooksResult,
+  HookSetInput,
+  McpServerEnabledInput,
+  McpServerRemoveInput,
+  McpServerUpsertInput,
+  McpServersResult,
+} from "./agentTooling";
+import type {
+  AuthBearerBootstrapResult,
+  AuthBootstrapInput,
+  AuthBootstrapResult,
+  AuthClientSession,
+  AuthCreatePairingCredentialInput,
+  AuthPairingCredentialResult,
+  AuthPairingLink,
+  AuthRevokeClientSessionInput,
+  AuthRevokePairingLinkInput,
+  AuthSessionState,
+  AuthWebSocketTokenResult,
+} from "./auth";
+import type {
+  AutomationCancelRunInput,
+  AutomationCancelRunResult,
+  AutomationArchiveRunInput,
+  AutomationCreateInput,
+  AutomationDefinition,
+  AutomationDeleteInput,
+  AutomationListInput,
+  AutomationListResult,
+  AutomationMarkRunReadInput,
+  AutomationRunActionResult,
+  AutomationRunNowInput,
+  AutomationRunNowResult,
+  AutomationStreamEvent,
+  AutomationUpdateInput,
+} from "./automation";
+import type {
+  GitCheckoutInput,
+  GitActionProgressEvent,
+  GitCreateBranchInput,
+  GitCreateDetachedWorktreeInput,
+  GitCreateDetachedWorktreeResult,
+  GitHubAuthStatusInput,
+  GitHubAuthStatusResult,
+  GitHubSignInInput,
+  GitHubSignInResult,
+  GitHubSignOutInput,
+  GitHubSignOutResult,
+  GitHubRepositoryInput,
+  GitHubRepositoryResult,
+  GitHandoffThreadInput,
+  GitHandoffThreadResult,
+  GitPreparePullRequestThreadInput,
+  GitPreparePullRequestThreadResult,
+  GitPullRequestRefInput,
+  GitPullRequestSnapshotInput,
+  GitPullRequestSnapshotResult,
+  GitCreateWorktreeInput,
+  GitCreateWorktreeResult,
+  GitInitInput,
+  GitListBranchesInput,
+  GitListBranchesResult,
+  GitPullInput,
+  GitPullResult,
+  GitReadWorkingTreeDiffInput,
+  GitReadWorkingTreeDiffResult,
+  GitRemoveIndexLockInput,
+  GitRemoveWorktreeInput,
+  GitResolvePullRequestResult,
+  GitRunStackedActionInput,
+  GitRunStackedActionResult,
+  GitStageFilesInput,
+  GitStageFilesResult,
+  GitStashAndCheckoutInput,
+  GitStashDropInput,
+  GitStashInfoInput,
+  GitStashInfoResult,
+  GitStatusInput,
+  GitStatusResult,
+  GitSummarizeDiffInput,
+  GitSummarizeDiffResult,
+  GitUnstageFilesInput,
+  GitUnstageFilesResult,
+} from "./git";
+import type {
+  ProjectCreateLocalFilePreviewGrantInput,
+  ProjectCreateLocalFilePreviewGrantResult,
+  ProjectDevServerEvent,
+  ProjectDiscoverScriptsInput,
+  ProjectDiscoverScriptsResult,
+  ProjectListDevServersResult,
+  ProjectListDirectoriesInput,
+  ProjectListDirectoriesResult,
+  ProjectReadFileInput,
+  ProjectReadFileResult,
+  ProjectRunDevServerInput,
+  ProjectRunDevServerResult,
+  ProjectSearchEntriesInput,
+  ProjectSearchEntriesResult,
+  ProjectSearchLocalEntriesInput,
+  ProjectSearchLocalEntriesResult,
+  ProjectStopDevServerInput,
+  ProjectStopDevServerResult,
+  ProjectWriteFileInput,
+  ProjectWriteFileResult,
+} from "./project";
+import type { FilesystemBrowseInput, FilesystemBrowseResult } from "./filesystem";
+import type {
+  RepoMemoryApplyWriteInput,
+  RepoMemoryApplyWriteResult,
+  RepoMemoryListInput,
+  RepoMemoryListResult,
+  RepoMemorySuggestInput,
+  RepoMemorySuggestResult,
+} from "./repoMemory";
+import type { StudioListThreadOutputsInput, StudioListThreadOutputsResult } from "./studio";
+import type {
+  ServerConfig,
+  ServerDiagnosticsResult,
+  ServerGenerateAutomationIntentInput,
+  ServerGenerateAutomationIntentResult,
+  ServerGenerateThreadRecapInput,
+  ServerGenerateThreadRecapResult,
+  ServerGetEnvironmentResult,
+  ServerGetProviderUsageSnapshotInput,
+  ServerGetProviderUsageSnapshotResult,
+  ServerListProviderUsageInput,
+  ServerListProviderUsageResult,
+  ServerGetSettingsResult,
+  ServerListLocalServersResult,
+  ServerListWorktreesResult,
+  ServerProviderUpdateInput,
+  ServerProviderUpdateResult,
+  ServerSetProviderApiKeyInput,
+  ServerSetProviderApiKeyResult,
+  ServerClearProviderApiKeyInput,
+  ServerClearProviderApiKeyResult,
+  ServerProviderSignInInput,
+  ServerProviderSignInResult,
+  ServerSetCustomModelEndpointInput,
+  ServerSetCustomModelEndpointResult,
+  ServerDeleteCustomModelEndpointInput,
+  ServerDeleteCustomModelEndpointResult,
+  ServerRefreshProvidersResult,
+  ServerStopLocalServerInput,
+  ServerStopLocalServerResult,
+  ServerUpdateSettingsInput,
+  ServerUpdateSettingsResult,
+  ServerUpsertKeybindingInput,
+  ServerUpsertKeybindingResult,
+  ServerVoiceTranscriptionInput,
+  ServerVoiceTranscriptionResult,
+} from "./server";
+import type {
+  TerminalAckOutputInput,
+  TerminalClearInput,
+  TerminalCloseInput,
+  TerminalEvent,
+  TerminalOpenInput,
+  TerminalResizeInput,
+  TerminalRestartInput,
+  TerminalSessionSnapshot,
+  TerminalWriteInput,
+} from "./terminal";
+import type {
+  ClientOrchestrationCommand,
+  OrchestrationCaptureHandoffCheckpointInput,
+  OrchestrationCaptureHandoffCheckpointResult,
+  OrchestrationGetFullThreadDiffInput,
+  OrchestrationGetFullThreadDiffResult,
+  OrchestrationGetHandoffCheckpointDiffInput,
+  OrchestrationGetHandoffCheckpointDiffResult,
+  OrchestrationImportThreadInput,
+  OrchestrationImportThreadResult,
+  OrchestrationGetTurnDiffInput,
+  OrchestrationGetTurnDiffResult,
+  OrchestrationRestoreHandoffCheckpointInput,
+  OrchestrationRestoreHandoffCheckpointResult,
+  OrchestrationEvent,
+  OrchestrationReadModel,
+  OrchestrationShellSnapshot,
+  OrchestrationShellStreamItem,
+  OrchestrationSubscribeThreadInput,
+  OrchestrationThreadStreamItem,
+} from "./orchestration";
+import { EditorId } from "./editor";
+import type { ThreadId } from "./baseSchemas";
+import type {
+  ProviderComposerCapabilities,
+  ProviderGetComposerCapabilitiesInput,
+  ProviderListAgentsInput,
+  ProviderListAgentsResult,
+  ProviderListCommandsInput,
+  ProviderListCommandsResult,
+  ProviderListModelsInput,
+  ProviderListModelsResult,
+  ProviderListPluginsInput,
+  ProviderListPluginsResult,
+  ProviderListSkillsInput,
+  ProviderListSkillsResult,
+  ProviderSkillsCatalogInput,
+  ProviderSkillsCatalogResult,
+  ProviderReadPluginInput,
+  ProviderReadPluginResult,
+  ProviderSetPluginInstalledInput,
+  ProviderSetPluginInstalledResult,
+} from "./providerDiscovery";
+import type { ProviderCompactThreadInput } from "./provider";
+import type {
+  OpenClawConnectionConfigUpdate,
+  OpenClawGatewayStatus,
+  OpenClawSetupInput,
+  OpenClawSnapshot,
+  OpenClawStreamEvent,
+} from "./openclaw";
+import type {
+  ReviewFinding,
+  ReviewCancelInput,
+  ReviewIgnoreFindingInput,
+  ReviewInstallInput,
+  ReviewInstallResult,
+  ReviewListInput,
+  ReviewListResult,
+  ReviewProviderListResult,
+  ReviewRun,
+  ReviewStartInput,
+  ReviewStreamEvent,
+} from "./review";
+import type {
+  StatsGetProfileStatsInput,
+  StatsGetProfileStatsResult,
+  StatsGetProfileCommitActivityInput,
+  StatsGetProfileCommitActivityResult,
+  StatsGetProfileTokenStatsInput,
+  StatsGetProfileTokenStatsResult,
+} from "./stats";
+
+export interface ContextMenuItem<T extends string = string> {
+  id: T;
+  label: string;
+  /** Starts a new visual group before this actionable row. */
+  separatorBefore?: boolean;
+  destructive?: boolean;
+}
+
+export type DesktopUpdateStatus =
+  | "disabled"
+  | "idle"
+  | "checking"
+  | "up-to-date"
+  | "available"
+  | "downloading"
+  | "downloaded"
+  | "error";
+
+export type DesktopRuntimeArch = "arm64" | "x64" | "other";
+export type DesktopTheme = "light" | "dark" | "system";
+export type DesktopUpdateChannel = "stable" | "development";
+
+export interface DesktopRuntimeInfo {
+  hostArch: DesktopRuntimeArch;
+  appArch: DesktopRuntimeArch;
+  runningUnderArm64Translation: boolean;
+}
+
+export interface DesktopUpdateState {
+  enabled: boolean;
+  status: DesktopUpdateStatus;
+  currentVersion: string;
+  hostArch: DesktopRuntimeArch;
+  appArch: DesktopRuntimeArch;
+  runningUnderArm64Translation: boolean;
+  availableVersion: string | null;
+  downloadedVersion: string | null;
+  downloadPercent: number | null;
+  checkedAt: string | null;
+  message: string | null;
+  errorContext: "check" | "download" | "install" | null;
+  canRetry: boolean;
+  installFailureCount: number;
+  // Public URL where the user can manually download the release when the
+  // in-app updater cannot apply it (silent installer failure, unsigned build,
+  // read-only install location, unsupported platform). Null when no GitHub
+  // update source is configured.
+  releaseUrl: string | null;
+  buildChannel?: DesktopUpdateChannel;
+  selectedChannel?: DesktopUpdateChannel;
+}
+
+export interface DesktopUpdateActionResult {
+  accepted: boolean;
+  completed: boolean;
+  state: DesktopUpdateState;
+}
+
+export interface BrowserTabState {
+  id: string;
+  url: string;
+  title: string;
+  status: "live" | "suspended";
+  isLoading: boolean;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  faviconUrl: string | null;
+  lastCommittedUrl: string | null;
+  lastError: string | null;
+}
+
+export interface ThreadBrowserState {
+  threadId: ThreadId;
+  version: number;
+  open: boolean;
+  activeTabId: string | null;
+  tabs: BrowserTabState[];
+  lastError: string | null;
+}
+
+export interface BrowserOpenInput {
+  threadId: ThreadId;
+  initialUrl?: string;
+}
+
+export interface BrowserThreadInput {
+  threadId: ThreadId;
+}
+
+export interface BrowserTabInput {
+  threadId: ThreadId;
+  tabId: string;
+}
+
+export interface BrowserNavigateInput {
+  threadId: ThreadId;
+  tabId?: string;
+  url: string;
+}
+
+export interface BrowserNewTabInput {
+  threadId: ThreadId;
+  url?: string;
+  activate?: boolean;
+}
+
+export interface BrowserPanelBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface BrowserSetPanelBoundsInput {
+  threadId: ThreadId;
+  bounds: BrowserPanelBounds | null;
+  surface?: "native" | "renderer";
+}
+
+export interface BrowserAttachWebviewInput extends BrowserTabInput {
+  webContentsId: number;
+}
+
+export interface BrowserDetachWebviewInput extends BrowserTabInput {
+  webContentsId: number;
+}
+
+export interface BrowserCaptureScreenshotResult {
+  name: string;
+  mimeType: "image/png";
+  sizeBytes: number;
+  bytes: Uint8Array;
+}
+
+export interface BrowserExecuteCdpInput extends BrowserTabInput {
+  method: string;
+  params?: Record<string, unknown>;
+}
+
+// Pushed from the desktop main process when the in-app browser copy-link chord fires
+// while the native page (not the React chrome) holds keyboard focus.
+export interface BrowserCopyLinkEvent {
+  threadId: ThreadId;
+  url: string;
+}
+
+export interface DesktopNotificationInput {
+  title: string;
+  body?: string;
+  silent?: boolean;
+  threadId?: ThreadId;
+}
+
+export interface DesktopWindowState {
+  isMaximized: boolean;
+  isFullscreen: boolean;
+}
+
+export interface ModestoStorageSnapshot {
+  readonly version: 1;
+  readonly exportedAt: string;
+  readonly entries: Readonly<Record<string, string>>;
+}
+
+export interface DesktopBridge {
+  getWsUrl: () => string | null;
+  pickFolder: () => Promise<string | null>;
+  saveFile?: (input: {
+    defaultFilename: string;
+    contents: string;
+    filters?: ReadonlyArray<{ name: string; extensions: ReadonlyArray<string> }>;
+  }) => Promise<string | null>;
+  confirm: (message: string) => Promise<boolean>;
+  setTheme: (theme: DesktopTheme) => Promise<void>;
+  showContextMenu: <T extends string>(
+    items: readonly ContextMenuItem<T>[],
+    position?: { x: number; y: number },
+  ) => Promise<T | null>;
+  openExternal: (url: string) => Promise<boolean>;
+  showInFolder: (path: string) => Promise<void>;
+  shell?: {
+    showInFolder: (path: string) => Promise<void>;
+  };
+  clipboard?: {
+    writeImagePngDataUrl: (dataUrl: string) => Promise<boolean>;
+  };
+  windowControls?: {
+    minimize: () => Promise<void>;
+    toggleMaximize: () => Promise<DesktopWindowState>;
+    close: () => Promise<void>;
+    getState: () => Promise<DesktopWindowState>;
+    onState: (listener: (state: DesktopWindowState) => void) => () => void;
+  };
+  onMenuAction: (listener: (action: string) => void) => () => void;
+  /** Current `webContents` page zoom (1 = 100%). Used to keep macOS traffic-light gutter aligned. */
+  getZoomFactor: () => number;
+  onZoomFactorChange: (listener: (zoomFactor: number) => void) => () => void;
+  getUpdateState: () => Promise<DesktopUpdateState>;
+  checkForUpdates: () => Promise<DesktopUpdateState>;
+  downloadUpdate: () => Promise<DesktopUpdateActionResult>;
+  installUpdate: () => Promise<DesktopUpdateActionResult>;
+  setUpdateChannel: (channel: DesktopUpdateChannel) => Promise<DesktopUpdateState>;
+  onUpdateState: (listener: (state: DesktopUpdateState) => void) => () => void;
+  notifications: {
+    isSupported: () => Promise<boolean>;
+    show: (input: DesktopNotificationInput) => Promise<boolean>;
+  };
+  storageMigration: {
+    readSnapshot: () => ModestoStorageSnapshot | null;
+    acknowledgeSnapshot: () => Promise<void>;
+  };
+  server?: {
+    transcribeVoice: (
+      input: ServerVoiceTranscriptionInput,
+    ) => Promise<ServerVoiceTranscriptionResult>;
+  };
+  browser: {
+    open: (input: BrowserOpenInput) => Promise<ThreadBrowserState>;
+    close: (input: BrowserThreadInput) => Promise<ThreadBrowserState>;
+    hide: (input: BrowserThreadInput) => Promise<void>;
+    getState: (input: BrowserThreadInput) => Promise<ThreadBrowserState>;
+    setPanelBounds: (input: BrowserSetPanelBoundsInput) => Promise<void>;
+    attachWebview: (input: BrowserAttachWebviewInput) => Promise<ThreadBrowserState>;
+    detachWebview: (input: BrowserDetachWebviewInput) => Promise<void>;
+    copyLink: (input: BrowserTabInput) => Promise<void>;
+    copyScreenshotToClipboard: (input: BrowserTabInput) => Promise<void>;
+    captureScreenshot: (input: BrowserTabInput) => Promise<BrowserCaptureScreenshotResult>;
+    executeCdp: (input: BrowserExecuteCdpInput) => Promise<unknown>;
+    navigate: (input: BrowserNavigateInput) => Promise<ThreadBrowserState>;
+    reload: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    goBack: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    goForward: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    newTab: (input: BrowserNewTabInput) => Promise<ThreadBrowserState>;
+    closeTab: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    selectTab: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    openDevTools: (input: BrowserTabInput) => Promise<void>;
+    onState: (listener: (state: ThreadBrowserState) => void) => () => void;
+    onBrowserUseOpenPanelRequest: (listener: () => void) => () => void;
+    onBrowserCopyLink: (listener: (event: BrowserCopyLinkEvent) => void) => () => void;
+  };
+}
+
+export interface NativeApi {
+  dialogs: {
+    pickFolder: () => Promise<string | null>;
+    saveFile?: (input: {
+      defaultFilename: string;
+      contents: string;
+      filters?: ReadonlyArray<{ name: string; extensions: ReadonlyArray<string> }>;
+    }) => Promise<string | null>;
+    confirm: (message: string) => Promise<boolean>;
+  };
+  terminal: {
+    open: (input: TerminalOpenInput) => Promise<TerminalSessionSnapshot>;
+    write: (input: TerminalWriteInput) => Promise<void>;
+    ackOutput: (input: TerminalAckOutputInput) => Promise<void>;
+    resize: (input: TerminalResizeInput) => Promise<void>;
+    clear: (input: TerminalClearInput) => Promise<void>;
+    restart: (input: TerminalRestartInput) => Promise<TerminalSessionSnapshot>;
+    close: (input: TerminalCloseInput) => Promise<void>;
+    onEvent: (callback: (event: TerminalEvent) => void) => () => void;
+  };
+  projects: {
+    discoverScripts: (input: ProjectDiscoverScriptsInput) => Promise<ProjectDiscoverScriptsResult>;
+    listDirectories: (input: ProjectListDirectoriesInput) => Promise<ProjectListDirectoriesResult>;
+    searchEntries: (input: ProjectSearchEntriesInput) => Promise<ProjectSearchEntriesResult>;
+    searchLocalEntries: (
+      input: ProjectSearchLocalEntriesInput,
+    ) => Promise<ProjectSearchLocalEntriesResult>;
+    readFile: (input: ProjectReadFileInput) => Promise<ProjectReadFileResult>;
+    createLocalFilePreviewGrant: (
+      input: ProjectCreateLocalFilePreviewGrantInput,
+    ) => Promise<ProjectCreateLocalFilePreviewGrantResult>;
+    writeFile: (input: ProjectWriteFileInput) => Promise<ProjectWriteFileResult>;
+    runDevServer: (input: ProjectRunDevServerInput) => Promise<ProjectRunDevServerResult>;
+    stopDevServer: (input: ProjectStopDevServerInput) => Promise<ProjectStopDevServerResult>;
+    listDevServers: () => Promise<ProjectListDevServersResult>;
+    onDevServerEvent: (callback: (event: ProjectDevServerEvent) => void) => () => void;
+  };
+  filesystem: {
+    browse: (input: FilesystemBrowseInput) => Promise<FilesystemBrowseResult>;
+  };
+  repoMemory: {
+    list: (input: RepoMemoryListInput) => Promise<RepoMemoryListResult>;
+    suggest: (input: RepoMemorySuggestInput) => Promise<RepoMemorySuggestResult>;
+    applyWrite: (input: RepoMemoryApplyWriteInput) => Promise<RepoMemoryApplyWriteResult>;
+  };
+  studio: {
+    listThreadOutputs: (
+      input: StudioListThreadOutputsInput,
+    ) => Promise<StudioListThreadOutputsResult>;
+  };
+  shell: {
+    openInEditor: (cwd: string, editor: EditorId) => Promise<void>;
+    openExternal: (url: string) => Promise<void>;
+    showInFolder: (path: string) => Promise<void>;
+  };
+  git: {
+    // Existing branch/worktree API
+    githubAuthStatus: (input: GitHubAuthStatusInput) => Promise<GitHubAuthStatusResult>;
+    githubSignIn: (input: GitHubSignInInput) => Promise<GitHubSignInResult>;
+    githubSignOut: (input: GitHubSignOutInput) => Promise<GitHubSignOutResult>;
+    githubRepository: (input: GitHubRepositoryInput) => Promise<GitHubRepositoryResult>;
+    listBranches: (input: GitListBranchesInput) => Promise<GitListBranchesResult>;
+    createWorktree: (input: GitCreateWorktreeInput) => Promise<GitCreateWorktreeResult>;
+    createDetachedWorktree: (
+      input: GitCreateDetachedWorktreeInput,
+    ) => Promise<GitCreateDetachedWorktreeResult>;
+    removeWorktree: (input: GitRemoveWorktreeInput) => Promise<void>;
+    createBranch: (input: GitCreateBranchInput) => Promise<void>;
+    checkout: (input: GitCheckoutInput) => Promise<void>;
+    stashAndCheckout: (input: GitStashAndCheckoutInput) => Promise<void>;
+    stashDrop: (input: GitStashDropInput) => Promise<void>;
+    stashInfo: (input: GitStashInfoInput) => Promise<GitStashInfoResult>;
+    removeIndexLock: (input: GitRemoveIndexLockInput) => Promise<void>;
+    init: (input: GitInitInput) => Promise<void>;
+    stageFiles: (input: GitStageFilesInput) => Promise<GitStageFilesResult>;
+    unstageFiles: (input: GitUnstageFilesInput) => Promise<GitUnstageFilesResult>;
+    handoffThread: (input: GitHandoffThreadInput) => Promise<GitHandoffThreadResult>;
+    resolvePullRequest: (input: GitPullRequestRefInput) => Promise<GitResolvePullRequestResult>;
+    pullRequestSnapshot: (
+      input: GitPullRequestSnapshotInput,
+    ) => Promise<GitPullRequestSnapshotResult>;
+    preparePullRequestThread: (
+      input: GitPreparePullRequestThreadInput,
+    ) => Promise<GitPreparePullRequestThreadResult>;
+    // Stacked action API
+    pull: (input: GitPullInput) => Promise<GitPullResult>;
+    status: (input: GitStatusInput) => Promise<GitStatusResult>;
+    readWorkingTreeDiff: (
+      input: GitReadWorkingTreeDiffInput,
+    ) => Promise<GitReadWorkingTreeDiffResult>;
+    summarizeDiff: (input: GitSummarizeDiffInput) => Promise<GitSummarizeDiffResult>;
+    runStackedAction: (input: GitRunStackedActionInput) => Promise<GitRunStackedActionResult>;
+    onActionProgress: (callback: (event: GitActionProgressEvent) => void) => () => void;
+  };
+  contextMenu: {
+    show: <T extends string>(
+      items: readonly ContextMenuItem<T>[],
+      position?: { x: number; y: number },
+    ) => Promise<T | null>;
+  };
+  server: {
+    getConfig: () => Promise<ServerConfig>;
+    getEnvironment: () => Promise<ServerGetEnvironmentResult>;
+    getSettings: () => Promise<ServerGetSettingsResult>;
+    updateSettings: (input: ServerUpdateSettingsInput) => Promise<ServerUpdateSettingsResult>;
+    listMcpServers: () => Promise<McpServersResult>;
+    setMcpServerEnabled: (input: McpServerEnabledInput) => Promise<McpServersResult>;
+    upsertMcpServer: (input: McpServerUpsertInput) => Promise<McpServersResult>;
+    removeMcpServer: (input: McpServerRemoveInput) => Promise<McpServersResult>;
+    listHooks: () => Promise<HooksResult>;
+    setHook: (input: HookSetInput) => Promise<HooksResult>;
+    listAgentRules: () => Promise<AgentRulesResult>;
+    getAuthSession: () => Promise<AuthSessionState>;
+    bootstrapAuth: (input: AuthBootstrapInput) => Promise<AuthBootstrapResult>;
+    bootstrapBearerAuth: (input: AuthBootstrapInput) => Promise<AuthBearerBootstrapResult>;
+    issueAuthWebSocketToken: () => Promise<AuthWebSocketTokenResult>;
+    createAuthPairingToken: (
+      input?: AuthCreatePairingCredentialInput,
+    ) => Promise<AuthPairingCredentialResult>;
+    listAuthPairingLinks: () => Promise<ReadonlyArray<AuthPairingLink>>;
+    revokeAuthPairingLink: (input: AuthRevokePairingLinkInput) => Promise<{ revoked: boolean }>;
+    listAuthClients: () => Promise<ReadonlyArray<AuthClientSession>>;
+    revokeAuthClient: (input: AuthRevokeClientSessionInput) => Promise<{ revoked: boolean }>;
+    revokeOtherAuthClients: () => Promise<{ revokedCount: number }>;
+    refreshProviders: () => Promise<ServerRefreshProvidersResult>;
+    updateProvider: (input: ServerProviderUpdateInput) => Promise<ServerProviderUpdateResult>;
+    setProviderApiKey: (
+      input: ServerSetProviderApiKeyInput,
+    ) => Promise<ServerSetProviderApiKeyResult>;
+    clearProviderApiKey: (
+      input: ServerClearProviderApiKeyInput,
+    ) => Promise<ServerClearProviderApiKeyResult>;
+    providerSignIn: (input: ServerProviderSignInInput) => Promise<ServerProviderSignInResult>;
+    setCustomModelEndpoint: (
+      input: ServerSetCustomModelEndpointInput,
+    ) => Promise<ServerSetCustomModelEndpointResult>;
+    deleteCustomModelEndpoint: (
+      input: ServerDeleteCustomModelEndpointInput,
+    ) => Promise<ServerDeleteCustomModelEndpointResult>;
+    listWorktrees: () => Promise<ServerListWorktreesResult>;
+    listLocalServers: () => Promise<ServerListLocalServersResult>;
+    stopLocalServer: (input: ServerStopLocalServerInput) => Promise<ServerStopLocalServerResult>;
+    getProviderUsageSnapshot: (
+      input: ServerGetProviderUsageSnapshotInput,
+    ) => Promise<ServerGetProviderUsageSnapshotResult>;
+    listProviderUsage: (
+      input: ServerListProviderUsageInput,
+    ) => Promise<ServerListProviderUsageResult>;
+    getDiagnostics: () => Promise<ServerDiagnosticsResult>;
+    generateThreadRecap: (
+      input: ServerGenerateThreadRecapInput,
+    ) => Promise<ServerGenerateThreadRecapResult>;
+    generateAutomationIntent: (
+      input: ServerGenerateAutomationIntentInput,
+    ) => Promise<ServerGenerateAutomationIntentResult>;
+    transcribeVoice: (
+      input: ServerVoiceTranscriptionInput,
+    ) => Promise<ServerVoiceTranscriptionResult>;
+    upsertKeybinding: (input: ServerUpsertKeybindingInput) => Promise<ServerUpsertKeybindingResult>;
+  };
+  stats: {
+    getProfileStats: (input: StatsGetProfileStatsInput) => Promise<StatsGetProfileStatsResult>;
+    getProfileCommitActivity: (
+      input: StatsGetProfileCommitActivityInput,
+    ) => Promise<StatsGetProfileCommitActivityResult>;
+    getProfileTokenStats: (
+      input: StatsGetProfileTokenStatsInput,
+    ) => Promise<StatsGetProfileTokenStatsResult>;
+  };
+  provider: {
+    getComposerCapabilities: (
+      input: ProviderGetComposerCapabilitiesInput,
+    ) => Promise<ProviderComposerCapabilities>;
+    compactThread: (input: ProviderCompactThreadInput) => Promise<void>;
+    listCommands: (input: ProviderListCommandsInput) => Promise<ProviderListCommandsResult>;
+    listSkills: (input: ProviderListSkillsInput) => Promise<ProviderListSkillsResult>;
+    listSkillsCatalog: (input: ProviderSkillsCatalogInput) => Promise<ProviderSkillsCatalogResult>;
+    listPlugins: (input: ProviderListPluginsInput) => Promise<ProviderListPluginsResult>;
+    readPlugin: (input: ProviderReadPluginInput) => Promise<ProviderReadPluginResult>;
+    setPluginInstalled: (
+      input: ProviderSetPluginInstalledInput,
+    ) => Promise<ProviderSetPluginInstalledResult>;
+    listModels: (input: ProviderListModelsInput) => Promise<ProviderListModelsResult>;
+    listAgents: (input: ProviderListAgentsInput) => Promise<ProviderListAgentsResult>;
+  };
+  orchestration: {
+    getSnapshot: () => Promise<OrchestrationReadModel>;
+    getShellSnapshot: () => Promise<OrchestrationShellSnapshot>;
+    dispatchCommand: (command: ClientOrchestrationCommand) => Promise<{ sequence: number }>;
+    importThread: (
+      input: OrchestrationImportThreadInput,
+    ) => Promise<OrchestrationImportThreadResult>;
+    repairState: () => Promise<OrchestrationReadModel>;
+    getTurnDiff: (input: OrchestrationGetTurnDiffInput) => Promise<OrchestrationGetTurnDiffResult>;
+    getFullThreadDiff: (
+      input: OrchestrationGetFullThreadDiffInput,
+    ) => Promise<OrchestrationGetFullThreadDiffResult>;
+    captureHandoffCheckpoint: (
+      input: OrchestrationCaptureHandoffCheckpointInput,
+    ) => Promise<OrchestrationCaptureHandoffCheckpointResult>;
+    getHandoffCheckpointDiff: (
+      input: OrchestrationGetHandoffCheckpointDiffInput,
+    ) => Promise<OrchestrationGetHandoffCheckpointDiffResult>;
+    restoreHandoffCheckpoint: (
+      input: OrchestrationRestoreHandoffCheckpointInput,
+    ) => Promise<OrchestrationRestoreHandoffCheckpointResult>;
+    replayEvents: (fromSequenceExclusive: number) => Promise<OrchestrationEvent[]>;
+    subscribeShell: () => Promise<void>;
+    unsubscribeShell: () => Promise<void>;
+    subscribeThread: (input: OrchestrationSubscribeThreadInput) => Promise<void>;
+    unsubscribeThread: (input: OrchestrationSubscribeThreadInput) => Promise<void>;
+    onDomainEvent: (callback: (event: OrchestrationEvent) => void) => () => void;
+    onShellEvent: (callback: (event: OrchestrationShellStreamItem) => void) => () => void;
+    onThreadEvent: (callback: (event: OrchestrationThreadStreamItem) => void) => () => void;
+  };
+  automation: {
+    list: (input?: AutomationListInput) => Promise<AutomationListResult>;
+    create: (input: AutomationCreateInput) => Promise<AutomationDefinition>;
+    update: (input: AutomationUpdateInput) => Promise<AutomationDefinition>;
+    delete: (input: AutomationDeleteInput) => Promise<void>;
+    runNow: (input: AutomationRunNowInput) => Promise<AutomationRunNowResult>;
+    cancelRun: (input: AutomationCancelRunInput) => Promise<AutomationCancelRunResult>;
+    markRunRead: (input: AutomationMarkRunReadInput) => Promise<AutomationRunActionResult>;
+    archiveRun: (input: AutomationArchiveRunInput) => Promise<AutomationRunActionResult>;
+    onEvent: (callback: (event: AutomationStreamEvent) => void) => () => void;
+  };
+  openClaw: {
+    getSnapshot: () => Promise<OpenClawSnapshot>;
+    updateConfig: (input: OpenClawConnectionConfigUpdate) => Promise<OpenClawSnapshot>;
+    setup: (input?: OpenClawSetupInput) => Promise<OpenClawGatewayStatus>;
+    testConnection: () => Promise<OpenClawGatewayStatus>;
+    onEvent: (callback: (event: OpenClawStreamEvent) => void) => () => void;
+  };
+  review: {
+    providers: () => Promise<ReviewProviderListResult>;
+    install: (input: ReviewInstallInput) => Promise<ReviewInstallResult>;
+    list: (input: ReviewListInput) => Promise<ReviewListResult>;
+    start: (input: ReviewStartInput) => Promise<ReviewRun>;
+    cancel: (input: ReviewCancelInput) => Promise<ReviewRun>;
+    ignoreFinding: (input: ReviewIgnoreFindingInput) => Promise<ReviewFinding>;
+    onEvent: (callback: (event: ReviewStreamEvent) => void) => () => void;
+  };
+  browser: {
+    open: (input: BrowserOpenInput) => Promise<ThreadBrowserState>;
+    close: (input: BrowserThreadInput) => Promise<ThreadBrowserState>;
+    hide: (input: BrowserThreadInput) => Promise<void>;
+    getState: (input: BrowserThreadInput) => Promise<ThreadBrowserState>;
+    setPanelBounds: (input: BrowserSetPanelBoundsInput) => Promise<void>;
+    attachWebview: (input: BrowserAttachWebviewInput) => Promise<ThreadBrowserState>;
+    detachWebview: (input: BrowserDetachWebviewInput) => Promise<void>;
+    copyLink: (input: BrowserTabInput) => Promise<void>;
+    copyScreenshotToClipboard: (input: BrowserTabInput) => Promise<void>;
+    captureScreenshot: (input: BrowserTabInput) => Promise<BrowserCaptureScreenshotResult>;
+    executeCdp: (input: BrowserExecuteCdpInput) => Promise<unknown>;
+    navigate: (input: BrowserNavigateInput) => Promise<ThreadBrowserState>;
+    reload: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    goBack: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    goForward: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    newTab: (input: BrowserNewTabInput) => Promise<ThreadBrowserState>;
+    closeTab: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    selectTab: (input: BrowserTabInput) => Promise<ThreadBrowserState>;
+    openDevTools: (input: BrowserTabInput) => Promise<void>;
+    onState: (callback: (state: ThreadBrowserState) => void) => () => void;
+    onCopyLink: (callback: (event: BrowserCopyLinkEvent) => void) => () => void;
+  };
+}

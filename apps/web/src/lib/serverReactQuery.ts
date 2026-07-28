@@ -1,0 +1,278 @@
+import type {
+  ProviderKind,
+  ServerListProviderUsageInput,
+  ServerStopLocalServerInput,
+  ThreadId,
+} from "@modesto/contracts";
+import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
+import { ensureNativeApi } from "~/nativeApi";
+
+export const LOCAL_SERVERS_VISIBLE_REFETCH_INTERVAL_MS = 10_000;
+export const LOCAL_SERVERS_BACKGROUND_REFETCH_INTERVAL_MS = 30_000;
+const LOCAL_SERVERS_DEFAULT_STALE_TIME_MS = 3_000;
+
+export const serverQueryKeys = {
+  all: ["server"] as const,
+  config: () => ["server", "config"] as const,
+  authSession: () => ["server", "auth", "session"] as const,
+  environment: () => ["server", "environment"] as const,
+  settings: () => ["server", "settings"] as const,
+  worktrees: () => ["server", "worktrees"] as const,
+  localServers: () => ["server", "localServers"] as const,
+  providerUsage: (provider: ProviderKind | null | undefined, homePath?: string | null) =>
+    ["server", "providerUsage", provider ?? null, homePath ?? null] as const,
+  allProviderUsage: (provider?: ProviderKind | null) =>
+    ["server", "allProviderUsage", provider ?? null] as const,
+  profileStats: (utcOffsetMinutes: number) =>
+    ["server", "profileStats", "peak-hour-v2", utcOffsetMinutes] as const,
+  profileTokenStats: (utcOffsetMinutes: number) =>
+    ["server", "profileTokenStats", utcOffsetMinutes] as const,
+  profileCommitActivity: () => ["server", "profileCommitActivity"] as const,
+  studioThreadOutputs: (threadId: ThreadId | null) =>
+    ["server", "studioThreadOutputs", threadId] as const,
+};
+
+export const serverMutationKeys = {
+  stopLocalServer: () => ["server", "mutation", "stopLocalServer"] as const,
+};
+
+export function serverConfigQueryOptions() {
+  return queryOptions({
+    queryKey: serverQueryKeys.config(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.getConfig();
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function serverAuthSessionQueryOptions() {
+  return queryOptions({
+    queryKey: serverQueryKeys.authSession(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.getAuthSession();
+    },
+    staleTime: 15_000,
+  });
+}
+
+export function serverEnvironmentQueryOptions() {
+  return queryOptions({
+    queryKey: serverQueryKeys.environment(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.getEnvironment();
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function serverSettingsQueryOptions() {
+  return queryOptions({
+    queryKey: serverQueryKeys.settings(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.getSettings();
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function serverWorktreesQueryOptions() {
+  return queryOptions({
+    queryKey: serverQueryKeys.worktrees(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.listWorktrees();
+    },
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+}
+
+export function serverLocalServersQueryOptions(
+  input:
+    | boolean
+    | {
+        enabled?: boolean;
+        refetchInterval?: number | false;
+        staleTime?: number;
+      } = true,
+) {
+  const options = typeof input === "boolean" ? { enabled: input } : input;
+  const enabled = options.enabled ?? true;
+  return queryOptions({
+    queryKey: serverQueryKeys.localServers(),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.server.listLocalServers();
+    },
+    enabled,
+    staleTime: options.staleTime ?? LOCAL_SERVERS_DEFAULT_STALE_TIME_MS,
+    refetchInterval: enabled
+      ? (options.refetchInterval ?? LOCAL_SERVERS_VISIBLE_REFETCH_INTERVAL_MS)
+      : false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+}
+
+// Sidebar project badges need a snapshot, but idle Home should not keep shelling out
+// through lsof/ps; active Modesto-owned runs still poll for responsive status.
+export function sidebarLocalServersQueryOptions(input: {
+  hasActiveProjectRun: boolean;
+  hasProjects: boolean;
+}) {
+  const enabled = input.hasProjects || input.hasActiveProjectRun;
+  return serverLocalServersQueryOptions({
+    enabled,
+    refetchInterval: input.hasActiveProjectRun ? LOCAL_SERVERS_VISIBLE_REFETCH_INTERVAL_MS : false,
+  });
+}
+
+const STUDIO_THREAD_OUTPUTS_STALE_TIME_MS = 10_000;
+
+/**
+ * Outbox files attributed server-side to one Studio chat. Domain events invalidate this
+ * query after checkpoint and non-Git file-change updates.
+ */
+export function studioThreadOutputsQueryOptions(input: {
+  threadId: ThreadId | null;
+  enabled?: boolean;
+}) {
+  const threadId = input.threadId;
+  return queryOptions({
+    queryKey: serverQueryKeys.studioThreadOutputs(threadId),
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      if (!threadId) {
+        return { entries: [] };
+      }
+      return api.studio.listThreadOutputs({ threadId });
+    },
+    enabled: (input.enabled ?? true) && threadId !== null,
+    staleTime: STUDIO_THREAD_OUTPUTS_STALE_TIME_MS,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+}
+
+export function serverStopLocalServerMutationOptions(input: { queryClient: QueryClient }) {
+  return mutationOptions({
+    mutationKey: serverMutationKeys.stopLocalServer(),
+    mutationFn: async (server: ServerStopLocalServerInput) => {
+      const api = ensureNativeApi();
+      return api.server.stopLocalServer(server);
+    },
+    onSettled: () => {
+      void input.queryClient.invalidateQueries({ queryKey: serverQueryKeys.localServers() });
+    },
+  });
+}
+
+export function serverProviderUsageSnapshotQueryOptions(input: {
+  provider: ProviderKind | null | undefined;
+  homePath?: string | null;
+  enabled?: boolean;
+}) {
+  return queryOptions({
+    queryKey: serverQueryKeys.providerUsage(input.provider, input.homePath),
+    enabled: (input.enabled ?? true) && input.provider !== null && input.provider !== undefined,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async () => {
+      if (!input.provider) return null;
+      const api = ensureNativeApi();
+      return api.server.getProviderUsageSnapshot({
+        provider: input.provider,
+        ...(input.homePath ? { homePath: input.homePath } : {}),
+      });
+    },
+  });
+}
+
+export async function fetchAllProviderUsage(input: ServerListProviderUsageInput = {}) {
+  const api = ensureNativeApi();
+  return api.server.listProviderUsage(input);
+}
+
+// Local profile + shareable-card core statistics. The client passes its own fixed
+// UTC offset; all metrics are computed from Modesto's local DB projections.
+export function serverProfileStatsQueryOptions(input: { enabled?: boolean } = {}) {
+  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  return queryOptions({
+    queryKey: serverQueryKeys.profileStats(utcOffsetMinutes),
+    enabled: input.enabled ?? true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.stats.getProfileStats({
+        utcOffsetMinutes,
+      });
+    },
+  });
+}
+
+// DB-backed token totals and token heatmap, split from core stats so the Profile
+// page can paint first and upgrade token-only surfaces later.
+export function serverProfileTokenStatsQueryOptions(input: { enabled?: boolean } = {}) {
+  const utcOffsetMinutes = -new Date().getTimezoneOffset();
+  return queryOptions({
+    queryKey: serverQueryKeys.profileTokenStats(utcOffsetMinutes),
+    enabled: input.enabled ?? true,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.stats.getProfileTokenStats({
+        utcOffsetMinutes,
+      });
+    },
+  });
+}
+
+// Git history can touch several workspaces and GitHub, so it stays separate from
+// the fast SQL-backed profile queries and loads after the page is already useful.
+export function serverProfileCommitActivityQueryOptions(input: { enabled?: boolean } = {}) {
+  return queryOptions({
+    queryKey: serverQueryKeys.profileCommitActivity(),
+    enabled: input.enabled ?? true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async () => {
+      const api = ensureNativeApi();
+      return api.stats.getProfileCommitActivity({});
+    },
+  });
+}
+
+// Live remaining-usage for every provider in Settings or a single provider in active usage UI.
+export function serverAllProviderUsageQueryOptions(
+  input:
+    | boolean
+    | {
+        enabled?: boolean;
+        provider?: ProviderKind | null;
+      } = true,
+) {
+  const enabled = typeof input === "boolean" ? input : (input.enabled ?? true);
+  const provider = typeof input === "boolean" ? null : (input.provider ?? null);
+  return queryOptions({
+    queryKey: serverQueryKeys.allProviderUsage(provider),
+    enabled,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+    queryFn: async () => fetchAllProviderUsage(provider ? { provider } : {}),
+  });
+}

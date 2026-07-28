@@ -1,0 +1,151 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="18" x2="1140" y2="665" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#181A20"/>
+      <stop offset=".52" stop-color="#0E1015"/>
+      <stop offset="1" stop-color="#090A0D"/>
+    </linearGradient>
+    <linearGradient id="rail" x1="118" y1="0" x2="1080" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#626775"/>
+      <stop offset=".34" stop-color="#8F96DB"/>
+      <stop offset=".68" stop-color="#737CC7"/>
+      <stop offset="1" stop-color="#D6D8E0"/>
+    </linearGradient>
+    <linearGradient id="title" x1="286" y1="0" x2="824" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".55" stop-color="#E2E3F5"/>
+      <stop offset="1" stop-color="#AEB4E6"/>
+    </linearGradient>
+    <linearGradient id="cardEdge" x1="388" y1="397" x2="822" y2="596" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#45495D"/>
+      <stop offset=".52" stop-color="#30333E"/>
+      <stop offset="1" stop-color="#292C35"/>
+    </linearGradient>
+    <radialGradient id="centerGlow">
+      <stop stop-color="#6F78C7" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#6F78C7" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#000" flood-opacity=".42"/>
+    </filter>
+    <filter id="nodeGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" rx="34" fill="url(#bg)"/>
+  <circle cx="600" cy="338" r="270" fill="url(#centerGlow)" filter="url(#blur)"/>
+  <circle cx="1114" cy="74" r="210" fill="#747CC5" fill-opacity=".045"/>
+  <circle cx="48" cy="640" r="220" fill="#A7ABB8" fill-opacity=".025"/>
+  <path d="M48 150H1152M48 617H1152" stroke="#FFFFFF" stroke-opacity=".03"/>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="72" y="76" fill="#9B9EA8" font-size="15" font-weight="650" letter-spacing="2.8">MODESTO 0.1.4 · SAN LEANDRO</text>
+    <text x="72" y="122" fill="url(#title)" font-size="42" font-weight="680" letter-spacing="-1.3">Context that moves with you.</text>
+    <text x="72" y="154" fill="#9296A1" font-size="17">A continuity layer for working across coding agents.</text>
+  </g>
+
+  <!-- continuous agent rail -->
+  <path d="M130 302C217 302 242 239 329 239C416 239 431 328 520 328C609 328 624 239 711 239C798 239 820 302 907 302H1070"
+        stroke="#272B34" stroke-width="16" stroke-linecap="round"/>
+  <path d="M130 302C217 302 242 239 329 239C416 239 431 328 520 328C609 328 624 239 711 239C798 239 820 302 907 302H1070"
+        stroke="url(#rail)" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- moving context packets -->
+  <g>
+    <circle cx="205" cy="286" r="12" fill="#8F96DB" fill-opacity=".12" filter="url(#nodeGlow)"/>
+    <circle cx="205" cy="286" r="5" fill="#8F96DB"/>
+    <circle cx="442" cy="303" r="12" fill="#8F96DB" fill-opacity=".14" filter="url(#nodeGlow)"/>
+    <circle cx="442" cy="303" r="5" fill="#A7ACE4"/>
+    <circle cx="799" cy="272" r="12" fill="#737CC7" fill-opacity=".14" filter="url(#nodeGlow)"/>
+    <circle cx="799" cy="272" r="5" fill="#858DD2"/>
+    <path d="M1048 292L1059 302L1048 312" stroke="#D6D8E0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- agent stations -->
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" text-anchor="middle">
+    <g>
+      <circle cx="130" cy="302" r="38" fill="#1B1D23" stroke="#363944"/>
+      <path d="M117 294H143M117 302H137M117 310H132" stroke="#AEB2BF" stroke-width="3" stroke-linecap="round"/>
+      <text x="130" y="360" fill="#D0D2D8" font-size="14" font-weight="620">Agent A</text>
+    </g>
+    <g>
+      <circle cx="329" cy="239" r="38" fill="#1C1D24" stroke="#41465B"/>
+      <path d="M318 250L329 226L340 250M322 242H336" stroke="#9DA4DF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="329" y="197" fill="#D0D2D8" font-size="14" font-weight="620">Agent B</text>
+    </g>
+    <g>
+      <circle cx="520" cy="328" r="46" fill="#1B1D24" stroke="#606ACC" stroke-width="1.5"/>
+      <circle cx="520" cy="328" r="36" fill="none" stroke="#8F96DB" stroke-opacity=".17" stroke-width="8"/>
+      <g transform="translate(500 307)" stroke="#F7F7F8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 13H15C18 13 19 12 20 10L24 4"/>
+        <path d="M30 8L27 13C26 16 27 17 29 19L37 26"/>
+        <path d="M4 19L14 22C17 23 17 25 17 28V37"/>
+        <path d="M26 26L32 32"/>
+      </g>
+      <text x="520" y="392" fill="#F2F2F4" font-size="15" font-weight="650">Modesto</text>
+    </g>
+    <g>
+      <circle cx="711" cy="239" r="38" fill="#1A1D24" stroke="#3A3F55"/>
+      <path d="M697 250L711 225L725 250L711 243L697 250Z" stroke="#858DD2" stroke-width="3" stroke-linejoin="round"/>
+      <text x="711" y="197" fill="#D0D2D8" font-size="14" font-weight="620">Agent C</text>
+    </g>
+    <g>
+      <circle cx="907" cy="302" r="38" fill="#1A1C22" stroke="#393C47"/>
+      <path d="M895 290H919V314H895V290ZM901 296H913M901 302H913M901 308H909" stroke="#C9CBD2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="907" y="360" fill="#D0D2D8" font-size="14" font-weight="620">Agent D</text>
+    </g>
+  </g>
+
+  <!-- provenance ticks beneath the rail -->
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11">
+    <rect x="967" y="280" width="103" height="44" rx="14" fill="#17191F" stroke="#373A45"/>
+    <circle cx="987" cy="296" r="4" fill="#A7ACE4"/>
+    <text x="999" y="300" fill="#C4C7D3">source</text>
+    <path d="M985 311H1050" stroke="#42534F" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- repo-native memory ledger -->
+  <path d="M520 374V420" stroke="#3B3549" stroke-width="2" stroke-dasharray="3 6"/>
+  <circle cx="520" cy="410" r="4" fill="#8F96DB"/>
+  <g filter="url(#shadow)">
+    <rect x="350" y="421" width="500" height="155" rx="25" fill="#14161B" stroke="url(#cardEdge)"/>
+  </g>
+  <rect x="350" y="421" width="500" height="48" rx="25" fill="#191B21"/>
+  <path d="M350 469H850" stroke="#292C34"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <path d="M380 441H395L403 449V457H380V441ZM395 441V449H403" stroke="#A7ACE4" stroke-width="1.8" stroke-linejoin="round"/>
+    <text x="417" y="452" fill="#EEEFF2" font-size="15" font-weight="630">.modesto/context.md</text>
+    <rect x="725" y="435" width="96" height="25" rx="12.5" fill="#20222A" stroke="#3A3E50"/>
+    <circle cx="742" cy="447.5" r="4" fill="#8F96DB"/>
+    <text x="753" y="452" fill="#C4C8EC" font-size="11" font-weight="650">repo-native</text>
+
+    <text x="380" y="498" fill="#686D78" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">01</text>
+    <text x="380" y="525" fill="#686D78" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">02</text>
+    <text x="380" y="552" fill="#686D78" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">03</text>
+    <text x="416" y="498" fill="#C9CBD2" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">decision: preserve provider context</text>
+    <text x="416" y="525" fill="#C9CBD2" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">handoff: Agent B → Agent C</text>
+    <text x="416" y="552" fill="#C9CBD2" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">source: thread/8f2 · commit/a13</text>
+    <rect x="773" y="486" width="48" height="18" rx="9" fill="#282A3A"/>
+    <text x="797" y="499" fill="#C4C8EC" font-size="10" font-weight="650" text-anchor="middle">saved</text>
+    <rect x="758" y="513" width="63" height="18" rx="9" fill="#242735"/>
+    <text x="789.5" y="526" fill="#B7BCE8" font-size="10" font-weight="650" text-anchor="middle">carried</text>
+    <rect x="758" y="540" width="63" height="18" rx="9" fill="#22252D"/>
+    <text x="789.5" y="553" fill="#C7CAD3" font-size="10" font-weight="650" text-anchor="middle">verified</text>
+  </g>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="72" y="630" fill="#AEB1B9" font-size="15">ACP foundation</text>
+    <circle cx="221" cy="625" r="3" fill="#4C505A"/>
+    <text x="241" y="630" fill="#AEB1B9" font-size="15">Transparent handoffs</text>
+    <circle cx="420" cy="625" r="3" fill="#4C505A"/>
+    <text x="440" y="630" fill="#AEB1B9" font-size="15">Repo-native memory</text>
+    <circle cx="616" cy="625" r="3" fill="#4C505A"/>
+    <text x="636" y="630" fill="#AEB1B9" font-size="15">Clear provenance</text>
+    <rect x="974" y="612" width="154" height="32" rx="16" fill="#171920" stroke="#30333B"/>
+    <text x="1051" y="633" fill="#D8DAE0" font-size="13" font-weight="650" text-anchor="middle">San Leandro</text>
+  </g>
+</svg>
