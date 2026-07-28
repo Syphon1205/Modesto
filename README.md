@@ -24,6 +24,10 @@
   </p>
 </div>
 
+<p align="center">
+  <img src="assets/san-mateo.svg" alt="Modesto San Mateo workspace: Agent and Plan controls alongside visual app context" width="100%" />
+</p>
+
 ![Modesto workspace](assets/modesto-app.png)
 
 ## Keep the whole task in view

@@ -1,0 +1,87 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="55" y1="20" x2="1218" y2="626" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#181C29"/>
+      <stop offset=".48" stop-color="#0F1320"/>
+      <stop offset="1" stop-color="#090B11"/>
+    </linearGradient>
+    <linearGradient id="agent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#96A5FF"/>
+      <stop offset="1" stop-color="#7259E8"/>
+    </linearGradient>
+    <linearGradient id="plan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7EE7D7"/>
+      <stop offset="1" stop-color="#4D9CF4"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#000" flood-opacity=".5"/>
+    </filter>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="36"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="32" fill="url(#bg)"/>
+  <circle cx="424" cy="350" r="240" fill="#7485FF" fill-opacity=".14" filter="url(#blur)"/>
+  <circle cx="892" cy="370" r="210" fill="#62DACB" fill-opacity=".11" filter="url(#blur)"/>
+  <path d="M58 175H1222M58 576H1222" stroke="#FFF" stroke-opacity=".055"/>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="76" y="76" fill="#A9B1C8" font-size="15" font-weight="700" letter-spacing="3">MODESTO · SAN MATEO</text>
+    <text x="76" y="130" fill="#F7F8FF" font-size="48" font-weight="730" letter-spacing="-1.6">The workspace for agentic coding.</text>
+    <text x="76" y="165" fill="#A1A9BB" font-size="18">Plan with intent. Execute with confidence. Review in context.</text>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="164" y="225" width="952" height="292" rx="28" fill="#131926" stroke="#343E55"/>
+  </g>
+  <rect x="164" y="225" width="952" height="54" rx="28" fill="#1A2131"/>
+  <path d="M164 279H1116" stroke="#2D3750"/>
+  <circle cx="200" cy="252" r="6" fill="#8493FF"/>
+  <text x="217" y="257" fill="#E1E5F1" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="14" font-weight="700">Modesto Composer</text>
+  <rect x="946" y="240" width="136" height="24" rx="12" fill="#232D43" stroke="#40506E"/>
+  <text x="1014" y="256" fill="#C1CCFC" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="11" font-weight="700" text-anchor="middle">VISUAL CONTEXT</text>
+
+  <rect x="196" y="302" width="242" height="174" rx="18" fill="#182030" stroke="#33405A"/>
+  <text x="220" y="336" fill="#F1F3FA" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="16" font-weight="700">Ship the settings cleanup</text>
+  <text x="220" y="365" fill="#9CA7BC" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="13">Keep one clear destination for</text>
+  <text x="220" y="386" fill="#9CA7BC" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="13">plugins, Git &amp; PRs, and MCP.</text>
+  <rect x="220" y="414" width="136" height="27" rx="13.5" fill="#24324A"/>
+  <path d="M236 421H252V434H236V421ZM239 425H249M239 429H249" stroke="#7FE1D2" stroke-width="1.5" stroke-linecap="round"/>
+  <text x="261" y="432" fill="#C7ECE6" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="11" font-weight="700">app-shot.png</text>
+
+  <g>
+    <rect x="470" y="302" width="286" height="174" rx="20" fill="#191E31" stroke="#6274EF"/>
+    <rect x="492" y="322" width="86" height="25" rx="12.5" fill="#2B376B"/>
+    <circle cx="508" cy="334.5" r="4" fill="#A8B4FF"/>
+    <text x="520" y="338" fill="#D5DBFF" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="11" font-weight="700">NEXT TURN</text>
+    <circle cx="613" cy="385" r="37" fill="url(#agent)" fill-opacity=".18"/>
+    <circle cx="613" cy="385" r="28" fill="#263256" stroke="#8C9AFF"/>
+    <path d="M601 379H619C622 379 623 377 625 374L630 365M638 371L634 380C633 383 634 385 637 387L647 396M600 389L612 393C615 394 616 396 616 399V408M629 398L637 406" stroke="#F6F7FF" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="613" y="440" fill="#F4F5FF" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="19" font-weight="730" text-anchor="middle">Agent</text>
+    <text x="613" y="461" fill="#ACB6D9" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="13" text-anchor="middle">Execute this turn</text>
+  </g>
+
+  <g>
+    <rect x="786" y="302" width="286" height="174" rx="20" fill="#15242D" stroke="#3C9C91"/>
+    <rect x="808" y="322" width="66" height="25" rx="12.5" fill="#1D4A47"/>
+    <circle cx="824" cy="334.5" r="4" fill="#7BE0D1"/>
+    <text x="836" y="338" fill="#C9F0EA" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="11" font-weight="700">MODE</text>
+    <circle cx="929" cy="385" r="37" fill="url(#plan)" fill-opacity=".18"/>
+    <circle cx="929" cy="385" r="28" fill="#1D3A40" stroke="#71DCCE"/>
+    <path d="M917 375H940M917 385H936M917 395H931" stroke="#EAFFFC" stroke-width="2.7" stroke-linecap="round"/>
+    <circle cx="944" cy="375" r="2.8" fill="#80E2D5"/><circle cx="940" cy="385" r="2.8" fill="#80E2D5"/><circle cx="935" cy="395" r="2.8" fill="#80E2D5"/>
+    <text x="929" y="440" fill="#F0FFFC" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="19" font-weight="730" text-anchor="middle">Plan</text>
+    <text x="929" y="461" fill="#A8D6CF" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="13" text-anchor="middle">Decide before acting</text>
+  </g>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="76" y="606" fill="#BCC3D3" font-size="15">Multiple providers</text>
+    <circle cx="225" cy="601" r="3" fill="#59647B"/>
+    <text x="245" y="606" fill="#BCC3D3" font-size="15">Visible context</text>
+    <circle cx="374" cy="601" r="3" fill="#59647B"/>
+    <text x="394" y="606" fill="#BCC3D3" font-size="15">Clear handoffs</text>
+    <rect x="1000" y="586" width="152" height="30" rx="15" fill="#1A2233" stroke="#3A4764"/>
+    <text x="1076" y="606" fill="#D4DCFA" font-size="13" font-weight="700" text-anchor="middle">v0.1.6 · San Mateo</text>
+  </g>
+</svg>
