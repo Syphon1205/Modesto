@@ -25,12 +25,10 @@
 </div>
 
 <p align="center">
-  <img src="assets/san-mateo.svg" alt="Modesto San Mateo workspace: Agent and Plan controls alongside visual app context" width="100%" />
+  <img src="assets/modesto-app.png" alt="Modesto workspace with chat, project files, terminal, browser, and diffs" width="100%" />
 </p>
 
-![Modesto workspace](assets/modesto-app.png)
-
-## Keep the whole task in view
+## One place for the whole task
 
 Modesto brings the conversation, project files, terminal, browser, diffs,
 screenshots, and provider tools into one desktop workspace. Pick the right
