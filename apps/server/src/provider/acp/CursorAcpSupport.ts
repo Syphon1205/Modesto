@@ -112,7 +112,7 @@ export const makeCursorAcpRuntime = (
       ...input,
       spawn: buildCursorAcpSpawnInput(input.cursorSettings, input.cwd),
       ...(input.cursorSettings?.authMethodId === null
-        ? {}
+        ? { skipAuthenticate: true }
         : { authMethodId: input.cursorSettings?.authMethodId ?? "cursor_login" }),
         authenticateMeta: { headless: true },
         clientCapabilities: CURSOR_PARAMETERIZED_MODEL_PICKER_CAPABILITIES,

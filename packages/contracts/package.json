@@ -1,6 +1,6 @@
 {
   "name": "@modesto/contracts",
-  "version": "0.1.8-patch.1",
+  "version": "0.1.8-patch.2",
   "private": true,
   "files": [
     "dist"
@@ -33,5 +33,5 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "modestoReleaseVersion": "0.1.7.1"
+  "modestoReleaseVersion": "0.1.7.2"
 }

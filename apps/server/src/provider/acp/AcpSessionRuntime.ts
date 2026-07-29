@@ -62,6 +62,11 @@ export interface AcpSessionRuntimeOptions {
     readonly version: string;
   };
   readonly authMethodId?: string;
+  /**
+   * When true, skip the ACP `authenticate` call. Used by CLIs that own
+   * credentials outside ACP (e.g. Poolside after `pool login`).
+   */
+  readonly skipAuthenticate?: boolean;
   readonly resolveAuthMethodId?: (
     initializeResult: EffectAcpSchema.InitializeResponse,
   ) => Effect.Effect<string, EffectAcpErrors.AcpError>;
@@ -557,24 +562,26 @@ const makeAcpSessionRuntime = (
           ? yield* options.resolveAuthMethodId(initializeResult)
           : options.authMethodId;
 
-      if (!authMethodId) {
-        return yield* new EffectAcpErrors.AcpRequestError({
-          code: -32602,
-          errorMessage: "ACP agent did not provide an authentication method.",
-          data: { authMethods: initializeResult.authMethods ?? [] },
-        });
+      if (!options.skipAuthenticate) {
+        if (!authMethodId) {
+          return yield* new EffectAcpErrors.AcpRequestError({
+            code: -32602,
+            errorMessage: "ACP agent did not provide an authentication method.",
+            data: { authMethods: initializeResult.authMethods ?? [] },
+          });
+        }
+
+        const authenticatePayload = {
+          methodId: authMethodId,
+          ...(options.authenticateMeta ? { _meta: options.authenticateMeta } : {}),
+        } satisfies EffectAcpSchema.AuthenticateRequest;
+
+        yield* runLoggedRequest(
+          "authenticate",
+          authenticatePayload,
+          acp.agent.authenticate(authenticatePayload),
+        );
       }
-
-      const authenticatePayload = {
-        methodId: authMethodId,
-        ...(options.authenticateMeta ? { _meta: options.authenticateMeta } : {}),
-      } satisfies EffectAcpSchema.AuthenticateRequest;
-
-      yield* runLoggedRequest(
-        "authenticate",
-        authenticatePayload,
-        acp.agent.authenticate(authenticatePayload),
-      );
 
       let sessionId: string;
       let sessionSetupResult:

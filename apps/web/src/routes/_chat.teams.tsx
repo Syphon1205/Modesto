@@ -190,7 +190,7 @@ function TeamsRouteView() {
               })}
               {projects.length === 0 ? (
                 <p className="px-2 text-xs leading-relaxed text-muted-foreground">
-                  Open a project to create its shared space.
+                  Open a project to start a shared room for people and agents.
                 </p>
               ) : null}
             </div>
@@ -205,7 +205,8 @@ function TeamsRouteView() {
                       {selectedProject?.name ?? "No project space"}
                     </h1>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      One room for live runs, handoffs, checkpoints, diffs, and review.
+                      A shared workspace for people and agents — live runs, handoffs, checkpoints,
+                      diffs, and review in one room.
                     </p>
                   </div>
                   {selectedProject ? (
@@ -242,7 +243,7 @@ function TeamsRouteView() {
                   <div>
                     <h2 className="text-sm font-medium">Shared runs</h2>
                     <p className="text-xs text-muted-foreground">
-                      Open any run to watch, steer, recover, or review it.
+                      Co-work on any run: watch, steer, recover, or hand off review.
                     </p>
                   </div>
                   <span className="text-xs tabular-nums text-muted-foreground">

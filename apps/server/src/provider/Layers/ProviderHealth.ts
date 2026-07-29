@@ -2665,7 +2665,20 @@ export const ProviderHealthLive = Layer.effect(
             args: ["install", "--global", installPackage],
             lockKey: `provider-install:${provider}`,
           }
-        : capabilities.update;
+        : provider === "poolside" && input.action === "install"
+          ? {
+              executable: process.platform === "win32" ? "powershell.exe" : "bash",
+              args:
+                process.platform === "win32"
+                  ? [
+                      "-NoProfile",
+                      "-Command",
+                      "irm https://downloads.poolside.ai/pool/install.ps1 | iex",
+                    ]
+                  : ["-lc", "curl -fsSL https://downloads.poolside.ai/pool/install.sh | bash"],
+              lockKey: "poolside-install",
+            }
+          : capabilities.update;
       if (!update) {
         return yield* new ServerProviderUpdateError({
           provider,

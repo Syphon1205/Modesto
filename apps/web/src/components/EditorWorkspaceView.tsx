@@ -70,10 +70,15 @@ type EditorActivityBarItem = EditorCenterMode | "search" | "review";
 const EDITOR_CHAT_PANE_STORAGE_KEY = "modesto.editor.chatPaneWidth";
 const EDITOR_SIDEBAR_VISIBLE_STORAGE_KEY = "modesto.editor.sidebarVisible";
 const EDITOR_CHAT_PANE_VISIBLE_STORAGE_KEY = "modesto.editor.chatPaneVisible";
+const EDITOR_EXPLORER_PANE_STORAGE_KEY = "modesto.editor.explorerPaneWidth";
 const EDITOR_CHAT_PANE_DEFAULT_WIDTH = 384;
 const EDITOR_CHAT_PANE_MIN_WIDTH = 320;
 const EDITOR_CHAT_PANE_MAX_WIDTH = 600;
 const EDITOR_CHAT_PANE_KEYBOARD_STEP = 24;
+const EDITOR_EXPLORER_PANE_DEFAULT_WIDTH = 224;
+const EDITOR_EXPLORER_PANE_MIN_WIDTH = 180;
+const EDITOR_EXPLORER_PANE_MAX_WIDTH = 360;
+const EDITOR_EXPLORER_PANE_KEYBOARD_STEP = 16;
 
 interface EditorWorkspaceViewProps {
   threadId?: ThreadId;
@@ -133,6 +138,44 @@ function storeEditorChatPaneWidth(width: number): void {
     window.localStorage.setItem(
       EDITOR_CHAT_PANE_STORAGE_KEY,
       String(clampEditorChatPaneWidth(width)),
+    );
+  } catch {
+    // Best-effort preference persistence only.
+  }
+}
+
+function clampEditorExplorerPaneWidth(width: number): number {
+  return Math.min(
+    EDITOR_EXPLORER_PANE_MAX_WIDTH,
+    Math.max(EDITOR_EXPLORER_PANE_MIN_WIDTH, Math.round(width)),
+  );
+}
+
+function readStoredEditorExplorerPaneWidth(): number {
+  if (typeof window === "undefined") {
+    return EDITOR_EXPLORER_PANE_DEFAULT_WIDTH;
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(EDITOR_EXPLORER_PANE_STORAGE_KEY);
+    const parsed = rawValue === null ? Number.NaN : Number.parseFloat(rawValue);
+    return Number.isFinite(parsed)
+      ? clampEditorExplorerPaneWidth(parsed)
+      : EDITOR_EXPLORER_PANE_DEFAULT_WIDTH;
+  } catch {
+    return EDITOR_EXPLORER_PANE_DEFAULT_WIDTH;
+  }
+}
+
+function storeEditorExplorerPaneWidth(width: number): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      EDITOR_EXPLORER_PANE_STORAGE_KEY,
+      String(clampEditorExplorerPaneWidth(width)),
     );
   } catch {
     // Best-effort preference persistence only.
@@ -244,6 +287,8 @@ function DiffFilesSidebar(props: {
   isLoading: boolean;
   selectedFilePath: string | null;
   optionsControl?: ReactNode;
+  containerClassName?: string;
+  containerStyle?: CSSProperties;
   onSelectFile: (path: string) => void;
   onReferenceInChat: ((reference: ChatFileReference) => void) | undefined;
   onAskWhyInChat: ((reference: ChatFileReference) => void) | undefined;
@@ -267,7 +312,13 @@ function DiffFilesSidebar(props: {
   );
 
   return (
-    <aside className="flex min-h-[11rem] w-full shrink-0 flex-col border-b border-border/65 bg-[var(--color-background-surface)] lg:h-full lg:w-56 lg:border-b-0 lg:border-r">
+    <aside
+      className={
+        props.containerClassName ??
+        "flex min-h-[12rem] w-full shrink-0 flex-col border-b border-border/65 bg-[var(--color-background-surface)] lg:h-full lg:w-56 lg:border-b-0 lg:border-r"
+      }
+      style={props.containerStyle}
+    >
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/65 px-3">
         <DiffIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-foreground/86">
@@ -381,10 +432,12 @@ export function EditorWorkspaceView(props: EditorWorkspaceViewProps) {
   // same way every other chat-surface header does.
   const trafficLightGutterClassName = useDesktopTopBarTrafficLightGutterClassName();
   const [chatPaneWidth, setChatPaneWidth] = useState(readStoredEditorChatPaneWidth);
+  const [explorerPaneWidth, setExplorerPaneWidth] = useState(readStoredEditorExplorerPaneWidth);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewSelection, setReviewSelection] = useState<ChatFileReference | null>(null);
   const [reviewReveal, setReviewReveal] = useState<{ line: number; token: number } | null>(null);
   const chatPaneResizeStateRef = useRef<EditorChatPaneResizeState | null>(null);
+  const explorerPaneResizeStateRef = useRef<EditorChatPaneResizeState | null>(null);
   // Both side surfaces can be hidden so the main content takes the full width:
   // re-clicking the active activity-bar item collapses the sidebar (VS Code
   // style), and the header chat toggle hides the chat pane (kept mounted so
@@ -570,11 +623,126 @@ export function EditorWorkspaceView(props: EditorWorkspaceViewProps) {
     [chatPaneWidth],
   );
 
+  const stopExplorerPaneResize = useCallback(() => {
+    const resizeState = explorerPaneResizeStateRef.current;
+    if (!resizeState || typeof window === "undefined") {
+      return;
+    }
+
+    if (resizeState.rafId !== null) {
+      window.cancelAnimationFrame(resizeState.rafId);
+      resizeState.rafId = null;
+    }
+
+    window.removeEventListener("pointermove", resizeState.onPointerMove);
+    window.removeEventListener("pointerup", resizeState.onPointerEnd);
+    window.removeEventListener("pointercancel", resizeState.onPointerEnd);
+    document.body.style.cursor = resizeState.restoreBodyCursor;
+    document.body.style.userSelect = resizeState.restoreBodyUserSelect;
+    setExplorerPaneWidth(resizeState.pendingWidth);
+    storeEditorExplorerPaneWidth(resizeState.pendingWidth);
+    explorerPaneResizeStateRef.current = null;
+  }, []);
+
+  const handleExplorerPaneResizePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0 || typeof window === "undefined") {
+        return;
+      }
+
+      event.preventDefault();
+      stopExplorerPaneResize();
+
+      const resizeState: EditorChatPaneResizeState = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startWidth: explorerPaneWidth,
+        pendingWidth: explorerPaneWidth,
+        rafId: null,
+        restoreBodyCursor: document.body.style.cursor,
+        restoreBodyUserSelect: document.body.style.userSelect,
+        onPointerMove: () => undefined,
+        onPointerEnd: () => undefined,
+      };
+
+      resizeState.onPointerMove = (moveEvent) => {
+        if (moveEvent.pointerId !== resizeState.pointerId) {
+          return;
+        }
+
+        resizeState.pendingWidth = clampEditorExplorerPaneWidth(
+          resizeState.startWidth + moveEvent.clientX - resizeState.startX,
+        );
+
+        if (resizeState.rafId !== null) {
+          return;
+        }
+
+        resizeState.rafId = window.requestAnimationFrame(() => {
+          resizeState.rafId = null;
+          setExplorerPaneWidth(resizeState.pendingWidth);
+        });
+      };
+
+      resizeState.onPointerEnd = (endEvent) => {
+        if (endEvent.pointerId !== resizeState.pointerId) {
+          return;
+        }
+        stopExplorerPaneResize();
+      };
+
+      explorerPaneResizeStateRef.current = resizeState;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      window.addEventListener("pointermove", resizeState.onPointerMove);
+      window.addEventListener("pointerup", resizeState.onPointerEnd);
+      window.addEventListener("pointercancel", resizeState.onPointerEnd);
+    },
+    [explorerPaneWidth, stopExplorerPaneResize],
+  );
+
+  const handleExplorerPaneResizeDoubleClick = useCallback(() => {
+    setExplorerPaneWidth(EDITOR_EXPLORER_PANE_DEFAULT_WIDTH);
+    storeEditorExplorerPaneWidth(EDITOR_EXPLORER_PANE_DEFAULT_WIDTH);
+  }, []);
+
+  const handleExplorerPaneResizeKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      let nextWidth: number | null = null;
+
+      if (event.key === "ArrowLeft") {
+        nextWidth = explorerPaneWidth - EDITOR_EXPLORER_PANE_KEYBOARD_STEP;
+      } else if (event.key === "ArrowRight") {
+        nextWidth = explorerPaneWidth + EDITOR_EXPLORER_PANE_KEYBOARD_STEP;
+      } else if (event.key === "Home") {
+        nextWidth = EDITOR_EXPLORER_PANE_MIN_WIDTH;
+      } else if (event.key === "End") {
+        nextWidth = EDITOR_EXPLORER_PANE_MAX_WIDTH;
+      }
+
+      if (nextWidth === null) {
+        return;
+      }
+
+      event.preventDefault();
+      const clampedWidth = clampEditorExplorerPaneWidth(nextWidth);
+      setExplorerPaneWidth(clampedWidth);
+      storeEditorExplorerPaneWidth(clampedWidth);
+    },
+    [explorerPaneWidth],
+  );
+
+  const explorerSidebarClassName =
+    "flex min-h-[12rem] w-full shrink-0 flex-col border-b border-border/70 bg-[var(--color-background-surface)] lg:h-full lg:w-[var(--editor-explorer-pane-width)] lg:max-w-[var(--editor-explorer-pane-width)] lg:border-b-0 lg:border-r";
+  const explorerPaneStyle = {
+    ["--editor-explorer-pane-width" as string]: `${explorerPaneWidth}px`,
+  } as CSSProperties;
+
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-[var(--color-background-root)] text-foreground">
       <div
         className={cn(
-          "flex shrink-0 items-center gap-2 px-2 sm:px-3",
+          "flex shrink-0 items-center gap-1.5 px-2",
           CHAT_SURFACE_HEADER_HEIGHT_CLASS,
           CHAT_SURFACE_HEADER_DIVIDER_CLASS_NAME,
           desktopTopBarWindowControlsGutterClassName,
@@ -583,10 +751,7 @@ export function EditorWorkspaceView(props: EditorWorkspaceViewProps) {
         <div
           className={cn("flex min-w-0 flex-1 items-center gap-1.5", trafficLightGutterClassName)}
         >
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="hidden rounded-md border border-border/60 bg-muted/45 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:inline">
-              Editor
-            </span>
+          <div className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[13px] font-medium text-foreground">
               {props.projectName ?? "Workspace"}
             </span>
@@ -662,36 +827,65 @@ export function EditorWorkspaceView(props: EditorWorkspaceViewProps) {
               diffFiles={props.diffFiles}
               onOpenLocation={handleOpenReviewLocation}
             />
-          ) : searchPaneActive ? (
-            <WorkspaceSearchSidebar
-              workspaceRoot={props.workspaceRoot}
-              query={searchQuery}
-              onQueryChange={setSearchQuery}
-              selectedFilePath={props.selectedFilePath}
-              onSelectFile={props.onSelectFile}
-              onReferenceInChat={props.onReferenceInChat}
-            />
-          ) : props.centerMode === "diff" ? (
-            <DiffFilesSidebar
-              files={props.diffFiles}
-              isLoading={props.diffFilesLoading ?? false}
-              selectedFilePath={props.selectedDiffFilePath}
-              optionsControl={props.diffOptionsControl}
-              onSelectFile={props.onSelectDiffFile}
-              onReferenceInChat={props.onReferenceInChat}
-              onAskWhyInChat={props.onAskWhyInChat}
-            />
           ) : (
-            <WorkspaceFilesSidebar
-              workspaceRoot={props.workspaceRoot}
-              selectedFilePath={props.selectedFilePath}
-              expandedDirectories={props.expandedDirectories}
-              onSelectFile={props.onSelectFile}
-              onToggleDirectory={props.onToggleDirectory}
-              onReferenceInChat={props.onReferenceInChat}
-            />
+            <>
+              {searchPaneActive ? (
+                <WorkspaceSearchSidebar
+                  workspaceRoot={props.workspaceRoot}
+                  query={searchQuery}
+                  onQueryChange={setSearchQuery}
+                  selectedFilePath={props.selectedFilePath}
+                  onSelectFile={props.onSelectFile}
+                  onReferenceInChat={props.onReferenceInChat}
+                  containerClassName={explorerSidebarClassName}
+                  containerStyle={explorerPaneStyle}
+                />
+              ) : props.centerMode === "diff" ? (
+                <DiffFilesSidebar
+                  files={props.diffFiles}
+                  isLoading={props.diffFilesLoading ?? false}
+                  selectedFilePath={props.selectedDiffFilePath}
+                  optionsControl={props.diffOptionsControl}
+                  containerClassName={explorerSidebarClassName}
+                  containerStyle={explorerPaneStyle}
+                  onSelectFile={props.onSelectDiffFile}
+                  onReferenceInChat={props.onReferenceInChat}
+                  onAskWhyInChat={props.onAskWhyInChat}
+                />
+              ) : (
+                <WorkspaceFilesSidebar
+                  workspaceRoot={props.workspaceRoot}
+                  selectedFilePath={props.selectedFilePath}
+                  expandedDirectories={props.expandedDirectories}
+                  onSelectFile={props.onSelectFile}
+                  onToggleDirectory={props.onToggleDirectory}
+                  onReferenceInChat={props.onReferenceInChat}
+                  containerClassName={explorerSidebarClassName}
+                  containerStyle={explorerPaneStyle}
+                />
+              )}
+              <div
+                role="separator"
+                aria-label="Resize explorer panel"
+                aria-orientation="vertical"
+                aria-valuemin={EDITOR_EXPLORER_PANE_MIN_WIDTH}
+                aria-valuemax={EDITOR_EXPLORER_PANE_MAX_WIDTH}
+                aria-valuenow={explorerPaneWidth}
+                tabIndex={0}
+                title="Drag to resize explorer panel"
+                className="group relative z-10 hidden w-0 shrink-0 cursor-col-resize outline-none lg:block"
+                onPointerDown={handleExplorerPaneResizePointerDown}
+                onDoubleClick={handleExplorerPaneResizeDoubleClick}
+                onKeyDown={handleExplorerPaneResizeKeyDown}
+              >
+                <span
+                  className="absolute inset-y-0 left-[-3px] w-1.5 cursor-col-resize bg-transparent transition-colors group-hover:bg-[var(--color-background-button-secondary-hover)] group-focus-visible:bg-[var(--color-background-button-secondary-hover)]"
+                  aria-hidden="true"
+                />
+              </div>
+            </>
           )}
-          <main className="flex min-h-[16rem] min-w-0 flex-1 flex-col border-b border-border/65 lg:h-full lg:border-b-0">
+          <main className="flex min-h-[18rem] min-w-0 flex-1 flex-col border-b border-border/70 bg-[var(--color-background-root)] lg:h-full lg:border-b-0">
             {/* Keep the diff panel mounted while browsing files: unmounting it
                 drops the parsed patch, diff worker pool, and query subscriptions,
                 which made every Files -> Diff switch a cold multi-second reload. */}
@@ -742,7 +936,7 @@ export function EditorWorkspaceView(props: EditorWorkspaceViewProps) {
               state survive toggling the pane. */}
           <aside
             className={cn(
-              "min-h-[18rem] w-full shrink-0 bg-[var(--color-background-surface)] lg:h-full lg:w-[var(--editor-chat-pane-width)]",
+              "min-h-[16rem] w-full shrink-0 border-t border-border/70 bg-[var(--color-background-surface)] lg:h-full lg:w-[var(--editor-chat-pane-width)] lg:border-t-0 lg:border-l",
               chatPaneVisible ? "flex" : "hidden",
             )}
             style={

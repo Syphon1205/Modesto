@@ -104,6 +104,9 @@ const RESEARCH_PROVIDER_INSTRUCTIONS = `<modesto_research_mode>
 You are operating inside Modesto Research. Investigate the user's request using web research and other read-only evidence gathering. Prefer primary sources, cite links inline, and clearly distinguish sourced facts from inference. Do not write or modify code, edit local files, run implementation workflows, or turn the request into a software-engineering task. Return the research and evidence in this conversation.
 </modesto_research_mode>`;
 
+/** Bound provider process spawn/init so a hung CLI cannot leave the UI in "Starting" forever. */
+const PROVIDER_SESSION_START_TIMEOUT = Duration.seconds(90);
+
 function toNonEmptyProviderInput(value: string | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized && normalized.length > 0 ? normalized : undefined;
@@ -835,17 +838,35 @@ const make = Effect.gen(function* () {
       readonly resumeCursor?: unknown;
       readonly provider?: ProviderKind;
     }) =>
-      providerService.startSession(threadId, {
-        threadId,
-        ...(preferredProvider ? { provider: preferredProvider } : {}),
-        ...(effectiveCwd ? { cwd: effectiveCwd } : {}),
-        modelSelection: desiredModelSelection,
-        ...(options?.providerOptions !== undefined
-          ? { providerOptions: options.providerOptions }
-          : {}),
-        ...(input?.resumeCursor !== undefined ? { resumeCursor: input.resumeCursor } : {}),
-        runtimeMode: desiredRuntimeMode,
-      });
+      providerService
+        .startSession(threadId, {
+          threadId,
+          ...(preferredProvider ? { provider: preferredProvider } : {}),
+          ...(effectiveCwd ? { cwd: effectiveCwd } : {}),
+          modelSelection: desiredModelSelection,
+          ...(options?.providerOptions !== undefined
+            ? { providerOptions: options.providerOptions }
+            : {}),
+          ...(input?.resumeCursor !== undefined ? { resumeCursor: input.resumeCursor } : {}),
+          runtimeMode: desiredRuntimeMode,
+        })
+        .pipe(
+          Effect.timeoutOption(PROVIDER_SESSION_START_TIMEOUT),
+          Effect.flatMap(
+            Option.match({
+              onNone: () =>
+                Effect.fail(
+                  new ProviderAdapterRequestError({
+                    provider: preferredProvider,
+                    method: "session/start",
+                    detail:
+                      "Timed out while starting the provider session. Check that the CLI is installed and authenticated, then retry.",
+                  }),
+                ),
+              onSome: (session) => Effect.succeed(session),
+            }),
+          ),
+        );
 
     const bindSessionToThread = (session: ProviderSession) =>
       setThreadSession({

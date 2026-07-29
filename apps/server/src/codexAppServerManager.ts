@@ -2370,8 +2370,10 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
     const marketplaceName = input.marketplaceName.trim();
     const pluginName = input.pluginName.trim();
     const pluginId = `${pluginName}@${marketplaceName}`;
+    const stages: NonNullable<ProviderSetPluginInstalledResult["stages"]> = ["queued"];
 
     const mutate = async (): Promise<ProviderSetPluginInstalledResult> => {
+      stages.push(input.installed ? "installing" : "removing");
       const context = await this.resolveContextForDiscovery(input.threadId, input.cwd);
       await runCodexPluginMutation({
         binaryPath: context.binaryPath,
@@ -2386,13 +2388,63 @@ export class CodexAppServerManager extends EventEmitter<CodexAppServerManagerEve
       // metadata-only app-server processes so the next query re-reads Codex's
       // updated config/cache. Active agent sessions stay alive; newly installed
       // tools become available when their next Codex session starts.
+      stages.push("refreshing");
       this.pluginsCache.clear();
       this.pluginDetailCache.clear();
+      this.skillsCache.clear();
       for (const discoveryKey of [...this.discoverySessions.keys()]) {
         this.stopDiscoverySession(discoveryKey);
       }
 
-      return { pluginId, installed: input.installed };
+      stages.push("verifying");
+      let verified = false;
+      try {
+        const listed = await this.listPlugins({
+          cwd: input.cwd,
+          threadId: input.threadId,
+          forceRemoteSync: true,
+          forceReload: true,
+        });
+        const match = listed.marketplaces
+          .flatMap((marketplace) =>
+            marketplace.plugins.map((plugin) => ({ marketplace, plugin }) as const),
+          )
+          .find(
+            ({ marketplace, plugin }) =>
+              plugin.id === pluginId ||
+              (plugin.name === pluginName && marketplace.name === marketplaceName),
+          );
+        const currentlyInstalled = match?.plugin.installed === true;
+        verified = currentlyInstalled === input.installed;
+      } catch {
+        verified = false;
+      }
+
+      if (!verified) {
+        stages.push("failed");
+        throw new Error(
+          input.installed
+            ? `Codex reported that ${pluginId} was not installed after the install command finished. Refresh plugins and try again.`
+            : `Codex still lists ${pluginId} as installed after removal. Refresh plugins and try again.`,
+        );
+      }
+
+      stages.push("complete");
+      const hasLiveAgentSession =
+        input.threadId !== undefined &&
+        input.threadId.trim().length > 0 &&
+        this.sessions.has(ThreadId.makeUnsafe(input.threadId.trim()));
+
+      return {
+        pluginId,
+        installed: input.installed,
+        verified: true,
+        requiresAgentRestart: hasLiveAgentSession,
+        stages: [...stages],
+        message: hasLiveAgentSession
+          ? "Restart the Codex agent in this thread to load the updated plugins."
+          : undefined,
+      };
     };
 
     const operation = this.pluginMutationTail.then(mutate, mutate);

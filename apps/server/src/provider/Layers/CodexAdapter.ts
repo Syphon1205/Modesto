@@ -314,7 +314,15 @@ function itemDetail(
   payload: Record<string, unknown>,
 ): string | undefined {
   const nestedResult = asObject(item.result);
+  const action = asObject(item.action) ?? asObject(payload.action);
+  const actionQueries = Array.isArray(action?.queries)
+    ? action.queries.filter((entry): entry is string => typeof entry === "string")
+    : [];
   const candidates = [
+    asString(item.query),
+    asString(action?.query),
+    actionQueries[0],
+    asString(action?.url),
     asString(item.command),
     asString(item.title),
     asString(item.summary),
@@ -331,6 +339,7 @@ function itemDetail(
     asString(payload.command),
     asString(payload.message),
     asString(payload.prompt),
+    asString(payload.query),
   ];
   for (const candidate of candidates) {
     if (!candidate) continue;

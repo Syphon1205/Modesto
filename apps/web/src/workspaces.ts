@@ -22,7 +22,7 @@ export const MODESTO_WORKSPACES: readonly ModestoWorkspace[] = [
   {
     id: "teams",
     name: "Teams",
-    description: "Create, operate, and coordinate agents",
+    description: "Shared rooms where people and agents work together",
     path: "/teams",
     icon: UsersIcon,
   },

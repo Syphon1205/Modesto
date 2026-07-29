@@ -745,7 +745,7 @@ function ProviderCredentialControls({
             {authenticated
               ? `Signed in to ${title}`
               : provider === "poolside"
-                ? "Set up Poolside"
+                ? "Log in to Poolside"
                 : `Sign in to ${title}`}
           </span>
           {authenticated ? (
@@ -763,7 +763,7 @@ function ProviderCredentialControls({
               {signInMutation.isPending || awaitingSignIn ? (
                 <Loader2Icon className="size-3.5 animate-spin" />
               ) : null}
-              {awaitingSignIn ? "Waiting…" : provider === "poolside" ? "Set up" : "Sign in"}
+              {awaitingSignIn ? "Waiting…" : provider === "poolside" ? "Log in" : "Sign in"}
             </Button>
           )}
         </div>
@@ -3378,9 +3378,14 @@ function SettingsRouteView() {
                               canInstall={
                                 !providerIsReady &&
                                 providerSettings.docs.some((doc) => doc.label === "Install") &&
-                                ["codex", "claudeAgent", "gemini", "opencode", "pi"].includes(
-                                  providerSettings.provider,
-                                )
+                                [
+                                  "codex",
+                                  "claudeAgent",
+                                  "gemini",
+                                  "opencode",
+                                  "pi",
+                                  "poolside",
+                                ].includes(providerSettings.provider)
                               }
                               installing={isProviderUpdateActive}
                               onInstall={() =>

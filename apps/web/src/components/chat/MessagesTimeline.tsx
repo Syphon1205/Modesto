@@ -34,6 +34,8 @@ import {
   isFileChangeWorkLogEntry,
   type WorkLogEntry,
 } from "../../session-logic";
+import { extractTurnSources } from "../../lib/turnSources";
+import { SourcesPanel } from "./SourcesPanel";
 import {
   type TurnDiffSummary,
   type WorktreeSetupSnapshot,
@@ -1334,6 +1336,19 @@ export const MessagesTimeline = memo(function MessagesTimeline({
           // fragments. `showAssistantCopyButton` is exactly the terminal-message
           // signal (see deriveTerminalAssistantMessageIds).
           const isTerminalAssistantMessage = row.showAssistantCopyButton;
+          const turnSources =
+            isTerminalAssistantMessage && !row.message.streaming
+              ? extractTurnSources({
+                  workEntries: [
+                    ...(row.leadingWorkEntries ?? []),
+                    ...(row.inlineWorkEntries ?? []),
+                    ...(row.collapsedTurnItems ?? [])
+                      .filter((item) => item.kind === "work")
+                      .map((item) => item.entry),
+                  ],
+                  assistantText: row.message.text,
+                })
+              : [];
           const assistantMeta = [
             isTerminalAssistantMessage
               ? formatShortTimestamp(row.message.createdAt, timestampFormat)
@@ -1525,6 +1540,9 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                   </div>
                 ) : null}
                 {renderWorkDisplay(inlineWorkDisplay, "inline")}
+                {isTerminalAssistantMessage && turnSources.length > 0 ? (
+                  <SourcesPanel sources={turnSources} />
+                ) : null}
                 {inlineEditedFilesFromTurnSummary.length > 0 && (
                   <div className="mt-2 space-y-0.5">
                     {inlineEditedFilesFromTurnSummary.map((file) => (

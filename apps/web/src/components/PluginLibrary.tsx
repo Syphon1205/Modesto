@@ -69,6 +69,8 @@ import {
 import { ensureNativeApi } from "~/nativeApi";
 import { toastManager } from "./ui/toast";
 import { OpenAI } from "./Icons";
+import { newCommandId } from "~/lib/utils";
+import type { ProviderPluginOperationStage } from "@modesto/contracts";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -85,6 +87,16 @@ type PluginEntry = {
 type PluginSkillEntry = {
   entry: PluginEntry;
   skill: ProviderPluginSkillSummary;
+};
+
+const PLUGIN_STAGE_LABELS: Record<ProviderPluginOperationStage, string> = {
+  queued: "Queued",
+  installing: "Installing",
+  removing: "Removing",
+  refreshing: "Refreshing discovery",
+  verifying: "Verifying",
+  complete: "Complete",
+  failed: "Failed",
 };
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -950,6 +962,36 @@ export function PluginLibrary() {
     [pluginEntries, selectedPluginKey],
   );
 
+  const [pluginOperationStage, setPluginOperationStage] =
+    useState<ProviderPluginOperationStage | null>(null);
+
+  const restartCodexAgentForPlugins = async () => {
+    if (!providerThreadId) return;
+    try {
+      await ensureNativeApi().orchestration.dispatchCommand({
+        type: "thread.session.stop",
+        commandId: newCommandId(),
+        threadId: providerThreadId,
+        createdAt: new Date().toISOString(),
+      });
+      toastManager.add({
+        type: "success",
+        title: "Codex agent restarted",
+        description: "The next message will start a fresh session with the updated plugins.",
+      });
+      void queryClient.invalidateQueries({ queryKey: providerDiscoveryQueryKeys.all });
+    } catch (error) {
+      toastManager.add({
+        type: "error",
+        title: "Could not restart agent",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Stop the session from chat, then send a new message.",
+      });
+    }
+  };
+
   const pluginMutation = useMutation({
     mutationFn: async (input: {
       entry: PluginEntry;
@@ -961,16 +1003,34 @@ export function PluginLibrary() {
           `${PROVIDER_DISPLAY_NAMES[selectedProvider]} does not support plugin installation here.`,
         );
       }
-      return ensureNativeApi().provider.setPluginInstalled({
-        provider: selectedProvider,
-        marketplaceName: input.entry.marketplaceName,
-        pluginName: input.entry.plugin.name,
-        installed: input.installed,
-        ...(discoveryCwd ? { cwd: discoveryCwd } : {}),
-        ...(providerThreadId ? { threadId: providerThreadId } : {}),
-      });
+      setPluginOperationStage("queued");
+      const stageTicker = window.setInterval(() => {
+        setPluginOperationStage((current) => {
+          if (current === "queued") return input.installed ? "installing" : "removing";
+          if (current === "installing" || current === "removing") return "refreshing";
+          if (current === "refreshing") return "verifying";
+          return current;
+        });
+      }, 900);
+      try {
+        return await ensureNativeApi().provider.setPluginInstalled({
+          provider: selectedProvider,
+          marketplaceName: input.entry.marketplaceName,
+          pluginName: input.entry.plugin.name,
+          installed: input.installed,
+          ...(discoveryCwd ? { cwd: discoveryCwd } : {}),
+          ...(providerThreadId ? { threadId: providerThreadId } : {}),
+        });
+      } finally {
+        window.clearInterval(stageTicker);
+      }
     },
     onSuccess: (result, input) => {
+      const finalStage =
+        [...(result.stages ?? [])]
+          .reverse()
+          .find((stage) => stage === "complete" || stage === "failed") ?? "complete";
+      setPluginOperationStage(finalStage);
       queryClient.setQueryData<ProviderListPluginsResult>(pluginsQueryOptions.queryKey, (current) =>
         current
           ? {
@@ -991,6 +1051,7 @@ export function PluginLibrary() {
       void queryClient.invalidateQueries({ queryKey: providerDiscoveryQueryKeys.all });
       const pluginLabel = input.entry.plugin.interface?.displayName ?? input.entry.plugin.name;
       const installingSkill = result.installed && input.requestedSkillName !== undefined;
+      const needsRestart = result.requiresAgentRestart === true && Boolean(providerThreadId);
       toastManager.add({
         type: "success",
         title: installingSkill
@@ -999,13 +1060,27 @@ export function PluginLibrary() {
             ? "Plugin installed"
             : "Plugin removed",
         description: installingSkill
-          ? `${input.requestedSkillName} was installed with ${pluginLabel}. Start a new Codex agent to use it.`
+          ? `${input.requestedSkillName} was installed with ${pluginLabel}.${needsRestart ? " Restart the Codex agent to use it." : " Start a new Codex agent to use it."}`
           : result.installed
-            ? `${pluginLabel} is ready for new Codex agents.`
+            ? needsRestart
+              ? `${pluginLabel} is installed. Restart the Codex agent to load it in this thread.`
+              : `${pluginLabel} is ready for new Codex agents.`
             : `${pluginLabel} was removed from Codex.`,
+        ...(needsRestart
+          ? {
+              actionProps: {
+                children: "Restart agent",
+                onClick: () => {
+                  void restartCodexAgentForPlugins();
+                },
+              },
+            }
+          : {}),
       });
+      window.setTimeout(() => setPluginOperationStage(null), 1200);
     },
     onError: (error, input) => {
+      setPluginOperationStage("failed");
       toastManager.add({
         type: "error",
         title: input.installed
@@ -1015,6 +1090,7 @@ export function PluginLibrary() {
           : "Plugin removal failed",
         description: error instanceof Error ? error.message : "The Codex plugin command failed.",
       });
+      window.setTimeout(() => setPluginOperationStage(null), 1800);
     },
   });
 
@@ -1153,6 +1229,26 @@ export function PluginLibrary() {
                 className="text-sm"
               />
             </InputGroup>
+            {pluginOperationStage ? (
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-xl border px-3 py-2 text-xs",
+                  pluginOperationStage === "failed"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : pluginOperationStage === "complete"
+                      ? "border-border/60 bg-background/70 text-muted-foreground"
+                      : "border-border/60 bg-background/70 text-foreground",
+                )}
+              >
+                {pluginOperationStage === "complete" || pluginOperationStage === "failed" ? null : (
+                  <Loader2Icon className="size-3.5 animate-spin" />
+                )}
+                <span>
+                  {PLUGIN_STAGE_LABELS[pluginOperationStage]}
+                  {pluginMutation.isPending ? "…" : ""}
+                </span>
+              </div>
+            ) : null}
             {selectedTab === "plugins" ? (
               <>
                 {pluginFilter === "all" && pluginSearch.length === 0 ? (

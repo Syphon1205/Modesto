@@ -84,6 +84,8 @@ export interface WorkLogEntry {
   subagents?: ReadonlyArray<WorkLogSubagent>;
   subagentAction?: WorkLogSubagentAction;
   automation?: WorkLogAutomation;
+  // Bounded provider payload (e.g. web_search results) for turn-scoped UI like Sources.
+  data?: Record<string, unknown>;
   // Source activity kind, kept so the timeline can pick a kind-specific icon
   // (e.g. user-input.requested -> question glyph) instead of the generic
   // tone fallback. Same rationale as `toolName` below.
@@ -1032,6 +1034,13 @@ function toDerivedWorkLogEntry(activity: OrchestrationThreadActivity): DerivedWo
   }
   if (requestKind) {
     entry.requestKind = requestKind;
+  }
+  const payloadData =
+    payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data)
+      ? (payload.data as Record<string, unknown>)
+      : null;
+  if (payloadData && (itemType === "web_search" || itemType === "dynamic_tool_call")) {
+    entry.data = payloadData;
   }
   const subagents = extractCollabSubagents(payload);
   if (subagents.length > 0) {

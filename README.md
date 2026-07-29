@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7.1-6366f1.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7.2-6366f1.svg?style=flat-square" />
   <img alt="License: Proprietary" src="https://img.shields.io/badge/license-Proprietary-64748b.svg?style=flat-square" />
   <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
   <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="#features">Features</a> ·
   <a href="#download">Download</a> ·
-  <a href="#whats-new-in-v0171">What's new</a> ·
+  <a href="#whats-new-in-v0172">What's new</a> ·
   <a href="#workspaces">Workspaces</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#roadmap">Roadmap</a> ·
@@ -47,7 +47,20 @@ installations receive v0.1.4 through Modesto's built-in updater. See the
 [full release and changelog](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.4)
 for every artifact.
 
-## What's new in v0.1.7.1
+## What's new in v0.1.7.2
+
+- **Recoverable sessions** clear stuck Working states on runtime errors, make
+  Recover session interrupt and rebuild state, and bound hung provider starts.
+- **Codex plugins** install and remove with staged progress, verified
+  availability, refresh support, and an explicit Restart agent action.
+- **Sources panels** attach to web-enabled answers with deduplicated titles,
+  domains, and favicons you can expand.
+- **Poolside** is installable from Provider tools, logs in with `pool login`,
+  and exposes deployment models dynamically over ACP.
+- **Teams** keeps its name while reading as a people-and-agents cowork room,
+  and the editor gives the center more room with resizable side panels.
+
+## Previously in v0.1.7.1
 
 - **Teams shared rooms** surface live runs, participants, attention states,
   and a filterable project timeline for checkpoints, handoffs, reviews, and diffs.

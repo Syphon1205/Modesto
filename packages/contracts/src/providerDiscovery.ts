@@ -258,6 +258,17 @@ export type ProviderReadPluginResult = typeof ProviderReadPluginResult.Type;
 // Installation is a provider-owned mutation. For Codex this maps directly to
 // `codex plugin add/remove`, so Modesto changes the same cache and config that
 // the Codex app and CLI use instead of maintaining a parallel plugin registry.
+export const ProviderPluginOperationStage = Schema.Literals([
+  "queued",
+  "installing",
+  "removing",
+  "refreshing",
+  "verifying",
+  "complete",
+  "failed",
+]);
+export type ProviderPluginOperationStage = typeof ProviderPluginOperationStage.Type;
+
 export const ProviderSetPluginInstalledInput = Schema.Struct({
   provider: ProviderDiscoveryKind,
   marketplaceName: TrimmedNonEmptyString,
@@ -271,8 +282,26 @@ export type ProviderSetPluginInstalledInput = typeof ProviderSetPluginInstalledI
 export const ProviderSetPluginInstalledResult = Schema.Struct({
   pluginId: TrimmedNonEmptyString,
   installed: Schema.Boolean,
+  verified: Schema.optional(Schema.Boolean),
+  requiresAgentRestart: Schema.optional(Schema.Boolean),
+  stages: Schema.optional(Schema.Array(ProviderPluginOperationStage)),
+  message: Schema.optional(TrimmedNonEmptyString),
 });
 export type ProviderSetPluginInstalledResult = typeof ProviderSetPluginInstalledResult.Type;
+
+export const ProviderPluginOperationEvent = Schema.Struct({
+  operationId: TrimmedNonEmptyString,
+  provider: ProviderDiscoveryKind,
+  pluginId: TrimmedNonEmptyString,
+  marketplaceName: TrimmedNonEmptyString,
+  pluginName: TrimmedNonEmptyString,
+  installed: Schema.Boolean,
+  stage: ProviderPluginOperationStage,
+  message: Schema.optional(TrimmedNonEmptyString),
+  error: Schema.optional(TrimmedNonEmptyString),
+  occurredAt: TrimmedNonEmptyString,
+});
+export type ProviderPluginOperationEvent = typeof ProviderPluginOperationEvent.Type;
 
 export const ProviderListModelsInput = Schema.Struct({
   provider: ProviderDiscoveryKind,

@@ -66,10 +66,9 @@ export function resolveProviderSignInCommand(
     case "cursor":
       return { command: executable || "cursor-agent", args: ["login"] };
     case "poolside":
-      // `pool setup` handles both first-run deployment selection and
-      // authentication. Existing users can still re-authenticate with
-      // `pool login` from their terminal without Modesto owning credentials.
-      return { command: executable || "pool", args: ["setup"] };
+      // Prefer `pool login` for authentication. First-time deployment selection
+      // still lives in `pool setup`, which users can run from the docs links.
+      return { command: executable || "pool", args: ["login"] };
     default:
       return null;
   }

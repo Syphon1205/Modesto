@@ -10,6 +10,7 @@ import { useDebouncedValue } from "@tanstack/react-pacer";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type ComponentPropsWithoutRef,
+  type CSSProperties,
   type DragEvent as ReactDragEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -381,6 +382,7 @@ export function WorkspaceFilesSidebar(props: {
   selectedFilePath: string | null;
   expandedDirectories: ReadonlySet<string>;
   containerClassName?: string;
+  containerStyle?: CSSProperties;
   onSelectFile: (path: string) => void;
   onToggleDirectory: (path: string) => void;
   onReferenceInChat: ((reference: ChatFileReference) => void) | undefined;
@@ -391,6 +393,7 @@ export function WorkspaceFilesSidebar(props: {
   return (
     <aside
       className={props.containerClassName ?? EXPLORER_SIDEBAR_CONTAINER_CLASS}
+      style={props.containerStyle}
       onKeyDown={handleListKeyDown}
     >
       <WorkspaceFilesTreeBody
@@ -612,6 +615,7 @@ export function WorkspaceSearchSidebar(props: {
   onQueryChange: (query: string) => void;
   selectedFilePath: string | null;
   containerClassName?: string;
+  containerStyle?: CSSProperties;
   onSelectFile: (path: string) => void;
   onReferenceInChat: ((reference: ChatFileReference) => void) | undefined;
 }) {
@@ -623,6 +627,7 @@ export function WorkspaceSearchSidebar(props: {
   return (
     <aside
       className={props.containerClassName ?? EXPLORER_SIDEBAR_CONTAINER_CLASS}
+      style={props.containerStyle}
       onKeyDown={handleListKeyDown}
     >
       <WorkspaceSearchInputHeader

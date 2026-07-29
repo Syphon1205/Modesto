@@ -10375,6 +10375,28 @@ export default function ChatView({
     const api = readNativeApi();
     if (!api || !activeThread) return;
     try {
+      // Prefer interrupting any live turn, then rebuild projections and clear
+      // restart-orphaned "Working" state before we dismiss the banner.
+      try {
+        await api.orchestration.dispatchCommand({
+          type: "thread.turn.interrupt",
+          commandId: newCommandId(),
+          threadId: activeThread.id,
+          createdAt: new Date().toISOString(),
+        });
+      } catch {
+        // Interrupt can fail when nothing is live; continue with repair.
+      }
+      try {
+        await api.orchestration.dispatchCommand({
+          type: "thread.session.stop",
+          commandId: newCommandId(),
+          threadId: activeThread.id,
+          createdAt: new Date().toISOString(),
+        });
+      } catch {
+        // Stop can fail when the provider process is already gone.
+      }
       await api.orchestration.repairState();
       const snapshot = await api.orchestration.getShellSnapshot();
       syncServerShellSnapshot(snapshot);

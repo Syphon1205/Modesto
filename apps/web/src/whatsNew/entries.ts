@@ -28,6 +28,42 @@ import type { WhatsNewEntry } from "./logic";
 
 export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
   {
+    version: "0.1.7.2",
+    date: "Jul 29",
+    features: [
+      {
+        id: "reliability-recoverable-sessions",
+        title: "Recoverable sessions",
+        description:
+          "Runtime errors clear stuck Working states, Recover session rebuilds projections and stops stale agents, and provider starts time out cleanly instead of hanging.",
+      },
+      {
+        id: "codex-plugins-complete",
+        title: "Codex plugins that finish the job",
+        description:
+          "Install and remove plugins with staged progress, verified availability, refresh support, and an explicit Restart agent action when a live session needs the update.",
+      },
+      {
+        id: "web-sources-panel",
+        title: "Sources on web-enabled answers",
+        description:
+          "When an agent searches the web, a compact Sources panel attaches to the response with deduplicated titles, domains, and favicons you can expand.",
+      },
+      {
+        id: "poolside-installable",
+        title: "Poolside as an installable provider",
+        description:
+          "Detect, install, and log in to Poolside from Provider tools, launch over ACP in the active repo, and pick models dynamically from your deployment.",
+      },
+      {
+        id: "teams-cowork-editor-space",
+        title: "Teams cowork room and roomier editor",
+        description:
+          "Teams keeps its name while reading as a people-and-agents workspace, and the editor gives the center more room with resizable, collapsible side panels.",
+      },
+    ],
+  },
+  {
     version: "0.1.7.1",
     date: "Jul 29",
     features: [

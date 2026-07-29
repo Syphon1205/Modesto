@@ -1419,16 +1419,17 @@ const makeOrchestrationProjectionPipeline = Effect.gen(function* () {
           const turnId = event.payload.session.activeTurnId;
           if (event.payload.session.status !== "running" || turnId === null) {
             if (
-              event.payload.session.activeTurnId === null &&
-              (event.payload.session.status === "ready" ||
-                event.payload.session.status === "error" ||
-                event.payload.session.status === "interrupted" ||
-                event.payload.session.status === "stopped")
+              event.payload.session.status === "ready" ||
+              event.payload.session.status === "error" ||
+              event.payload.session.status === "interrupted" ||
+              event.payload.session.status === "stopped"
             ) {
               // Close the newest still-open turn when the runtime reports that
-              // the thread is no longer running. Assistant message completion
-              // can happen multiple times inside one turn, so session status is
-              // the safer lifecycle boundary for `completedAt`.
+              // the thread is no longer running. Terminal statuses finalize even
+              // if activeTurnId was left non-null by a buggy emitter, so the UI
+              // cannot stay stuck in "Working". Assistant message completion can
+              // happen multiple times inside one turn, so session status is the
+              // safer lifecycle boundary for `completedAt`.
               const turnToFinalize = (yield* projectionTurnRepository.listByThreadId({
                 threadId: event.payload.threadId,
               }))

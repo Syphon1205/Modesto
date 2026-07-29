@@ -41,6 +41,10 @@ import {
   OrchestrationEngineService,
   type OrchestrationEngineShape,
 } from "../Services/OrchestrationEngine.ts";
+import {
+  planRestartTurnReconciliation,
+  type ReconcilableThread,
+} from "../startupTurnReconciliation.ts";
 
 const ORCHESTRATION_DISPATCH_TIMEOUT_MS = 45_000;
 
@@ -695,94 +699,127 @@ const makeOrchestrationEngine = Effect.gen(function* () {
     });
 
   // Used by the settings screen to rebuild local indexes without deleting chats.
+  // After rebuild, reconcile stuck turns outside the maintenance lock so dispatch
+  // can acquire it (Recover session must actually clear orphaned "Working" state).
   const repairState: OrchestrationEngineShape["repairState"] = () =>
-    maintenanceLock.withPermits(1)(
-      Effect.gen(function* () {
-        yield* Effect.log("repairing orchestration projection state");
-        const previousCommandReadModel = commandReadModel;
+    Effect.gen(function* () {
+      const snapshot = yield* maintenanceLock.withPermits(1)(
+        Effect.gen(function* () {
+          yield* Effect.log("repairing orchestration projection state");
+          const previousCommandReadModel = commandReadModel;
 
-        yield* backupDerivedProjectionState.pipe(
-          Effect.catchTag("SqlError", (sqlError) =>
-            Effect.logError("failed to back up derived orchestration projection state").pipe(
-              Effect.annotateLogs({
-                cause: Cause.pretty(Cause.fail(sqlError)),
-              }),
-              Effect.flatMap(() =>
-                Effect.fail(
-                  new OrchestrationCommandInternalError({
-                    commandId: "repair-local-state",
-                    commandType: ORCHESTRATION_WS_METHODS.repairState,
-                    detail: "Failed to stage the current local state before rebuilding it.",
-                  }),
-                ),
-              ),
-            ),
-          ),
-        );
-
-        yield* resetDerivedProjectionState.pipe(
-          Effect.catchTag("SqlError", (sqlError) =>
-            Effect.logError("failed to reset derived orchestration projection state").pipe(
-              Effect.annotateLogs({
-                cause: Cause.pretty(Cause.fail(sqlError)),
-              }),
-              Effect.tap(() =>
-                restoreDerivedProjectionState.pipe(
-                  Effect.catchCause(() =>
-                    Effect.logWarning(
-                      "failed to restore orchestration projection backup after reset failure",
-                    ),
+          yield* backupDerivedProjectionState.pipe(
+            Effect.catchTag("SqlError", (sqlError) =>
+              Effect.logError("failed to back up derived orchestration projection state").pipe(
+                Effect.annotateLogs({
+                  cause: Cause.pretty(Cause.fail(sqlError)),
+                }),
+                Effect.flatMap(() =>
+                  Effect.fail(
+                    new OrchestrationCommandInternalError({
+                      commandId: "repair-local-state",
+                      commandType: ORCHESTRATION_WS_METHODS.repairState,
+                      detail: "Failed to stage the current local state before rebuilding it.",
+                    }),
                   ),
                 ),
               ),
+            ),
+          );
+
+          yield* resetDerivedProjectionState.pipe(
+            Effect.catchTag("SqlError", (sqlError) =>
+              Effect.logError("failed to reset derived orchestration projection state").pipe(
+                Effect.annotateLogs({
+                  cause: Cause.pretty(Cause.fail(sqlError)),
+                }),
+                Effect.tap(() =>
+                  restoreDerivedProjectionState.pipe(
+                    Effect.catchCause(() =>
+                      Effect.logWarning(
+                        "failed to restore orchestration projection backup after reset failure",
+                      ),
+                    ),
+                  ),
+                ),
+                Effect.flatMap(() =>
+                  Effect.fail(
+                    new OrchestrationCommandInternalError({
+                      commandId: "repair-local-state",
+                      commandType: ORCHESTRATION_WS_METHODS.repairState,
+                      detail: "Failed to clear the local projection cache before rebuilding it.",
+                    }),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          const rebuildResult = yield* Effect.exit(projectionPipeline.bootstrap);
+          if (rebuildResult._tag === "Failure") {
+            yield* restoreDerivedProjectionState.pipe(
+              Effect.catchCause(() =>
+                Effect.logWarning(
+                  "failed to restore orchestration projection backup after rebuild failure",
+                ),
+              ),
+            );
+            commandReadModel = previousCommandReadModel;
+            yield* dropProjectionRepairBackup.pipe(Effect.catchCause(() => Effect.void));
+
+            return yield* Effect.logError(
+              "failed to rebuild orchestration projections from event log",
+            ).pipe(
+              Effect.annotateLogs({
+                cause: Cause.pretty(rebuildResult.cause),
+              }),
               Effect.flatMap(() =>
                 Effect.fail(
                   new OrchestrationCommandInternalError({
                     commandId: "repair-local-state",
                     commandType: ORCHESTRATION_WS_METHODS.repairState,
-                    detail: "Failed to clear the local projection cache before rebuilding it.",
+                    detail: "Failed to rebuild local projections from the saved event history.",
                   }),
                 ),
               ),
-            ),
+            );
+          }
+
+          const repairedSnapshot = yield* refreshCommandReadModelFromProjectionState;
+          yield* dropProjectionRepairBackup.pipe(Effect.catchCause(() => Effect.void));
+          return repairedSnapshot;
+        }),
+      );
+
+      const now = new Date().toISOString();
+      const reconcilableThreads: ReconcilableThread[] = [];
+      for (const thread of snapshot.threads) {
+        const detail = yield* projectionSnapshotQuery.getThreadDetailById(thread.id).pipe(
+          Effect.map((value) => Option.getOrElse(value, () => thread)),
+          Effect.catchCause(() => Effect.succeed(thread)),
+        );
+        reconcilableThreads.push(detail);
+      }
+      const reconcileCommands = planRestartTurnReconciliation({
+        threads: reconcilableThreads,
+        now,
+      });
+      for (const command of reconcileCommands) {
+        yield* dispatch(command).pipe(
+          Effect.catchCause((cause) =>
+            Effect.logWarning("failed to reconcile stuck turn during repair", {
+              threadId: command.threadId,
+              cause: Cause.pretty(cause),
+            }),
           ),
         );
+      }
 
-        const rebuildResult = yield* Effect.exit(projectionPipeline.bootstrap);
-        if (rebuildResult._tag === "Failure") {
-          yield* restoreDerivedProjectionState.pipe(
-            Effect.catchCause(() =>
-              Effect.logWarning(
-                "failed to restore orchestration projection backup after rebuild failure",
-              ),
-            ),
-          );
-          commandReadModel = previousCommandReadModel;
-          yield* dropProjectionRepairBackup.pipe(Effect.catchCause(() => Effect.void));
-
-          return yield* Effect.logError(
-            "failed to rebuild orchestration projections from event log",
-          ).pipe(
-            Effect.annotateLogs({
-              cause: Cause.pretty(rebuildResult.cause),
-            }),
-            Effect.flatMap(() =>
-              Effect.fail(
-                new OrchestrationCommandInternalError({
-                  commandId: "repair-local-state",
-                  commandType: ORCHESTRATION_WS_METHODS.repairState,
-                  detail: "Failed to rebuild local projections from the saved event history.",
-                }),
-              ),
-            ),
-          );
-        }
-
-        const snapshot = yield* refreshCommandReadModelFromProjectionState;
-        yield* dropProjectionRepairBackup.pipe(Effect.catchCause(() => Effect.void));
+      if (reconcileCommands.length === 0) {
         return snapshot;
-      }),
-    );
+      }
+      return yield* refreshCommandReadModel();
+    });
 
   return {
     getReadModel,

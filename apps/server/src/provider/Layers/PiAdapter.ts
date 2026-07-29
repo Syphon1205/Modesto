@@ -545,7 +545,8 @@ function toolItemType(toolName: string): PiTrackedToolCall["itemType"] {
       return "file_change";
     case "grep":
     case "find":
-      return "web_search";
+      // Local code search — not web search. Keep a generic tool row.
+      return "dynamic_tool_call";
     default:
       return "dynamic_tool_call";
   }

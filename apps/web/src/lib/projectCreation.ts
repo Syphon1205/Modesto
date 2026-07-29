@@ -36,6 +36,7 @@ export async function createOrRecoverProjectFromPath(input: {
   workspaceRoot: string;
   createIfMissing?: boolean;
   loadSnapshot: () => Promise<OrchestrationShellSnapshot | null>;
+  repairSnapshot?: () => Promise<OrchestrationShellSnapshot | null>;
   maxAttempts?: number;
   delayMs?: number;
 }): Promise<{
@@ -54,6 +55,13 @@ export async function createOrRecoverProjectFromPath(input: {
   const projectId = newProjectId();
   const createdAt = new Date().toISOString();
   const title = buildProjectTitleFromWorkspaceRoot(workspaceRoot);
+  const repairSnapshot =
+    input.repairSnapshot ??
+    (() =>
+      input.api.orchestration
+        .repairState()
+        .then(() => input.loadSnapshot())
+        .catch(() => null));
 
   try {
     await input.api.orchestration.dispatchCommand({
@@ -74,6 +82,7 @@ export async function createOrRecoverProjectFromPath(input: {
     const { project, snapshot } = await waitForRecoverableProjectInReadModel({
       projectId,
       loadSnapshot: input.loadSnapshot,
+      repairSnapshot,
       maxAttempts,
       delayMs,
     });
@@ -94,6 +103,7 @@ export async function createOrRecoverProjectFromPath(input: {
       message: description,
       workspaceRoot,
       loadSnapshot: input.loadSnapshot,
+      repairSnapshot,
       maxAttempts,
       delayMs,
     });

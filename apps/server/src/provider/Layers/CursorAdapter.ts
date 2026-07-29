@@ -81,6 +81,7 @@ import {
 } from "../acp/AcpTurnIdleWatchdog.ts";
 import {
   applyCursorAcpModelSelection,
+  buildCursorAcpModelDescriptors,
   buildCursorCliModelListCommand,
   fetchCursorAcpModelDescriptors,
   makeCursorAcpRuntime,
@@ -1562,7 +1563,13 @@ export function makeCursorAdapter(
           clientInfo: { name: "Modesto", version: "0.0.0" },
         });
         const started = yield* runtime.start();
-        const models = yield* fetchCursorAcpModelDescriptors(runtime, started.sessionId);
+        const models = yield* fetchCursorAcpModelDescriptors(runtime, started.sessionId).pipe(
+          Effect.catch(() =>
+            runtime.getConfigOptions.pipe(
+              Effect.map((configOptions) => buildCursorAcpModelDescriptors(configOptions)),
+            ),
+          ),
+        );
         if (models.length === 0) {
           return yield* new ProviderAdapterRequestError({
             provider: PROVIDER,

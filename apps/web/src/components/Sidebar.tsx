@@ -6963,7 +6963,7 @@ export default function Sidebar() {
                   ) : isOnTeams ? (
                     <SidebarPrimaryAction
                       icon={NewThreadIcon}
-                      label="New agent run"
+                      label="New room run"
                       onClick={handlePrimaryNewThread}
                     />
                   ) : (

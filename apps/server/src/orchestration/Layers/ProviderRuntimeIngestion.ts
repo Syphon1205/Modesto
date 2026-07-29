@@ -3128,6 +3128,9 @@ const make = Effect.gen(function* () {
           : activeTurnId === null || eventTurnId === undefined || sameId(activeTurnId, eventTurnId);
 
         if (shouldApplyRuntimeError) {
+          // Terminal runtime errors must clear the active turn so projection
+          // finalizes open turns, the session reaper can reclaim idle processes,
+          // and Recover session does not rehydrate a stuck "Working" state.
           yield* orchestrationEngine.dispatch({
             type: "thread.session.set",
             commandId: providerCommandId(event, "runtime-error-session-set"),
@@ -3137,7 +3140,7 @@ const make = Effect.gen(function* () {
               status: "error",
               providerName: event.provider,
               runtimeMode: thread.session?.runtimeMode ?? "full-access",
-              activeTurnId: eventTurnId ?? null,
+              activeTurnId: null,
               lastError: runtimeErrorMessage,
               updatedAt: now,
             },
