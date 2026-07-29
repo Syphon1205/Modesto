@@ -160,6 +160,30 @@ it.effect("accepts automation run action requests", () =>
   }),
 );
 
+it.effect("accepts LangGraph configuration and invocation requests", () =>
+  Effect.gen(function* () {
+    const config = yield* decode(WebSocketRequest, {
+      id: "req-langgraph-config-1",
+      body: {
+        _tag: WS_METHODS.langGraphUpdateConfig,
+        deploymentUrl: "https://example.langgraph.app",
+        assistantId: "assistant-1",
+        enabled: true,
+      },
+    });
+    const invoke = yield* decode(WebSocketRequest, {
+      id: "req-langgraph-invoke-1",
+      body: {
+        _tag: WS_METHODS.langGraphInvoke,
+        input: { messages: [{ role: "user", content: "Run the graph" }] },
+      },
+    });
+
+    assert.strictEqual(config.body._tag, WS_METHODS.langGraphUpdateConfig);
+    assert.strictEqual(invoke.body._tag, WS_METHODS.langGraphInvoke);
+  }),
+);
+
 it.effect("accepts typed websocket push envelopes with sequence", () =>
   Effect.gen(function* () {
     const parsed = yield* decode(WsResponse, {

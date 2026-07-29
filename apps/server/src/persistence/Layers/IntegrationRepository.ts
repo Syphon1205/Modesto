@@ -1,6 +1,7 @@
 import {
   IncomingTask,
   IncomingTaskPermissionSnapshot,
+  LangGraphConnectionConfig,
   OpenClawConnectionConfig,
   type IncomingTaskSource,
 } from "@modesto/contracts";
@@ -31,6 +32,7 @@ interface IncomingTaskRow {
 
 const decodeTask = Schema.decodeUnknownEffect(IncomingTask);
 const decodeConfig = Schema.decodeUnknownEffect(OpenClawConnectionConfig);
+const decodeLangGraphConfig = Schema.decodeUnknownEffect(LangGraphConnectionConfig);
 
 const toTask = (row: IncomingTaskRow) =>
   Schema.decodeUnknownEffect(Schema.fromJsonString(IncomingTaskPermissionSnapshot))(
@@ -89,6 +91,45 @@ const makeIntegrationRepository = Effect.gen(function* () {
       ),
       Effect.as(config),
       Effect.mapError(toPersistenceSqlError("IntegrationRepository.saveOpenClawConfig")),
+    );
+
+  const getLangGraphConfig: IntegrationRepositoryShape["getLangGraphConfig"] = () =>
+    sql<{ readonly config: string }>`
+      SELECT config_json AS "config"
+      FROM integration_settings
+      WHERE integration_id = 'langgraph'
+      LIMIT 1
+    `.pipe(
+      Effect.mapError(toPersistenceSqlError("IntegrationRepository.getLangGraphConfig")),
+      Effect.flatMap((rows) => {
+        const row = rows[0];
+        if (!row) return Effect.succeed(Option.none());
+        return Schema.decodeUnknownEffect(Schema.fromJsonString(LangGraphConnectionConfig))(
+          row.config,
+        ).pipe(
+          Effect.flatMap(decodeLangGraphConfig),
+          Effect.map(Option.some),
+          Effect.mapError(
+            toPersistenceDecodeError("IntegrationRepository.getLangGraphConfig.decode"),
+          ),
+        );
+      }),
+    );
+
+  const saveLangGraphConfig: IntegrationRepositoryShape["saveLangGraphConfig"] = (config) =>
+    Schema.encodeEffect(Schema.fromJsonString(LangGraphConnectionConfig))(config).pipe(
+      Effect.flatMap(
+        (encoded) =>
+          sql`
+          INSERT INTO integration_settings (integration_id, config_json, updated_at)
+          VALUES ('langgraph', ${encoded}, ${config.updatedAt})
+          ON CONFLICT(integration_id) DO UPDATE SET
+            config_json = excluded.config_json,
+            updated_at = excluded.updated_at
+        `,
+      ),
+      Effect.as(config),
+      Effect.mapError(toPersistenceSqlError("IntegrationRepository.saveLangGraphConfig")),
     );
 
   const writeTask = (task: IncomingTask, createOnly: boolean) =>
@@ -211,6 +252,8 @@ const makeIntegrationRepository = Effect.gen(function* () {
   return {
     getOpenClawConfig,
     saveOpenClawConfig,
+    getLangGraphConfig,
+    saveLangGraphConfig,
     createTask,
     saveTask,
     getTaskById,

@@ -2,6 +2,7 @@ import {
   IncomingTask,
   IncomingTaskId,
   IncomingTaskSource,
+  LangGraphConnectionConfig,
   OpenClawConnectionConfig,
   ThreadId,
 } from "@modesto/contracts";
@@ -18,6 +19,13 @@ export interface IntegrationRepositoryShape {
   readonly saveOpenClawConfig: (
     config: OpenClawConnectionConfig,
   ) => Effect.Effect<OpenClawConnectionConfig, IntegrationRepositoryError>;
+  readonly getLangGraphConfig: () => Effect.Effect<
+    Option.Option<LangGraphConnectionConfig>,
+    IntegrationRepositoryError
+  >;
+  readonly saveLangGraphConfig: (
+    config: LangGraphConnectionConfig,
+  ) => Effect.Effect<LangGraphConnectionConfig, IntegrationRepositoryError>;
   readonly createTask: (
     task: IncomingTask,
   ) => Effect.Effect<IncomingTask, IntegrationRepositoryError>;

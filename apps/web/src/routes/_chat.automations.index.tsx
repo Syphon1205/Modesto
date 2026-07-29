@@ -14,6 +14,7 @@ import { SidebarHeaderNavigationControls } from "~/components/SidebarHeaderNavig
 import { Button } from "~/components/ui/button";
 import { RouteInsetSurface } from "~/components/RouteInsetSurface";
 import { OpenClawSection } from "~/components/automations/OpenClawSection";
+import { LangGraphSection } from "~/components/automations/LangGraphSection";
 import {
   hasBlockingAutomationDraftWarnings,
   type AutomationDraftWarning,
@@ -431,26 +432,7 @@ function AutomationsRouteView() {
               hiddenProviders={settings.hiddenProviders}
               onOpenThread={(threadId) => void navigate({ to: "/$threadId", params: { threadId } })}
             />
-            <section className="rounded-lg border border-border/70 bg-background px-4 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm font-semibold text-foreground">n8n</h2>
-                    <span className="rounded-full bg-[var(--color-background-elevated-secondary)] px-2 py-0.5 text-[10px] text-muted-foreground">
-                      Integration
-                    </span>
-                  </div>
-                  <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">
-                    Trigger Modesto automations from n8n workflows and route run results back to
-                    the workflow. n8n belongs to automation setup, separate from Teams project
-                    spaces and participants.
-                  </p>
-                </div>
-                <Button type="button" size="sm" variant="outline" disabled>
-                  Configure soon
-                </Button>
-              </div>
-            </section>
+            <LangGraphSection />
             {isLoading ? (
               <div className="py-16 text-center text-sm text-muted-foreground">
                 Loading automations...

@@ -51,6 +51,12 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Palo Alto patches now use four-part versions such as 0.1.7.1, with updater-safe ordering behind the scenes.",
       },
+      {
+        id: "palo-alto-patch-langgraph",
+        title: "Working LangGraph integration",
+        description:
+          "Connect an Agent Server, securely save its API key, discover assistants, test the connection, and invoke a graph from Automations.",
+      },
     ],
   },
   {
@@ -77,7 +83,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Teams now groups human and agent participants around project spaces with a shared timeline for runs, checkpoints, handoffs, diffs, and reviews.",
         details:
-          "Workflow integrations such as n8n now live under Automations rather than the Teams participant model.",
+          "LangGraph Agent Server connections now live under Automations rather than the Teams participant model.",
       },
     ],
   },

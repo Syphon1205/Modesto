@@ -65,7 +65,7 @@ for every artifact.
 - **Active window context** attaches a screenshot, app and window names, and
   accessibility text when the operating system makes it available.
 - **Teams project spaces** bring people, agents, and a shared work timeline
-  together. n8n configuration now lives under Automations.
+  together. LangGraph connections and graph runs live under Automations.
 - **Recovery hardening** improves restart reconciliation, stale Git refreshes,
   provider failure copy, and retry paths.
 

@@ -19,6 +19,12 @@ import {
   AutomationUpdateInput,
 } from "./automation";
 import {
+  LangGraphConnectionConfigUpdate,
+  LangGraphGetSnapshotInput,
+  LangGraphInvokeInput,
+  LangGraphTestConnectionInput,
+} from "./langgraph";
+import {
   ClientOrchestrationCommand,
   OrchestrationEvent,
   OrchestrationImportThreadInput,
@@ -287,6 +293,10 @@ export const WS_METHODS = {
   automationMarkRunRead: "automation.markRunRead",
   automationArchiveRun: "automation.archiveRun",
   subscribeAutomationEvents: "automation.subscribe",
+  langGraphGetSnapshot: "langgraph.getSnapshot",
+  langGraphUpdateConfig: "langgraph.updateConfig",
+  langGraphTestConnection: "langgraph.testConnection",
+  langGraphInvoke: "langgraph.invoke",
 
   // External automation integrations
   openClawGetSnapshot: "openclaw.getSnapshot",
@@ -489,6 +499,10 @@ const WebSocketRequestBody = Schema.Union([
   tagRequestBody(WS_METHODS.automationMarkRunRead, AutomationMarkRunReadInput),
   tagRequestBody(WS_METHODS.automationArchiveRun, AutomationArchiveRunInput),
   tagRequestBody(WS_METHODS.subscribeAutomationEvents, Schema.Struct({})),
+  tagRequestBody(WS_METHODS.langGraphGetSnapshot, LangGraphGetSnapshotInput),
+  tagRequestBody(WS_METHODS.langGraphUpdateConfig, LangGraphConnectionConfigUpdate),
+  tagRequestBody(WS_METHODS.langGraphTestConnection, LangGraphTestConnectionInput),
+  tagRequestBody(WS_METHODS.langGraphInvoke, LangGraphInvokeInput),
   tagRequestBody(WS_METHODS.openClawGetSnapshot, OpenClawGetSnapshotInput),
   tagRequestBody(WS_METHODS.openClawUpdateConfig, OpenClawConnectionConfigUpdate),
   tagRequestBody(WS_METHODS.openClawSetup, OpenClawSetupInput),

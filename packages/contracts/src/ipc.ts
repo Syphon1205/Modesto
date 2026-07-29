@@ -37,6 +37,13 @@ import type {
   AutomationUpdateInput,
 } from "./automation";
 import type {
+  LangGraphConnectionConfigUpdate,
+  LangGraphConnectionStatus,
+  LangGraphInvokeInput,
+  LangGraphInvokeResult,
+  LangGraphSnapshot,
+} from "./langgraph";
+import type {
   GitCheckoutInput,
   GitActionProgressEvent,
   GitCreateBranchInput,
@@ -721,6 +728,12 @@ export interface NativeApi {
     markRunRead: (input: AutomationMarkRunReadInput) => Promise<AutomationRunActionResult>;
     archiveRun: (input: AutomationArchiveRunInput) => Promise<AutomationRunActionResult>;
     onEvent: (callback: (event: AutomationStreamEvent) => void) => () => void;
+  };
+  langGraph: {
+    getSnapshot: () => Promise<LangGraphSnapshot>;
+    updateConfig: (input: LangGraphConnectionConfigUpdate) => Promise<LangGraphSnapshot>;
+    testConnection: () => Promise<LangGraphConnectionStatus>;
+    invoke: (input: LangGraphInvokeInput) => Promise<LangGraphInvokeResult>;
   };
   openClaw: {
     getSnapshot: () => Promise<OpenClawSnapshot>;

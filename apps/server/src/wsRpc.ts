@@ -30,6 +30,7 @@ import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 
 import { AutomationService } from "./automation/Services/AutomationService";
 import { OpenClawService } from "./openclaw/Services/OpenClawService";
+import { LangGraphService } from "./langgraph/Services/LangGraphService";
 import { ReviewService } from "./review/Services/ReviewService";
 import { authErrorResponse, makeEffectAuthRequest } from "./auth/http";
 import { ServerAuth } from "./auth/Services/ServerAuth";
@@ -683,6 +684,7 @@ export const makeWsRpcLayer = () =>
       const checkpointStore = yield* CheckpointStore;
       const automationService = yield* AutomationService;
       const openClawService = yield* OpenClawService;
+      const langGraphService = yield* LangGraphService;
       const reviewService = yield* ReviewService;
       const config = yield* ServerConfig;
       const devServerManager = yield* DevServerManager;
@@ -1857,6 +1859,14 @@ export const makeWsRpcLayer = () =>
             ),
             automationService.streamEvents,
           ).pipe(Stream.mapError((cause) => toWsRpcError(cause, "Automation event stream failed"))),
+        [WS_METHODS.langGraphGetSnapshot]: () =>
+          rpcEffect(langGraphService.getSnapshot, "Failed to load LangGraph"),
+        [WS_METHODS.langGraphUpdateConfig]: (input) =>
+          rpcEffect(langGraphService.updateConfig(input), "Failed to update LangGraph"),
+        [WS_METHODS.langGraphTestConnection]: () =>
+          rpcEffect(langGraphService.testConnection, "Failed to test LangGraph"),
+        [WS_METHODS.langGraphInvoke]: (input) =>
+          rpcEffect(langGraphService.invoke(input), "Failed to run LangGraph"),
         [WS_METHODS.openClawGetSnapshot]: () =>
           rpcEffect(openClawService.getSnapshot, "Failed to load OpenClaw"),
         [WS_METHODS.openClawUpdateConfig]: (input) =>

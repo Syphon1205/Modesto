@@ -41,6 +41,7 @@ import { ProjectionTurnRepositoryLive } from "./persistence/Layers/ProjectionTur
 import { IncomingTaskRouterLive } from "./incomingTask/Layers/IncomingTaskRouter";
 import { IncomingTaskCompletionReactorLive } from "./incomingTask/Layers/IncomingTaskCompletionReactor";
 import { OpenClawServiceLive } from "./openclaw/Layers/OpenClawService";
+import { LangGraphServiceLive } from "./langgraph/Layers/LangGraphService";
 import { ReviewServiceLive } from "./review/Layers/ReviewService";
 import { ReviewRepositoryLive } from "./persistence/Layers/ReviewRepository";
 
@@ -141,6 +142,10 @@ export function makeServerRuntimeServicesLayer() {
     Layer.provideMerge(incomingTaskRouterLayer),
     Layer.provideMerge(ServerSecretStoreLive),
   );
+  const langGraphServiceLayer = LangGraphServiceLive.pipe(
+    Layer.provideMerge(IntegrationRepositoryLive),
+    Layer.provideMerge(ServerSecretStoreLive),
+  );
   const incomingTaskCompletionReactorLayer = IncomingTaskCompletionReactorLive.pipe(
     Layer.provideMerge(IntegrationRepositoryLive),
     Layer.provideMerge(runtimeServicesLayer),
@@ -159,6 +164,7 @@ export function makeServerRuntimeServicesLayer() {
     incomingTaskRouterLayer,
     incomingTaskCompletionReactorLayer,
     openClawServiceLayer,
+    langGraphServiceLayer,
     ReviewRepositoryLive,
     reviewServiceLayer,
     orchestrationReactorLayer,

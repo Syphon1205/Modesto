@@ -783,6 +783,12 @@ export function createWsNativeApi(): NativeApi {
         };
       },
     },
+    langGraph: {
+      getSnapshot: () => transport.request(WS_METHODS.langGraphGetSnapshot, {}),
+      updateConfig: (input) => transport.request(WS_METHODS.langGraphUpdateConfig, input),
+      testConnection: () => transport.request(WS_METHODS.langGraphTestConnection, {}),
+      invoke: (input) => transport.request(WS_METHODS.langGraphInvoke, input),
+    },
     openClaw: {
       getSnapshot: () => transport.request(WS_METHODS.openClawGetSnapshot, {}),
       updateConfig: (input) => transport.request(WS_METHODS.openClawUpdateConfig, input),

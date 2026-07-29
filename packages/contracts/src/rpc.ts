@@ -27,6 +27,15 @@ import {
   AutomationStreamEvent,
   AutomationUpdateInput,
 } from "./automation";
+import {
+  LangGraphConnectionConfigUpdate,
+  LangGraphConnectionStatus,
+  LangGraphGetSnapshotInput,
+  LangGraphInvokeInput,
+  LangGraphInvokeResult,
+  LangGraphSnapshot,
+  LangGraphTestConnectionInput,
+} from "./langgraph";
 import { OpenInEditorInput } from "./editor";
 import { FilesystemBrowseInput, FilesystemBrowseResult } from "./filesystem";
 import {
@@ -1007,6 +1016,30 @@ export const WsSubscribeAutomationEventsRpc = Rpc.make(WS_METHODS.subscribeAutom
   stream: true,
 });
 
+export const WsLangGraphGetSnapshotRpc = Rpc.make(WS_METHODS.langGraphGetSnapshot, {
+  payload: LangGraphGetSnapshotInput,
+  success: LangGraphSnapshot,
+  error: WsRpcError,
+});
+
+export const WsLangGraphUpdateConfigRpc = Rpc.make(WS_METHODS.langGraphUpdateConfig, {
+  payload: LangGraphConnectionConfigUpdate,
+  success: LangGraphSnapshot,
+  error: WsRpcError,
+});
+
+export const WsLangGraphTestConnectionRpc = Rpc.make(WS_METHODS.langGraphTestConnection, {
+  payload: LangGraphTestConnectionInput,
+  success: LangGraphConnectionStatus,
+  error: WsRpcError,
+});
+
+export const WsLangGraphInvokeRpc = Rpc.make(WS_METHODS.langGraphInvoke, {
+  payload: LangGraphInvokeInput,
+  success: LangGraphInvokeResult,
+  error: WsRpcError,
+});
+
 export const WsOpenClawGetSnapshotRpc = Rpc.make(WS_METHODS.openClawGetSnapshot, {
   payload: OpenClawGetSnapshotInput,
   success: OpenClawSnapshot,
@@ -1204,6 +1237,10 @@ export const WsRpcGroup = RpcGroup.make(
   WsAutomationMarkRunReadRpc,
   WsAutomationArchiveRunRpc,
   WsSubscribeAutomationEventsRpc,
+  WsLangGraphGetSnapshotRpc,
+  WsLangGraphUpdateConfigRpc,
+  WsLangGraphTestConnectionRpc,
+  WsLangGraphInvokeRpc,
   WsOpenClawGetSnapshotRpc,
   WsOpenClawUpdateConfigRpc,
   WsOpenClawSetupRpc,
