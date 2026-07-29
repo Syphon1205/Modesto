@@ -119,7 +119,7 @@ export function LangGraphSection() {
           </div>
           <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted-foreground">
             Connect a LangGraph Agent Server, discover its assistants, and invoke a graph directly
-            from Modesto. API keys stay in Modesto’s encrypted secret store.
+            from Modesto. API keys stay in Modesto’s permission-protected secret store.
           </p>
         </div>
         <Button
