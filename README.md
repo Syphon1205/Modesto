@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.6</strong></a>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.7.2</strong></a>
     &nbsp;·&nbsp;
     <a href="#san-mateo--v016">What’s new</a>
     &nbsp;·&nbsp;
