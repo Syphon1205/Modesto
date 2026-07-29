@@ -36,6 +36,9 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         title: "A more useful Teams room",
         description:
           "Project spaces now surface shared runs, people and agents, attention states, and one filterable timeline for checkpoints, handoffs, reviews, and diffs.",
+        image: "/whats-new/0.1.7.1/palo-alto-patch.svg",
+        imageAlt:
+          "Modesto Teams project space showing shared agent runs, checkpoint timeline, and a connected LangGraph assistant.",
         details:
           "Open a run directly from Teams to watch it, steer it, recover it, or review its work without losing the project-wide context.",
       },

@@ -174,10 +174,8 @@ jobs:
           required_assets=(
             latest-mac.yml
             latest.yml
-            latest-linux.yml
             "${UPDATE_CHANNEL}-mac.yml"
             "${UPDATE_CHANNEL}.yml"
-            "${UPDATE_CHANNEL}-linux.yml"
           )
           for required_asset in "${required_assets[@]}"; do
             if ! grep -Fxq "$required_asset" <<< "$bridge_assets"; then
@@ -224,11 +222,6 @@ jobs:
             runner: macos-15-intel
             platform: mac
             target: dmg
-            arch: x64
-          - label: Linux x64
-            runner: ubuntu-24.04
-            platform: linux
-            target: AppImage
             arch: x64
           - label: Windows x64
             runner: windows-2022
@@ -360,7 +353,6 @@ jobs:
           for pattern in \
             "release/*.dmg" \
             "release/*.zip" \
-            "release/*.AppImage" \
             "release/*.exe" \
             "release/*.blockmap" \
             "release/latest*.yml"; do
@@ -453,6 +445,18 @@ jobs:
       - name: Prepare updater feed metadata
         run: node scripts/prepare-release-update-feed.ts release-assets "${{ needs.preflight.outputs.update_channel }}"
 
+      - name: Prepare release notes
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          notes_path=".github/release-notes/v${RELEASE_VERSION}.md"
+          if [[ -f "$notes_path" ]]; then
+            cp "$notes_path" release-assets/RELEASE_NOTES.md
+          else
+            : > release-assets/RELEASE_NOTES.md
+          fi
+
       - name: Prevent compatibility channel rollback
         if: ${{ needs.preflight.outputs.release_lane == 'bridge' }}
         env:
@@ -537,13 +541,13 @@ jobs:
           tag_name: ${{ needs.preflight.outputs.tag }}
           target_commitish: ${{ env.MODESTO_RELEASE_BRANCH }}
           name: ${{ needs.preflight.outputs.is_prerelease == 'true' && format('Modesto Development v{0}', needs.preflight.outputs.version) || format('Modesto v{0}', needs.preflight.outputs.version) }}
+          body_path: release-assets/RELEASE_NOTES.md
           generate_release_notes: true
           prerelease: ${{ needs.preflight.outputs.is_prerelease }}
           make_latest: ${{ needs.preflight.outputs.make_latest }}
           files: |
             release-assets/*.dmg
             release-assets/*.zip
-            release-assets/*.AppImage
             release-assets/*.exe
             release-assets/*.blockmap
             release-assets/*.yml
@@ -569,14 +573,12 @@ jobs:
           payloads=(
             release-assets/*.dmg
             release-assets/*.zip
-            release-assets/*.AppImage
             release-assets/*.exe
             release-assets/*.blockmap
           )
           manifests=(
             "release-assets/${UPDATE_CHANNEL}-mac.yml"
             "release-assets/${UPDATE_CHANNEL}.yml"
-            "release-assets/${UPDATE_CHANNEL}-linux.yml"
           )
 
           if [[ "${#payloads[@]}" -eq 0 ]]; then

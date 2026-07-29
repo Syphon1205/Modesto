@@ -1,0 +1,129 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="30" x2="1120" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171A21"/>
+      <stop offset=".52" stop-color="#0D1016"/>
+      <stop offset="1" stop-color="#080A0E"/>
+    </linearGradient>
+    <linearGradient id="title" x1="70" y1="0" x2="740" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".55" stop-color="#E8E9F5"/>
+      <stop offset="1" stop-color="#AAB2EF"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="205" y1="0" x2="1010" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C86DC"/>
+      <stop offset=".5" stop-color="#AAB1EE"/>
+      <stop offset="1" stop-color="#66C7B1"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#7580D8" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#7580D8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="34"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#000" flood-opacity=".44"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" rx="34" fill="url(#bg)"/>
+  <circle cx="633" cy="350" r="330" fill="url(#glow)" filter="url(#blur)"/>
+  <path d="M48 174H1152M48 616H1152" stroke="#FFFFFF" stroke-opacity=".035"/>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="72" y="72" fill="#9DA2AF" font-size="15" font-weight="650" letter-spacing="2.8">MODESTO 0.1.7.1 · PALO ALTO PATCH</text>
+    <text x="72" y="122" fill="url(#title)" font-size="43" font-weight="680" letter-spacing="-1.4">A shared room for work in motion.</text>
+    <text x="72" y="154" fill="#9297A4" font-size="17">Runs, checkpoints, handoffs, and graphs—visible in one place.</text>
+  </g>
+
+  <!-- Teams project space -->
+  <g filter="url(#shadow)">
+    <rect x="72" y="205" width="730" height="365" rx="24" fill="#12151B" stroke="#343947"/>
+  </g>
+  <rect x="72" y="205" width="730" height="54" rx="24" fill="#181B23"/>
+  <path d="M72 259H802" stroke="#2A2F3B"/>
+  <circle cx="103" cy="232" r="6" fill="#7C86DC"/>
+  <text x="122" y="238" fill="#F0F1F5" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="16" font-weight="650">Teams · Modesto</text>
+  <rect x="675" y="220" width="99" height="25" rx="12.5" fill="#20242E" stroke="#373D4D"/>
+  <text x="724.5" y="237" fill="#C8CCE7" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="11" font-weight="650" text-anchor="middle">3 active</text>
+
+  <!-- space sidebar -->
+  <path d="M255 259V570" stroke="#292E38"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="95" y="290" fill="#747A88" font-size="11" font-weight="650" letter-spacing="1.4">PROJECT SPACES</text>
+    <rect x="88" y="308" width="150" height="44" rx="9" fill="#20242E"/>
+    <circle cx="105" cy="330" r="4" fill="#6ED0B8"/>
+    <text x="119" y="335" fill="#E9EAF0" font-size="13" font-weight="620">Modesto</text>
+    <circle cx="105" cy="375" r="4" fill="#515866"/>
+    <text x="119" y="380" fill="#949AA7" font-size="13">Website</text>
+    <circle cx="105" cy="419" r="4" fill="#515866"/>
+    <text x="119" y="424" fill="#949AA7" font-size="13">Research</text>
+  </g>
+
+  <!-- shared run cards -->
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="280" y="290" fill="#747A88" font-size="11" font-weight="650" letter-spacing="1.4">SHARED RUNS</text>
+
+    <rect x="280" y="308" width="236" height="94" rx="13" fill="#191D25" stroke="#343A49"/>
+    <circle cx="301" cy="330" r="5" fill="#6ED0B8"/>
+    <text x="317" y="335" fill="#EFF0F4" font-size="14" font-weight="630">Checkpoint API</text>
+    <text x="301" y="360" fill="#9299A8" font-size="12">Codex · Working</text>
+    <rect x="301" y="375" width="91" height="17" rx="8.5" fill="#252A37"/>
+    <text x="346.5" y="387" fill="#AEB5E8" font-size="9.5" font-weight="650" text-anchor="middle">DIFF CAPTURED</text>
+
+    <rect x="534" y="308" width="236" height="94" rx="13" fill="#191D25" stroke="#343A49"/>
+    <circle cx="555" cy="330" r="5" fill="#E7B75C"/>
+    <text x="571" y="335" fill="#EFF0F4" font-size="14" font-weight="630">Provider handoff</text>
+    <text x="555" y="360" fill="#9299A8" font-size="12">Claude → Cursor</text>
+    <rect x="555" y="375" width="80" height="17" rx="8.5" fill="#2B2830"/>
+    <text x="595" y="387" fill="#E7C98F" font-size="9.5" font-weight="650" text-anchor="middle">NEEDS YOU</text>
+  </g>
+
+  <!-- timeline -->
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="280" y="439" fill="#747A88" font-size="11" font-weight="650" letter-spacing="1.4">SHARED TIMELINE</text>
+    <path d="M301 462V546" stroke="#343A49" stroke-width="2"/>
+    <circle cx="301" cy="470" r="7" fill="#1B2029" stroke="#8D96E5" stroke-width="2"/>
+    <circle cx="301" cy="508" r="7" fill="#1B2029" stroke="#6ED0B8" stroke-width="2"/>
+    <circle cx="301" cy="546" r="7" fill="#1B2029" stroke="#C3C7D1" stroke-width="2"/>
+    <text x="321" y="474" fill="#E6E7EC" font-size="13">Clean checkpoint declared</text>
+    <text x="321" y="493" fill="#7F8695" font-size="11">diff · incomplete work · next step</text>
+    <text x="321" y="512" fill="#E6E7EC" font-size="13">Agent run completed</text>
+    <text x="321" y="531" fill="#7F8695" font-size="11">review ready for a person</text>
+    <text x="321" y="550" fill="#E6E7EC" font-size="13">Handoff opened in Cursor</text>
+  </g>
+
+  <!-- LangGraph node -->
+  <path d="M802 386C842 386 838 324 874 324" stroke="#282D38" stroke-width="12" stroke-linecap="round"/>
+  <path d="M802 386C842 386 838 324 874 324" stroke="url(#flow)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="840" cy="357" r="5" fill="#AAB1EE"/>
+
+  <g filter="url(#shadow)">
+    <rect x="874" y="246" width="254" height="244" rx="24" fill="#13171D" stroke="#38403F"/>
+  </g>
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <circle cx="915" cy="289" r="20" fill="#1B2826" stroke="#427468"/>
+    <path d="M905 290L913 281L921 290L913 299L905 290ZM921 290L927 284" stroke="#78D4BE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="946" y="295" fill="#EFF2F1" font-size="16" font-weight="650">LangGraph</text>
+    <circle cx="898" cy="330" r="4" fill="#6ED0B8"/>
+    <text x="911" y="334" fill="#A7AEB5" font-size="11">Agent Server connected</text>
+    <text x="898" y="372" fill="#7D858E" font-size="10.5" font-weight="650" letter-spacing="1.2">ASSISTANT</text>
+    <rect x="894" y="386" width="214" height="40" rx="9" fill="#1C2228" stroke="#323A40"/>
+    <text x="911" y="411" fill="#E0E4E4" font-size="12.5">palo-alto-review</text>
+    <rect x="894" y="442" width="104" height="28" rx="14" fill="#22342F" stroke="#3B665C"/>
+    <text x="946" y="460.5" fill="#AEE5D7" font-size="11" font-weight="650" text-anchor="middle">RUN GRAPH</text>
+  </g>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif">
+    <text x="72" y="631" fill="#AEB3BE" font-size="15">Project spaces</text>
+    <circle cx="202" cy="626" r="3" fill="#4C525E"/>
+    <text x="222" y="631" fill="#AEB3BE" font-size="15">Clean seams</text>
+    <circle cx="326" cy="626" r="3" fill="#4C525E"/>
+    <text x="346" y="631" fill="#AEB3BE" font-size="15">Safer chat</text>
+    <circle cx="447" cy="626" r="3" fill="#4C525E"/>
+    <text x="467" y="631" fill="#AEB3BE" font-size="15">Real LangGraph runs</text>
+    <rect x="974" y="610" width="154" height="32" rx="16" fill="#171B21" stroke="#343A45"/>
+    <text x="1051" y="631" fill="#D8DBE2" font-size="13" font-weight="650" text-anchor="middle">Palo Alto patch</text>
+  </g>
+</svg>
