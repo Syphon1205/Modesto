@@ -11,7 +11,6 @@ import { memo, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { type ComposerTriggerKind } from "../../composer-logic";
 import { type ComposerSlashCommand } from "../../composerSlashCommands";
 import {
-  BotIcon,
   BrainIcon,
   BugIcon,
   ChangesIcon,
@@ -81,18 +80,12 @@ function commandMenuTitle(
       return "Sidechat";
     case "status":
       return "Status";
-    case "subagents":
-      return "Subagents";
     default:
       return humanizeProviderCommandName(item.command);
   }
 }
 
 function commandMenuTrailingMeta(item: ComposerCommandItem): string | null {
-  if (item.type === "agent") {
-    return "delegate task to subagent";
-  }
-
   if (item.type === "plugin") {
     return "Plugin";
   }
@@ -124,10 +117,6 @@ function commandMenuTrailingMeta(item: ComposerCommandItem): string | null {
 
 function commandMenuSecondaryText(item: ComposerCommandItem): string | null {
   if (item.type === "slash-command" || item.type === "provider-native-command") {
-    return item.description;
-  }
-
-  if (item.type === "agent") {
     return item.description;
   }
 
@@ -205,15 +194,6 @@ export type ComposerCommandItem =
       skill: ProviderSkillDescriptor;
       label: string;
       description: string;
-    }
-  | {
-      id: string;
-      type: "agent";
-      provider: ProviderKind;
-      alias: string;
-      color: string;
-      label: string;
-      description: string;
     };
 
 type ComposerCommandGroupModel = {
@@ -233,13 +213,11 @@ export function groupCommandItems(
   if (triggerKind === "mention") {
     const pluginItems = items.filter((item) => item.type === "plugin");
     const localItems = items.filter((item) => item.type === "local-root" || item.type === "path");
-    const agentItems = items.filter((item) => item.type === "agent");
     const otherItems = items.filter(
       (item) =>
         item.type !== "plugin" &&
         item.type !== "local-root" &&
-        item.type !== "path" &&
-        item.type !== "agent",
+        item.type !== "path",
     );
 
     const groups: ComposerCommandGroupModel[] = [];
@@ -248,9 +226,6 @@ export function groupCommandItems(
     }
     if (localItems.length > 0) {
       groups.push({ id: "local", label: "Local", items: localItems });
-    }
-    if (agentItems.length > 0) {
-      groups.push({ id: "subagents", label: "Subagents", items: agentItems });
     }
     if (otherItems.length > 0) {
       groups.push({ id: "other", label: null, items: otherItems });
@@ -422,7 +397,6 @@ const SLASH_COMMAND_ICONS: Record<string, LucideIcon> = {
   fork: GitForkIcon,
   side: TemporaryThreadIcon,
   status: InfoIcon,
-  subagents: BotIcon,
   automation: ClockIcon,
 };
 
@@ -468,8 +442,6 @@ function commandMenuItemGlyph(item: ComposerCommandItem, theme: "light" | "dark"
       return commandMenuSlashGlyph(item.command, SkillCubeIcon);
     case "model":
       return <BrainIcon className={cls} />;
-    case "agent":
-      return <BotIcon className={cls} />;
     case "plugin":
       return <PluginIcon className={cls} />;
     case "skill":

@@ -20,7 +20,6 @@ import {
   matchesLocalFolderMentionShortcut,
 } from "~/lib/localFolderMentions";
 import { basenameOfPath } from "../file-icons";
-import { buildComposerAgentMenuItems } from "../composerAgentMenuItems";
 import type { ComposerTrigger } from "../composer-logic";
 import {
   filterComposerSlashCommands,
@@ -61,7 +60,6 @@ export function useComposerCommandMenuItems(input: {
   canOfferSideCommand: boolean;
   canOfferExportCommand: boolean;
   surfaceAppSlashCommands?: ReadonlySet<string>;
-  dynamicAgents: readonly { name: string; displayName: string; description?: string }[];
 }): ComposerCommandItem[] {
   const {
     composerTrigger,
@@ -78,7 +76,6 @@ export function useComposerCommandMenuItems(input: {
     canOfferSideCommand,
     canOfferExportCommand,
     surfaceAppSlashCommands,
-    dynamicAgents,
   } = input;
 
   return useMemo<ComposerCommandItem[]>(() => {
@@ -86,12 +83,7 @@ export function useComposerCommandMenuItems(input: {
 
     // Keep trigger-specific discovery outside ChatView so the view mostly orchestrates state.
     if (composerTrigger.kind === "mention") {
-      const agentItems = buildComposerAgentMenuItems({
-        provider,
-        query: composerTrigger.query,
-        dynamicAgents,
-      });
-
+      const query = normalizeProviderDiscoveryText(composerTrigger.query);
       const pluginItems = rankProviderDiscoveryItems(
         providerPlugins.filter(({ plugin }) => isInstalledProviderPlugin(plugin)),
         query,
@@ -123,9 +115,7 @@ export function useComposerCommandMenuItems(input: {
         label: basenameOfPath(entry.path),
         description: entry.parentPath ?? "",
       }));
-      // Keep mention suggestions ordered by primary intent: plugins first,
-      // then local context, then subagent delegation targets.
-      return [...pluginItems, ...localRootItems, ...pathItems, ...agentItems];
+      return [...pluginItems, ...localRootItems, ...pathItems];
     }
 
     if (composerTrigger.kind === "slash-command") {
@@ -234,7 +224,6 @@ export function useComposerCommandMenuItems(input: {
     canOfferSideCommand,
     canOfferExportCommand,
     composerTrigger,
-    dynamicAgents,
     provider,
     providerPlugins,
     providerNativeCommands,

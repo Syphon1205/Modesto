@@ -23,17 +23,18 @@ const entry = (version: string, overrides?: Partial<WhatsNewEntry>): WhatsNewEnt
 
 describe("parseVersion", () => {
   it("parses a well-formed semver string", () => {
-    expect(parseVersion("1.2.3")).toEqual([1, 2, 3]);
+    expect(parseVersion("1.2.3")).toEqual([1, 2, 3, 0]);
+    expect(parseVersion("1.2.3.4")).toEqual([1, 2, 3, 4]);
   });
 
   it("fills missing segments with 0", () => {
-    expect(parseVersion("1")).toEqual([1, 0, 0]);
-    expect(parseVersion("1.2")).toEqual([1, 2, 0]);
+    expect(parseVersion("1")).toEqual([1, 0, 0, 0]);
+    expect(parseVersion("1.2")).toEqual([1, 2, 0, 0]);
   });
 
   it("treats non-numeric segments as 0", () => {
-    expect(parseVersion("abc.def.ghi")).toEqual([0, 0, 0]);
-    expect(parseVersion("1.x.3")).toEqual([1, 0, 3]);
+    expect(parseVersion("abc.def.ghi")).toEqual([0, 0, 0, 0]);
+    expect(parseVersion("1.x.3")).toEqual([1, 0, 3, 0]);
   });
 });
 
@@ -50,6 +51,11 @@ describe("compareVersions", () => {
   it("ranks major > minor > patch", () => {
     expect(compareVersions("2.0.0", "1.99.99")).toBeGreaterThan(0);
     expect(compareVersions("1.2.0", "1.1.99")).toBeGreaterThan(0);
+  });
+
+  it("ranks four-part patch revisions within the same release", () => {
+    expect(compareVersions("0.1.7.1", "0.1.7")).toBeGreaterThan(0);
+    expect(compareVersions("0.1.7.2", "0.1.7.1")).toBeGreaterThan(0);
   });
 });
 

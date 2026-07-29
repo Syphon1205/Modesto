@@ -1,6 +1,6 @@
 {
   "name": "@modesto/cli",
-  "version": "0.1.4",
+  "version": "0.1.8-patch.1",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
@@ -61,5 +61,6 @@
   },
   "engines": {
     "node": "^22.16 || ^23.11 || >=24.10"
-  }
+  },
+  "modestoReleaseVersion": "0.1.7.1"
 }

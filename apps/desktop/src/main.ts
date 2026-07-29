@@ -16,6 +16,7 @@ import {
   app,
   BrowserWindow,
   clipboard,
+  desktopCapturer,
   dialog,
   ipcMain,
   Menu,
@@ -185,6 +186,7 @@ const startupBundleIdentity = captureStartupBundleIdentity();
 syncShellEnvironment();
 
 const PICK_FOLDER_CHANNEL = "desktop:pick-folder";
+const CAPTURE_ACTIVE_WINDOW_CHANNEL = "desktop:capture-active-window";
 const SAVE_FILE_CHANNEL = "desktop:save-file";
 const CONFIRM_CHANNEL = "desktop:confirm";
 const SET_THEME_CHANNEL = "desktop:set-theme";
@@ -213,6 +215,48 @@ const BASE_DIR = process.env.MODESTO_HOME?.trim() || Path.join(OS.homedir(), ".m
 const STATE_DIR = Path.join(BASE_DIR, "userdata");
 const DESKTOP_SCHEME = MODESTO_DESKTOP_SCHEME;
 const ROOT_DIR = Path.resolve(__dirname, "../../..");
+
+async function readMacActiveWindowAccessibility(): Promise<{
+  appName: string;
+  windowTitle: string;
+  accessibilityText: string | null;
+} | null> {
+  if (process.platform !== "darwin") return null;
+  const script = [
+    'tell application "System Events"',
+    "set frontProcess to first application process whose frontmost is true",
+    "set appName to name of frontProcess",
+    'set windowTitle to ""',
+    "try",
+    "set windowTitle to name of front window of frontProcess",
+    "end try",
+    'set accessibilityText to ""',
+    "try",
+    "set accessibilityText to (value of every static text of entire contents of front window of frontProcess) as text",
+    "end try",
+    'return appName & linefeed & windowTitle & linefeed & accessibilityText',
+    "end tell",
+  ].join("\n");
+  return new Promise((resolve) => {
+    ChildProcess.execFile(
+      "/usr/bin/osascript",
+      ["-e", script],
+      { timeout: 3_000, maxBuffer: 256 * 1024 },
+      (error, stdout) => {
+        if (error) {
+          resolve(null);
+          return;
+        }
+        const [appName = "", windowTitle = "", ...text] = stdout.trimEnd().split("\n");
+        resolve({
+          appName: appName.trim(),
+          windowTitle: windowTitle.trim(),
+          accessibilityText: text.join("\n").trim() || null,
+        });
+      },
+    );
+  });
+}
 const isDevelopment = Boolean(process.env.VITE_DEV_SERVER_URL);
 const APP_DISPLAY_NAME = isDevelopment ? "Modesto (Dev)" : "Modesto";
 const APP_USER_MODEL_ID = modestoBundleId(isDevelopment);
@@ -270,6 +314,7 @@ let desktopShutdownPromise: Promise<void> | null = null;
 let desktopShutdownComplete = false;
 let desktopProtocolRegistered = false;
 let aboutCommitHashCache: string | null | undefined;
+let releaseDisplayVersionCache: string | undefined;
 let appUpdateYmlCache: Record<string, string> | null | undefined;
 let desktopLogSink: RotatingFileSink | null = null;
 let backendLogSink: RotatingFileSink | null = null;
@@ -339,7 +384,7 @@ const desktopRuntimeInfo = resolveDesktopRuntimeInfo({
 const buildUpdateChannel = resolveBuildUpdateChannel(app.getVersion());
 let selectedUpdateChannel = readSelectedUpdateChannel();
 const initialUpdateState = (): DesktopUpdateState => ({
-  ...createInitialDesktopUpdateState(app.getVersion(), desktopRuntimeInfo),
+  ...createInitialDesktopUpdateState(resolveReleaseDisplayVersion(), desktopRuntimeInfo),
   buildChannel: buildUpdateChannel,
   selectedChannel: selectedUpdateChannel,
 });
@@ -903,6 +948,30 @@ function resolveEmbeddedCommitHash(): string | null {
   } catch {
     return null;
   }
+}
+
+function resolveReleaseDisplayVersion(): string {
+  if (releaseDisplayVersionCache !== undefined) {
+    return releaseDisplayVersionCache;
+  }
+
+  if (!app.isPackaged) {
+    releaseDisplayVersionCache = app.getVersion();
+    return releaseDisplayVersionCache;
+  }
+
+  try {
+    const raw = FS.readFileSync(Path.join(resolveAppRoot(), "package.json"), "utf8");
+    const parsed = JSON.parse(raw) as { modestoReleaseVersion?: unknown };
+    const embeddedVersion = parsed.modestoReleaseVersion;
+    releaseDisplayVersionCache =
+      typeof embeddedVersion === "string" && /^\d+\.\d+\.\d+(?:\.[1-9]\d*)?$/.test(embeddedVersion)
+        ? embeddedVersion
+        : app.getVersion();
+  } catch {
+    releaseDisplayVersionCache = app.getVersion();
+  }
+  return releaseDisplayVersionCache;
 }
 
 function resolveAboutCommitHash(): string | null {
@@ -1577,7 +1646,7 @@ function configureAppIdentity(): void {
   const commitHash = resolveAboutCommitHash();
   app.setAboutPanelOptions({
     applicationName: APP_DISPLAY_NAME,
-    applicationVersion: app.getVersion(),
+    applicationVersion: resolveReleaseDisplayVersion(),
     version: commitHash ?? "unknown",
     copyright: `© ${new Date().getFullYear()} Tanner Davidson`,
   });
@@ -2350,7 +2419,7 @@ function configureAutoUpdater(): void {
   configuredUpdaterCacheDirName = resolveElectronUpdaterCacheDirName(appUpdateYml, app.getName());
   const enabled = shouldEnableAutoUpdates();
   setUpdateState({
-    ...createInitialDesktopUpdateState(app.getVersion(), desktopRuntimeInfo),
+    ...createInitialDesktopUpdateState(resolveReleaseDisplayVersion(), desktopRuntimeInfo),
     enabled,
     status: enabled ? "idle" : "disabled",
   });
@@ -2958,6 +3027,45 @@ function registerIpcHandlers(): void {
         });
     if (result.canceled) return null;
     return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.removeHandler(CAPTURE_ACTIVE_WINDOW_CHANNEL);
+  ipcMain.handle(CAPTURE_ACTIVE_WINDOW_CHANNEL, async () => {
+    const activeWindow = await readMacActiveWindowAccessibility();
+    const sources = await desktopCapturer.getSources({
+      types: ["window"],
+      thumbnailSize: { width: 1920, height: 1080 },
+      fetchWindowIcons: true,
+    });
+    const focusedTitle = BrowserWindow.getFocusedWindow()?.getTitle().trim() ?? "";
+    const source =
+      sources.find(
+        (candidate) =>
+          activeWindow?.windowTitle &&
+          (candidate.name === activeWindow.windowTitle ||
+            candidate.name.includes(activeWindow.windowTitle)),
+      ) ??
+      sources.find((candidate) => candidate.name === focusedTitle) ??
+      sources.find((candidate) => candidate.name.trim().length > 0);
+    if (!source || source.thumbnail.isEmpty()) {
+      throw new Error(
+        "No active window could be captured. Check Screen Recording permission and try again.",
+      );
+    }
+    const png = source.thumbnail.toPNG();
+    const title = source.name.trim() || "Active window";
+    return {
+      name: `${title.replaceAll(/[^a-z0-9._-]+/gi, "-").replaceAll(/^-|-$/g, "") || "window"}.png`,
+      mimeType: "image/png" as const,
+      sizeBytes: png.byteLength,
+      bytes: png.buffer.slice(png.byteOffset, png.byteOffset + png.byteLength),
+      appName: activeWindow?.appName || title,
+      windowTitle: activeWindow?.windowTitle || title,
+      // Native accessibility text is permission-dependent. Missing permission
+      // does not make the screenshot fail.
+      accessibilityText: activeWindow?.accessibilityText ?? null,
+      capturedAt: new Date().toISOString(),
+    };
   });
 
   ipcMain.removeHandler(SAVE_FILE_CHANNEL);

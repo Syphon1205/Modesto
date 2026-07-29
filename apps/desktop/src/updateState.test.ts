@@ -166,6 +166,12 @@ describe("isUpdateVersionNewer", () => {
     expect(isUpdateVersionNewer("0.1.0-beta.1", "0.1.0")).toBe(true);
   });
 
+  it("orders four-part patch carrier versions by their numeric prerelease revision", () => {
+    expect(isUpdateVersionNewer("0.1.8-patch.1", "0.1.8-patch.2")).toBe(true);
+    expect(isUpdateVersionNewer("0.1.8-patch.2", "0.1.8-patch.1")).toBe(false);
+    expect(isUpdateVersionNewer("0.1.8-patch.2", "0.1.8")).toBe(true);
+  });
+
   it("rejects older versions", () => {
     expect(isUpdateVersionNewer("0.1.1", "0.1.0")).toBe(false);
     expect(isUpdateVersionNewer("1.0.0", "0.9.9")).toBe(false);

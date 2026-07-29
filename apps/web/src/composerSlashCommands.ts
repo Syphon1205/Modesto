@@ -159,12 +159,6 @@ const COMPOSER_SLASH_COMMAND_DEFINITIONS: Record<
     description: "Show context usage and rate-limit status",
     source: "app",
   },
-  subagents: {
-    command: "subagents",
-    label: "/subagents",
-    description: "Pick an @agent(task) subagent to delegate work",
-    source: "app",
-  },
   fast: {
     command: "fast",
     label: "/fast",
@@ -291,15 +285,6 @@ export function canOfferReviewSlashCommand(input: {
   );
 }
 
-export function buildSubagentsPrompt(existingPrompt: string): string {
-  // Kept for callers that still expect a prompt seed; prefer opening the
-  // @agent(task) picker (ComposerMultiAgentControl / /subagents) instead.
-  const cannedPrompt =
-    "Delegate distinct work with @agent(task) mentions, then synthesize the results.";
-  const trimmedPrompt = existingPrompt.trim();
-  return trimmedPrompt.length > 0 ? `${trimmedPrompt}\n\n${cannedPrompt}` : cannedPrompt;
-}
-
 export function buildReviewPrompt(input: { target: "changes" | "base-branch" }): string {
   const baseInstruction =
     "Review the local code changes for bugs, risks, behavioural regressions, and missing tests. Findings first, ordered by severity.";
@@ -383,7 +368,6 @@ export function getAvailableComposerSlashCommands(input: {
           ...(input.canOfferForkCommand ? (["fork"] as const) : []),
           ...(input.canOfferSideCommand ? (["side"] as const) : []),
           "status",
-          "subagents",
           ...(input.canOfferExportCommand ? (["export"] as const) : []),
           "automation",
         ]

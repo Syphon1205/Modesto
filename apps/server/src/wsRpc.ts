@@ -3,6 +3,7 @@ import { execFile, spawn } from "node:child_process";
 import {
   CommandId,
   DEFAULT_TERMINAL_ID,
+  EventId,
   ORCHESTRATION_WS_METHODS,
   ServerCustomModelEndpointError,
   type ServerDeleteCustomModelEndpointInput,
@@ -38,6 +39,7 @@ import { CheckpointDiffQuery } from "./checkpointing/Services/CheckpointDiffQuer
 import { CheckpointStore } from "./checkpointing/Services/CheckpointStore";
 import {
   captureAgentHandoffCheckpoint,
+  declareAgentCheckpoint,
   diffAgentHandoffCheckpoint,
   restoreAgentHandoffCheckpoint,
 } from "./checkpointing/handoffCheckpoint";
@@ -1088,6 +1090,46 @@ export const makeWsRpcLayer = () =>
           rpcEffect(
             checkpointDiffQuery.getFullThreadDiff(input),
             "Failed to load full thread diff",
+          ),
+        [ORCHESTRATION_WS_METHODS.declareAgentCheckpoint]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              const result = yield* declareAgentCheckpoint(checkpointStore, input);
+              // Repeated declarations against the same tree are deliberately silent:
+              // callers receive the existing seam without duplicating the timeline.
+              if (!result.unchanged) {
+                yield* orchestrationEngine.dispatch({
+                  type: "thread.activity.append",
+                  commandId: CommandId.makeUnsafe(
+                    `server:agent-checkpoint:${crypto.randomUUID()}`,
+                  ),
+                  threadId: input.threadId,
+                  activity: {
+                    id: EventId.makeUnsafe(crypto.randomUUID()),
+                    tone: "info",
+                    kind: "agent.checkpoint.declared",
+                    summary: input.summary,
+                    payload: {
+                      checkpointRef: result.checkpointRef,
+                      baseCheckpointRef: result.baseCheckpointRef,
+                      baseHeadSha: result.baseHeadSha,
+                      checkpointStatus: result.checkpointStatus,
+                      diffAvailable: result.diff.length > 0,
+                      diffBytes: Buffer.byteLength(result.diff, "utf8"),
+                      diffPreview: result.diff.slice(0, 20_000),
+                      notRun: input.notRun,
+                      incomplete: input.incomplete,
+                      nextStep: input.nextStep,
+                    },
+                    turnId: null,
+                    createdAt: result.declaredAt,
+                  },
+                  createdAt: result.declaredAt,
+                });
+              }
+              return result;
+            }),
+            "Failed to declare agent checkpoint",
           ),
         [ORCHESTRATION_WS_METHODS.captureHandoffCheckpoint]: (input) =>
           rpcEffect(

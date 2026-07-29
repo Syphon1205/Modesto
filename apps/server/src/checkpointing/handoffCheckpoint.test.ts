@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   captureAgentHandoffCheckpoint,
+  declareAgentCheckpoint,
   diffAgentHandoffCheckpoint,
   restoreAgentHandoffCheckpoint,
 } from "./handoffCheckpoint.ts";
@@ -12,6 +13,8 @@ import {
   AGENT_CHECKPOINT_REFS_PREFIX,
   checkpointRefForAgentHandoffBase,
   checkpointRefForAgentHandoffTree,
+  checkpointRefForDeclaredAgentBase,
+  checkpointRefForDeclaredAgentTree,
 } from "./Utils.ts";
 
 function unusedStore(): CheckpointStoreShape {
@@ -49,6 +52,47 @@ describe("handoffCheckpoint helpers", () => {
   const destThreadId = ThreadId.makeUnsafe("thread-dest");
   const treeRef = checkpointRefForAgentHandoffTree(sourceThreadId, destThreadId);
   const baseRef = checkpointRefForAgentHandoffBase(sourceThreadId, destThreadId);
+
+  it("reuses a declared checkpoint without recapturing an unchanged tree", async () => {
+    const calls: string[] = [];
+    const declaredTreeRef = checkpointRefForDeclaredAgentTree(sourceThreadId);
+    const declaredBaseRef = checkpointRefForDeclaredAgentBase(sourceThreadId);
+    const store = {
+      ...unusedStore(),
+      isGitRepository: () => Effect.succeed(true),
+      resolveCheckpointTreeOid: () => Effect.succeed("same-tree"),
+      resolveWorkingTreeOid: () => Effect.succeed("same-tree"),
+      resolveHeadCommitOid: () => Effect.succeed("head-sha"),
+      hasCheckpointRef: () => Effect.succeed(true),
+      diffCheckpoints: () => Effect.succeed("saved patch"),
+      copyCheckpointRef: () =>
+        Effect.sync(() => {
+          calls.push("copy");
+          return true;
+        }),
+      captureCheckpoint: () =>
+        Effect.sync(() => {
+          calls.push("capture");
+        }),
+    } satisfies CheckpointStoreShape;
+
+    const result = await Effect.runPromise(
+      declareAgentCheckpoint(store, {
+        threadId: sourceThreadId,
+        cwd: "/tmp/repo",
+        summary: "Feature complete",
+        notRun: ["end-to-end tests"],
+        incomplete: [],
+        nextStep: "Review the diff",
+      }),
+    );
+
+    expect(result.checkpointRef).toBe(declaredTreeRef);
+    expect(result.baseCheckpointRef).toBe(declaredBaseRef);
+    expect(result.diff).toBe("saved patch");
+    expect(result.unchanged).toBe(true);
+    expect(calls).toEqual([]);
+  });
 
   it("captures base+tree refs when cwd is a git repo", async () => {
     const calls: string[] = [];

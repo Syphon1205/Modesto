@@ -40,6 +40,12 @@ describe("release update policy", () => {
       mirrorToStableChannel: false,
       channel: "modesto-dev",
     });
+    expect(resolveReleaseUpdatePolicy("0.5.0.1", cleanConfig)).toMatchObject({
+      tag: "v0.5.0.1",
+      isPrerelease: false,
+      makeLatest: true,
+      channel: "modesto",
+    });
   });
 
   it("rejects releases that could bypass or replace the compatibility hop", () => {
@@ -50,6 +56,9 @@ describe("release update policy", () => {
     expect(() => resolveReleaseUpdatePolicy("0.4.1", cleanConfig)).toThrow("must be newer");
     expect(() => resolveReleaseUpdatePolicy("0.4.0", cleanConfig)).toThrow("must be newer");
     expect(() => resolveReleaseUpdatePolicy("0.5.0.not-semver", cleanConfig)).toThrow(
+      "Invalid release version",
+    );
+    expect(() => resolveReleaseUpdatePolicy("0.5.0.0", cleanConfig)).toThrow(
       "Invalid release version",
     );
   });

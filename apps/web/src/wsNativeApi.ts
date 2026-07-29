@@ -729,6 +729,8 @@ export function createWsNativeApi(): NativeApi {
       getTurnDiff: (input) => transport.request(ORCHESTRATION_WS_METHODS.getTurnDiff, input),
       getFullThreadDiff: (input) =>
         transport.request(ORCHESTRATION_WS_METHODS.getFullThreadDiff, input),
+      declareAgentCheckpoint: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.declareAgentCheckpoint, input),
       captureHandoffCheckpoint: (input) =>
         transport.request(ORCHESTRATION_WS_METHODS.captureHandoffCheckpoint, input),
       getHandoffCheckpointDiff: (input) =>

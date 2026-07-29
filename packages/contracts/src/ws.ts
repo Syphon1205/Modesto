@@ -35,6 +35,7 @@ import {
   ORCHESTRATION_WS_METHODS,
   OrchestrationGetSnapshotInput,
   OrchestrationGetTurnDiffInput,
+  OrchestrationDeclareAgentCheckpointInput,
   OrchestrationCaptureHandoffCheckpointInput,
   OrchestrationGetHandoffCheckpointDiffInput,
   OrchestrationRestoreHandoffCheckpointInput,
@@ -344,6 +345,10 @@ const WebSocketRequestBody = Schema.Union([
   tagRequestBody(ORCHESTRATION_WS_METHODS.repairState, OrchestrationRepairStateInput),
   tagRequestBody(ORCHESTRATION_WS_METHODS.getTurnDiff, OrchestrationGetTurnDiffInput),
   tagRequestBody(ORCHESTRATION_WS_METHODS.getFullThreadDiff, OrchestrationGetFullThreadDiffInput),
+  tagRequestBody(
+    ORCHESTRATION_WS_METHODS.declareAgentCheckpoint,
+    OrchestrationDeclareAgentCheckpointInput,
+  ),
   tagRequestBody(
     ORCHESTRATION_WS_METHODS.captureHandoffCheckpoint,
     OrchestrationCaptureHandoffCheckpointInput,

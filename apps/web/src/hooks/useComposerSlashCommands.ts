@@ -73,7 +73,6 @@ export function useComposerSlashCommands(input: {
   handleInteractionModeChange: (mode: "default" | "plan") => Promise<void> | void;
   openForkTargetPicker: () => void;
   openReviewTargetPicker: () => void;
-  openAgentsPicker: () => void;
   setComposerDraftProviderModelOptions: (
     threadId: ThreadId,
     provider: ProviderKind,
@@ -123,7 +122,6 @@ export function useComposerSlashCommands(input: {
     handleInteractionModeChange,
     openForkTargetPicker,
     openReviewTargetPicker,
-    openAgentsPicker,
     setComposerDraftProviderModelOptions,
     editorActions,
   } = input;
@@ -634,11 +632,6 @@ export function useComposerSlashCommands(input: {
         setIsSlashStatusDialogOpen(true);
         return true;
       }
-      if (slashInvocation.command === "subagents") {
-        editorActions.clearComposerSlashDraft();
-        openAgentsPicker();
-        return true;
-      }
       if (slashInvocation.command === "export") {
         editorActions.clearComposerSlashDraft();
         runExportSlashCommand();
@@ -741,7 +734,6 @@ export function useComposerSlashCommands(input: {
       handleInteractionModeChange,
       openForkTargetPicker,
       openReviewTargetPicker,
-      openAgentsPicker,
       selectedProvider,
       supportsTextNativeReviewCommand,
       runCodexReviewStart,
@@ -827,15 +819,6 @@ export function useComposerSlashCommands(input: {
         if (wasPromptReplacementApplied(applied)) {
           editorActions.setComposerHighlightedItemId(null);
         }
-        return;
-      }
-
-      if (item.command === "subagents") {
-        const applied = clearSlashCommandFromComposer();
-        if (wasPromptReplacementApplied(applied)) {
-          editorActions.setComposerHighlightedItemId(null);
-        }
-        openAgentsPicker();
         return;
       }
 
@@ -945,7 +928,6 @@ export function useComposerSlashCommands(input: {
       handleInteractionModeChange,
       openForkTargetPicker,
       openReviewTargetPicker,
-      openAgentsPicker,
       selectedProvider,
       supportsTextNativeReviewCommand,
       runExportSlashCommand,

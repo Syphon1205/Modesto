@@ -76,7 +76,7 @@ type ParsedUpdateVersion = {
   readonly major: number;
   readonly minor: number;
   readonly patch: number;
-  readonly prerelease: string | null;
+  readonly prerelease: readonly string[] | null;
 };
 
 function parseUpdateVersion(version: string): ParsedUpdateVersion | null {
@@ -88,8 +88,33 @@ function parseUpdateVersion(version: string): ParsedUpdateVersion | null {
     major: Number(match[1]),
     minor: Number(match[2]),
     patch: Number(match[3]),
-    prerelease: match[4] ?? null,
+    prerelease: match[4]?.split(".") ?? null,
   };
+}
+
+function comparePrereleaseIdentifiers(
+  current: readonly string[],
+  candidate: readonly string[],
+): number {
+  const length = Math.max(current.length, candidate.length);
+  for (let index = 0; index < length; index += 1) {
+    const currentIdentifier = current[index];
+    const candidateIdentifier = candidate[index];
+    if (currentIdentifier === undefined) return 1;
+    if (candidateIdentifier === undefined) return -1;
+    if (currentIdentifier === candidateIdentifier) continue;
+
+    const currentNumeric = /^\d+$/.test(currentIdentifier);
+    const candidateNumeric = /^\d+$/.test(candidateIdentifier);
+    if (currentNumeric && candidateNumeric) {
+      return Number(candidateIdentifier) - Number(currentIdentifier);
+    }
+    if (currentNumeric !== candidateNumeric) {
+      return candidateNumeric ? -1 : 1;
+    }
+    return candidateIdentifier.localeCompare(currentIdentifier);
+  }
+  return 0;
 }
 
 export function isUpdateVersionNewer(currentVersion: string, candidateVersion: string): boolean {
@@ -103,9 +128,9 @@ export function isUpdateVersionNewer(currentVersion: string, candidateVersion: s
   if (candidate.minor !== current.minor) return candidate.minor > current.minor;
   if (candidate.patch !== current.patch) return candidate.patch > current.patch;
 
-  // Treat stable as newer than the same prerelease, but never reinstall the
-  // exact same stable version from a stale updater cache.
-  return current.prerelease !== null && candidate.prerelease === null;
+  if (current.prerelease === null) return false;
+  if (candidate.prerelease === null) return true;
+  return comparePrereleaseIdentifiers(current.prerelease, candidate.prerelease) > 0;
 }
 
 export function nextStatusAfterDownloadFailure(

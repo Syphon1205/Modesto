@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildReviewPrompt,
-  buildSubagentsPrompt,
   canOfferForkSlashCommand,
   canOfferReviewSlashCommand,
   canOfferSideSlashCommand,
@@ -186,8 +185,6 @@ describe("composerSlashCommands", () => {
   });
 
   it("builds slash-command canned prompts", () => {
-    expect(buildSubagentsPrompt("")).toContain("@agent(task)");
-    expect(buildSubagentsPrompt("Already there")).toContain("Already there\n\nDelegate");
     expect(buildReviewPrompt({ target: "changes" })).toContain("uncommitted changes");
     expect(buildReviewPrompt({ target: "base-branch" })).toContain("base branch");
   });
@@ -364,7 +361,6 @@ describe("composerSlashCommands", () => {
       "fork",
       "side",
       "status",
-      "subagents",
       "export",
       "automation",
     ]);

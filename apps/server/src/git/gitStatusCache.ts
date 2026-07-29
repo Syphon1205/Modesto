@@ -17,7 +17,9 @@ export interface CachedGitStatus {
   readonly remote: CachedValue<GitStatusRemoteResult | null> | null;
 }
 
-export const REMOTE_STATUS_CACHE_TTL_MS = 30_000;
+// Keep PR metadata inexpensive without leaving branch/ahead/behind state stale
+// long enough to survive a handoff or a normal review cycle.
+export const REMOTE_STATUS_CACHE_TTL_MS = 5_000;
 
 export function makeCachedStatusValue<T>(value: T): CachedValue<T> {
   return {

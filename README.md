@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.4-6366f1.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7.1-6366f1.svg?style=flat-square" />
   <img alt="License: Proprietary" src="https://img.shields.io/badge/license-Proprietary-64748b.svg?style=flat-square" />
   <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
   <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
@@ -18,8 +18,8 @@
 
 <p align="center">
   <a href="#features">Features</a> ·
-  <a href="#download-v014">Download</a> ·
-  <a href="#whats-new-in-v014">What's new</a> ·
+  <a href="#download">Download</a> ·
+  <a href="#whats-new-in-v0171">What's new</a> ·
   <a href="#workspaces">Workspaces</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#roadmap">Roadmap</a> ·
@@ -47,7 +47,29 @@ installations receive v0.1.4 through Modesto's built-in updater. See the
 [full release and changelog](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.4)
 for every artifact.
 
-## What's new in v0.1.4
+## What's new in v0.1.7.1
+
+- **Teams shared rooms** surface live runs, participants, attention states,
+  and a filterable project timeline for checkpoints, handoffs, reviews, and diffs.
+- **Safer chat controls** remove the agent-selection surfaces that could crash
+  the composer while preserving existing agent activity in conversation history.
+- **Four-part patch releases** keep Palo Alto fixes together under versions
+  such as `0.1.7.1` without sacrificing updater ordering.
+
+## Previously in v0.1.7
+
+- **Declared checkpoints** capture the working-tree diff, checks not run,
+  incomplete work, and the next action without duplicating unchanged seams.
+- **Cross-provider handoffs** carry the project, branch, Git state, latest
+  checkpoint, and next step between Claude, Codex, Cursor, and OpenCode.
+- **Active window context** attaches a screenshot, app and window names, and
+  accessibility text when the operating system makes it available.
+- **Teams project spaces** bring people, agents, and a shared work timeline
+  together. n8n configuration now lives under Automations.
+- **Recovery hardening** improves restart reconciliation, stale Git refreshes,
+  provider failure copy, and retry paths.
+
+## Previously in v0.1.4
 
 - **Composer bubbles** for Changes, Commit, Working, tasks, Plan mode, and
   Multi-agent — compact pills above the chat that only show when needed.

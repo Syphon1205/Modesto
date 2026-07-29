@@ -46,19 +46,22 @@ export interface WhatsNewEntry {
 }
 
 /**
- * Parse a `MAJOR.MINOR.PATCH` string into a numeric tuple. Non-numeric or
+ * Parse a `MAJOR.MINOR.PATCH[.REVISION]` string into a numeric tuple. Non-numeric or
  * missing segments fall back to 0 so a malformed version never crashes the
  * dialog — it just sorts as the lowest possible value.
  */
-export function parseVersion(version: string): readonly [number, number, number] {
-  const [rawMajor = "0", rawMinor = "0", rawPatch = "0"] = version.split(".");
+export function parseVersion(version: string): readonly [number, number, number, number] {
+  const [rawMajor = "0", rawMinor = "0", rawPatch = "0", rawRevision = "0"] =
+    version.split(".");
   const major = Number.parseInt(rawMajor, 10);
   const minor = Number.parseInt(rawMinor, 10);
   const patch = Number.parseInt(rawPatch, 10);
+  const revision = Number.parseInt(rawRevision, 10);
   return [
     Number.isFinite(major) ? major : 0,
     Number.isFinite(minor) ? minor : 0,
     Number.isFinite(patch) ? patch : 0,
+    Number.isFinite(revision) ? revision : 0,
   ] as const;
 }
 
@@ -67,11 +70,12 @@ export function parseVersion(version: string): readonly [number, number, number]
  * when equal, and a positive number when `a > b`. Suitable for `Array.sort`.
  */
 export function compareVersions(a: string, b: string): number {
-  const [majorA, minorA, patchA] = parseVersion(a);
-  const [majorB, minorB, patchB] = parseVersion(b);
+  const [majorA, minorA, patchA, revisionA] = parseVersion(a);
+  const [majorB, minorB, patchB, revisionB] = parseVersion(b);
   if (majorA !== majorB) return majorA - majorB;
   if (minorA !== minorB) return minorA - minorB;
-  return patchA - patchB;
+  if (patchA !== patchB) return patchA - patchB;
+  return revisionA - revisionB;
 }
 
 /**

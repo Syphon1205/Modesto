@@ -73,12 +73,42 @@ export function prepareThreadHandoffDraft(
   thread: Thread,
   targetProvider: ProviderKind,
 ): Omit<ThreadHandoffDraft, "repoSnapshot" | "diffAckStatus" | "repoSnapshotLoading"> {
+  const latestDeclaredCheckpoint = [...thread.activities]
+    .reverse()
+    .find((activity) => activity.kind === "agent.checkpoint.declared");
+  const checkpointPayload =
+    latestDeclaredCheckpoint?.payload &&
+    typeof latestDeclaredCheckpoint.payload === "object" &&
+    !Array.isArray(latestDeclaredCheckpoint.payload)
+      ? (latestDeclaredCheckpoint.payload as Record<string, unknown>)
+      : null;
+  const checkpointIncomplete = Array.isArray(checkpointPayload?.incomplete)
+    ? checkpointPayload.incomplete.filter((value): value is string => typeof value === "string")
+    : [];
+  const checkpointNotRun = Array.isArray(checkpointPayload?.notRun)
+    ? checkpointPayload.notRun.filter((value): value is string => typeof value === "string")
+    : [];
+  const checkpointNextStep =
+    typeof checkpointPayload?.nextStep === "string" ? checkpointPayload.nextStep.trim() : "";
+  const checkpointSteps = [
+    ...checkpointIncomplete.map((text, index) => ({
+      id: `checkpoint:incomplete:${index}`,
+      text,
+      status: "todo" as const,
+    })),
+    ...checkpointNotRun.map((text, index) => ({
+      id: `checkpoint:not-run:${index}`,
+      text: `Not run: ${text}`,
+      status: "blocked" as const,
+    })),
+  ];
   return {
     sourceThread: thread,
     targetProvider,
-    summary: buildDefaultHandoffSummary(thread),
-    objective: buildDefaultHandoffObjective(thread),
-    unfinishedSteps: buildHandoffUnfinishedSteps(thread),
+    summary: latestDeclaredCheckpoint?.summary ?? buildDefaultHandoffSummary(thread),
+    objective: checkpointNextStep || buildDefaultHandoffObjective(thread),
+    unfinishedSteps:
+      checkpointSteps.length > 0 ? checkpointSteps : buildHandoffUnfinishedSteps(thread),
   };
 }
 

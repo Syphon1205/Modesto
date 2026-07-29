@@ -288,6 +288,15 @@ export const WsOrchestrationCaptureHandoffCheckpointRpc = Rpc.make(
   },
 );
 
+export const WsOrchestrationDeclareAgentCheckpointRpc = Rpc.make(
+  ORCHESTRATION_WS_METHODS.declareAgentCheckpoint,
+  {
+    payload: OrchestrationRpcSchemas.declareAgentCheckpoint.input,
+    success: OrchestrationRpcSchemas.declareAgentCheckpoint.output,
+    error: WsRpcError,
+  },
+);
+
 export const WsOrchestrationGetHandoffCheckpointDiffRpc = Rpc.make(
   ORCHESTRATION_WS_METHODS.getHandoffCheckpointDiff,
   {
@@ -1080,6 +1089,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationRepairStateRpc,
   WsOrchestrationGetTurnDiffRpc,
   WsOrchestrationGetFullThreadDiffRpc,
+  WsOrchestrationDeclareAgentCheckpointRpc,
   WsOrchestrationCaptureHandoffCheckpointRpc,
   WsOrchestrationGetHandoffCheckpointDiffRpc,
   WsOrchestrationRestoreHandoffCheckpointRpc,

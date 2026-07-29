@@ -2,6 +2,8 @@ import { appendFileSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { resolveDesktopReleaseVersion } from "./lib/desktop-app-version.ts";
+
 export const releasePackageFiles = [
   "apps/server/package.json",
   "apps/desktop/package.json",
@@ -14,6 +16,7 @@ interface UpdateReleasePackageVersionsOptions {
 }
 
 interface MutablePackageJson {
+  modestoReleaseVersion?: string;
   version?: string;
   [key: string]: unknown;
 }
@@ -23,16 +26,29 @@ export function updateReleasePackageVersions(
   options: UpdateReleasePackageVersionsOptions = {},
 ): { changed: boolean } {
   const rootDir = resolve(options.rootDir ?? process.cwd());
+  const releaseVersion = resolveDesktopReleaseVersion(version);
   let changed = false;
 
   for (const relativePath of releasePackageFiles) {
     const filePath = resolve(rootDir, relativePath);
     const packageJson = JSON.parse(readFileSync(filePath, "utf8")) as MutablePackageJson;
-    if (packageJson.version === version) {
+    const nextReleaseVersion =
+      releaseVersion.releaseVersion === releaseVersion.appVersion
+        ? undefined
+        : releaseVersion.releaseVersion;
+    if (
+      packageJson.version === releaseVersion.appVersion &&
+      packageJson.modestoReleaseVersion === nextReleaseVersion
+    ) {
       continue;
     }
 
-    packageJson.version = version;
+    packageJson.version = releaseVersion.appVersion;
+    if (nextReleaseVersion === undefined) {
+      delete packageJson.modestoReleaseVersion;
+    } else {
+      packageJson.modestoReleaseVersion = nextReleaseVersion;
+    }
     writeFileSync(filePath, `${JSON.stringify(packageJson, null, 2)}\n`);
     changed = true;
   }

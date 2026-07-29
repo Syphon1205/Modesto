@@ -13,7 +13,7 @@ import desktopPackageJson from "../apps/desktop/package.json" with { type: "json
 import serverPackageJson from "../apps/server/package.json" with { type: "json" };
 
 import { BRAND_ASSET_PATHS } from "./lib/brand-assets.ts";
-import { validateDesktopAppVersion } from "./lib/desktop-app-version.ts";
+import { resolveDesktopReleaseVersion } from "./lib/desktop-app-version.ts";
 import { DESKTOP_STAGE_DEPENDENCY_OVERRIDES } from "./lib/desktop-stage-dependency-overrides.ts";
 import {
   CLAUDE_AGENT_SDK_NATIVE_PACKAGE_PREFIX,
@@ -198,6 +198,7 @@ interface StagePackageJson {
   readonly name: string;
   readonly version: string;
   readonly buildVersion: string;
+  readonly modestoReleaseVersion: string;
   readonly modestoCommitHash: string;
   readonly private: true;
   readonly description: string;
@@ -552,13 +553,14 @@ const createBuildConfig = Effect.fn("createBuildConfig")(function* (
   signed: boolean,
   mockUpdates: boolean,
   mockUpdateServerPort: string | undefined,
+  artifactVersion: string,
 ) {
   const buildConfig: Record<string, unknown> = {
     appId: MODESTO_PRODUCTION_BUNDLE_ID,
     productName,
     artifactName: developmentBuild
-      ? "Modesto-Dev-${version}-${arch}.${ext}"
-      : "Modesto-${version}-${arch}.${ext}",
+      ? `Modesto-Dev-${artifactVersion}-\${arch}.\${ext}`
+      : `Modesto-${artifactVersion}-\${arch}.\${ext}`,
     directories: {
       buildResources: "apps/desktop/resources",
     },
@@ -698,8 +700,8 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       }),
   });
 
-  const appVersion = yield* Effect.try({
-    try: () => validateDesktopAppVersion(options.version ?? serverPackageJson.version),
+  const releaseVersion = yield* Effect.try({
+    try: () => resolveDesktopReleaseVersion(options.version ?? serverPackageJson.version),
     catch: (cause) =>
       new BuildScriptError({
         message:
@@ -727,6 +729,10 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     yield* runCommand(
       ChildProcess.make({
         cwd: repoRoot,
+        env: {
+          ...process.env,
+          MODESTO_RELEASE_VERSION: releaseVersion.releaseVersion,
+        },
         ...commandOutputOptions(options.verbose),
         // Windows needs shell mode to resolve .cmd shims (e.g. bun.cmd).
         shell: process.platform === "win32",
@@ -782,8 +788,9 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
 
   const stagePackageJson: StagePackageJson = {
     name: "modesto-desktop",
-    version: appVersion,
-    buildVersion: appVersion,
+    version: releaseVersion.appVersion,
+    buildVersion: releaseVersion.buildVersion,
+    modestoReleaseVersion: releaseVersion.releaseVersion,
     modestoCommitHash: commitHash,
     private: true,
     description: "Modesto Desktop",
@@ -793,10 +800,11 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       options.platform,
       options.target,
       desktopPackageJson.productName ?? "Modesto",
-      appVersion.includes("-"),
+      releaseVersion.releaseVersion.includes("-"),
       options.signed,
       options.mockUpdates,
       options.mockUpdateServerPort,
+      releaseVersion.releaseVersion,
     ),
     dependencies: {
       ...resolvedServerDependencies,
@@ -875,7 +883,7 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
   }
 
   yield* Effect.log(
-    `[desktop-artifact] Building ${options.platform}/${options.target} (arch=${options.arch}, version=${appVersion})...`,
+    `[desktop-artifact] Building ${options.platform}/${options.target} (arch=${options.arch}, version=${releaseVersion.releaseVersion}, updater=${releaseVersion.appVersion})...`,
   );
   yield* runCommand(
     ChildProcess.make({

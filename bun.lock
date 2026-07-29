@@ -14,7 +14,7 @@
     },
     "apps/desktop": {
       "name": "@modesto/desktop",
-      "version": "0.1.0",
+      "version": "0.1.8-patch.1",
       "dependencies": {
         "effect": "catalog:",
         "electron": "40.6.0",
@@ -43,7 +43,7 @@
     },
     "apps/server": {
       "name": "@modesto/cli",
-      "version": "0.1.0",
+      "version": "0.1.8-patch.1",
       "bin": {
         "modesto": "./dist/index.mjs",
       },
@@ -87,7 +87,7 @@
     },
     "apps/web": {
       "name": "@modesto/web",
-      "version": "0.1.0",
+      "version": "0.1.8-patch.1",
       "dependencies": {
         "@base-ui/react": "^1.5.0",
         "@dnd-kit/core": "^6.3.1",
@@ -157,7 +157,7 @@
     },
     "packages/contracts": {
       "name": "@modesto/contracts",
-      "version": "0.1.0",
+      "version": "0.1.8-patch.1",
       "dependencies": {
         "effect": "catalog:",
       },

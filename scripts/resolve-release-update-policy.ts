@@ -9,14 +9,17 @@ import {
   readReleaseUpdatePolicyConfig,
   resolveReleaseUpdatePolicy,
 } from "./lib/release-update-policy.ts";
+import { resolveDesktopReleaseVersion } from "./lib/desktop-app-version.ts";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const rawVersion = process.argv[2];
 if (!rawVersion) throw new Error("Usage: node scripts/resolve-release-update-policy.ts <version>");
 
 const policy = resolveReleaseUpdatePolicy(rawVersion, readReleaseUpdatePolicyConfig(repoRoot));
+const desktopVersion = resolveDesktopReleaseVersion(policy.version);
 const output = {
   version: policy.version,
+  app_version: desktopVersion.appVersion,
   tag: policy.tag,
   is_prerelease: String(policy.isPrerelease),
   make_latest: String(policy.makeLatest),

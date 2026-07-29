@@ -6949,7 +6949,11 @@ export default function Sidebar() {
                       disabled
                     />
                   ) : isOnTeams ? (
-                    <SidebarPrimaryAction icon={UsersIcon} label="Teams · Coming soon" disabled />
+                    <SidebarPrimaryAction
+                      icon={NewThreadIcon}
+                      label="New agent run"
+                      onClick={handlePrimaryNewThread}
+                    />
                   ) : (
                     <>
                       <SidebarPrimaryAction

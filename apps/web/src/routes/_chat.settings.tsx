@@ -3698,7 +3698,7 @@ function SettingsRouteView() {
         <SettingsRow
           title="About Modesto"
           description="A focused desktop workspace for coding agents, code review, and shipping software."
-          status="v0.1.1 · Milpitas"
+          status="v0.1.7.1 · Palo Alto patch"
           control={
             <code className="rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
               {APP_VERSION}

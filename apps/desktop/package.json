@@ -1,6 +1,6 @@
 {
   "name": "@modesto/desktop",
-  "version": "0.1.4",
+  "version": "0.1.8-patch.1",
   "private": true,
   "main": "dist-electron/main.js",
   "scripts": {
@@ -27,5 +27,6 @@
     "vitest": "catalog:",
     "wait-on": "^8.0.2"
   },
-  "productName": "Modesto"
+  "productName": "Modesto",
+  "modestoReleaseVersion": "0.1.7.1"
 }

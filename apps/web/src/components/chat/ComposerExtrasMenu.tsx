@@ -23,6 +23,8 @@ export const ComposerExtrasMenu = memo(function ComposerExtrasMenu(props: {
   supportsFastMode: boolean;
   fastModeEnabled: boolean;
   onAddPhotos: (files: File[]) => void;
+  onCaptureActiveWindow?: () => void;
+  onDeclareCheckpoint?: () => void;
   onToggleFastMode: () => void;
 }) {
   const inputId = useId();
@@ -71,6 +73,18 @@ export const ComposerExtrasMenu = memo(function ComposerExtrasMenu(props: {
             <PaperclipIcon className="size-4 shrink-0" />
             Add image
           </MenuItem>
+          {props.onCaptureActiveWindow ? (
+            <MenuItem onClick={props.onCaptureActiveWindow}>
+              <PaperclipIcon className="size-4 shrink-0" />
+              Capture active window
+            </MenuItem>
+          ) : null}
+          {props.onDeclareCheckpoint ? (
+            <MenuItem onClick={props.onDeclareCheckpoint}>
+              <PaperclipIcon className="size-4 shrink-0" />
+              Declare checkpoint
+            </MenuItem>
+          ) : null}
 
           {props.supportsFastMode ? (
             <>

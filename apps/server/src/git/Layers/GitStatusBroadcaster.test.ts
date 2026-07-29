@@ -6,6 +6,7 @@ import type { GitManagerServiceError } from "../Errors";
 import { GitCore, type GitCoreShape, type GitStatusDetails } from "../Services/GitCore";
 import { GitManager, type GitManagerShape } from "../Services/GitManager";
 import { GitStatusBroadcaster } from "../Services/GitStatusBroadcaster";
+import { REMOTE_STATUS_CACHE_TTL_MS } from "../gitStatusCache";
 import { GitStatusBroadcasterLive } from "./GitStatusBroadcaster";
 
 const baseStatus: GitStatusResult = {
@@ -180,10 +181,10 @@ describe("GitStatusBroadcasterLive", () => {
         const broadcaster = yield* GitStatusBroadcaster;
 
         yield* broadcaster.getStatus({ cwd: "/repo" });
-        vi.setSystemTime(20_000);
+        vi.setSystemTime(REMOTE_STATUS_CACHE_TTL_MS - 1_000);
         yield* broadcaster.getStatus({ cwd: "/repo" });
 
-        vi.setSystemTime(31_000);
+        vi.setSystemTime(REMOTE_STATUS_CACHE_TTL_MS + 1_000);
         state.currentStatus = {
           ...baseStatus,
           pr: {

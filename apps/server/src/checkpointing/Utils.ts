@@ -50,6 +50,18 @@ function agentHandoffCheckpointFamilyPrefix(
   return `${AGENT_CHECKPOINT_REFS_PREFIX}/${Encoding.encodeBase64Url(sourceThreadId)}/${Encoding.encodeBase64Url(destThreadId)}`;
 }
 
+function declaredAgentCheckpointFamilyPrefix(threadId: ThreadId): string {
+  return `${AGENT_CHECKPOINT_REFS_PREFIX}/${Encoding.encodeBase64Url(threadId)}/declared`;
+}
+
+export function checkpointRefForDeclaredAgentTree(threadId: ThreadId): CheckpointRef {
+  return CheckpointRef.makeUnsafe(`${declaredAgentCheckpointFamilyPrefix(threadId)}/tree`);
+}
+
+export function checkpointRefForDeclaredAgentBase(threadId: ThreadId): CheckpointRef {
+  return CheckpointRef.makeUnsafe(`${declaredAgentCheckpointFamilyPrefix(threadId)}/base`);
+}
+
 export function checkpointRefForAgentHandoffTree(
   sourceThreadId: ThreadId,
   destThreadId: ThreadId,

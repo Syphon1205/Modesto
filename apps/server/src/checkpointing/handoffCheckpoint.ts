@@ -12,6 +12,8 @@ import {
   CheckpointRef,
   type OrchestrationCaptureHandoffCheckpointInput,
   type OrchestrationCaptureHandoffCheckpointResult,
+  type OrchestrationDeclareAgentCheckpointInput,
+  type OrchestrationDeclareAgentCheckpointResult,
   type OrchestrationGetHandoffCheckpointDiffInput,
   type OrchestrationGetHandoffCheckpointDiffResult,
   type OrchestrationRestoreHandoffCheckpointInput,
@@ -25,9 +27,104 @@ import type { CheckpointStoreShape } from "./Services/CheckpointStore.ts";
 import {
   checkpointRefForAgentHandoffBase,
   checkpointRefForAgentHandoffTree,
+  checkpointRefForDeclaredAgentBase,
+  checkpointRefForDeclaredAgentTree,
 } from "./Utils.ts";
 
 const HEAD_CHECKPOINT_REF = CheckpointRef.makeUnsafe("HEAD");
+
+export function declareAgentCheckpoint(
+  checkpointStore: CheckpointStoreShape,
+  input: OrchestrationDeclareAgentCheckpointInput,
+): Effect.Effect<OrchestrationDeclareAgentCheckpointResult> {
+  const declaredAt = new Date().toISOString();
+  return Effect.gen(function* () {
+    const isGit = yield* checkpointStore.isGitRepository(input.cwd);
+    if (!isGit) {
+      return {
+        threadId: input.threadId,
+        checkpointRef: null,
+        baseCheckpointRef: null,
+        baseHeadSha: null,
+        checkpointStatus: "not_applicable" as const,
+        unchanged: false,
+        diff: "",
+        declaredAt,
+      };
+    }
+
+    const treeRef = checkpointRefForDeclaredAgentTree(input.threadId);
+    const baseRef = checkpointRefForDeclaredAgentBase(input.threadId);
+    const baseHeadSha = yield* checkpointStore.resolveHeadCommitOid(input.cwd);
+    const existingTreeOid = yield* checkpointStore.resolveCheckpointTreeOid({
+      cwd: input.cwd,
+      checkpointRef: treeRef,
+    });
+    const workingTreeOid = yield* checkpointStore.resolveWorkingTreeOid(input.cwd);
+
+    if (existingTreeOid !== null && workingTreeOid === existingTreeOid) {
+      const hasBase = yield* checkpointStore.hasCheckpointRef({
+        cwd: input.cwd,
+        checkpointRef: baseRef,
+      });
+      const diff = yield* checkpointStore.diffCheckpoints({
+        cwd: input.cwd,
+        fromCheckpointRef: hasBase ? baseRef : HEAD_CHECKPOINT_REF,
+        toCheckpointRef: treeRef,
+        fallbackFromToHead: !hasBase,
+        ignoreWhitespace: true,
+      });
+      return {
+        threadId: input.threadId,
+        checkpointRef: treeRef,
+        baseCheckpointRef: hasBase ? baseRef : null,
+        baseHeadSha,
+        checkpointStatus: "captured" as const,
+        unchanged: true,
+        diff,
+        declaredAt,
+      };
+    }
+
+    const pinned = yield* checkpointStore.copyCheckpointRef({
+      cwd: input.cwd,
+      fromCheckpointRef: HEAD_CHECKPOINT_REF,
+      toCheckpointRef: baseRef,
+    });
+    yield* checkpointStore.captureCheckpoint({ cwd: input.cwd, checkpointRef: treeRef });
+    const diff = yield* checkpointStore.diffCheckpoints({
+      cwd: input.cwd,
+      fromCheckpointRef: pinned ? baseRef : HEAD_CHECKPOINT_REF,
+      toCheckpointRef: treeRef,
+      fallbackFromToHead: !pinned,
+      ignoreWhitespace: true,
+    });
+
+    return {
+      threadId: input.threadId,
+      checkpointRef: treeRef,
+      baseCheckpointRef: pinned ? baseRef : null,
+      baseHeadSha,
+      checkpointStatus: "captured" as const,
+      unchanged: false,
+      diff,
+      declaredAt,
+    };
+  }).pipe(
+    Effect.catch(() =>
+      Effect.succeed({
+        threadId: input.threadId,
+        checkpointRef: null,
+        baseCheckpointRef: null,
+        baseHeadSha: null,
+        checkpointStatus: "missing" as const,
+        unchanged: false,
+        diff: "",
+        declaredAt,
+      }),
+    ),
+  );
+}
 
 function missingCaptureResult(): OrchestrationCaptureHandoffCheckpointResult {
   return {

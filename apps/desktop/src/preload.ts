@@ -10,6 +10,7 @@ import { SERVER_TRANSCRIBE_VOICE_CHANNEL } from "./voiceTranscription";
 import { STORAGE_MIGRATION_IPC_CHANNELS } from "./desktopStorageMigration";
 
 const PICK_FOLDER_CHANNEL = "desktop:pick-folder";
+const CAPTURE_ACTIVE_WINDOW_CHANNEL = "desktop:capture-active-window";
 const SAVE_FILE_CHANNEL = "desktop:save-file";
 const CONFIRM_CHANNEL = "desktop:confirm";
 const SET_THEME_CHANNEL = "desktop:set-theme";
@@ -46,6 +47,7 @@ function getDesktopWsUrl(): string | null {
 contextBridge.exposeInMainWorld("desktopBridge", {
   getWsUrl: getDesktopWsUrl,
   pickFolder: () => ipcRenderer.invoke(PICK_FOLDER_CHANNEL),
+  captureActiveWindow: () => ipcRenderer.invoke(CAPTURE_ACTIVE_WINDOW_CHANNEL),
   saveFile: (input) => ipcRenderer.invoke(SAVE_FILE_CHANNEL, input),
   confirm: (message) => ipcRenderer.invoke(CONFIRM_CHANNEL, message),
   setTheme: (theme) => ipcRenderer.invoke(SET_THEME_CHANNEL, theme),

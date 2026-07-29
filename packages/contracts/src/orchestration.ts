@@ -36,6 +36,7 @@ export const ORCHESTRATION_WS_METHODS = {
   repairState: "orchestration.repairState",
   getTurnDiff: "orchestration.getTurnDiff",
   getFullThreadDiff: "orchestration.getFullThreadDiff",
+  declareAgentCheckpoint: "orchestration.declareAgentCheckpoint",
   captureHandoffCheckpoint: "orchestration.captureHandoffCheckpoint",
   getHandoffCheckpointDiff: "orchestration.getHandoffCheckpointDiff",
   restoreHandoffCheckpoint: "orchestration.restoreHandoffCheckpoint",
@@ -2243,6 +2244,39 @@ export const OrchestrationCaptureHandoffCheckpointResult = Schema.Struct({
 export type OrchestrationCaptureHandoffCheckpointResult =
   typeof OrchestrationCaptureHandoffCheckpointResult.Type;
 
+/**
+ * A clean seam explicitly declared by an agent or person. The Git tree is
+ * captured by the server; callers only supply the operational notes that Git
+ * cannot infer.
+ */
+export const OrchestrationDeclareAgentCheckpointInput = Schema.Struct({
+  threadId: ThreadId,
+  cwd: TrimmedNonEmptyString,
+  summary: TrimmedNonEmptyString,
+  notRun: Schema.optional(Schema.Array(TrimmedNonEmptyString)).pipe(
+    Schema.withDecodingDefault(() => []),
+  ),
+  incomplete: Schema.optional(Schema.Array(TrimmedNonEmptyString)).pipe(
+    Schema.withDecodingDefault(() => []),
+  ),
+  nextStep: TrimmedNonEmptyString,
+});
+export type OrchestrationDeclareAgentCheckpointInput =
+  typeof OrchestrationDeclareAgentCheckpointInput.Type;
+
+export const OrchestrationDeclareAgentCheckpointResult = Schema.Struct({
+  threadId: ThreadId,
+  checkpointRef: Schema.NullOr(CheckpointRef),
+  baseCheckpointRef: Schema.NullOr(CheckpointRef),
+  baseHeadSha: Schema.NullOr(TrimmedNonEmptyString),
+  checkpointStatus: ThreadHandoffCheckpointStatus,
+  unchanged: Schema.Boolean,
+  diff: Schema.String,
+  declaredAt: IsoDateTime,
+});
+export type OrchestrationDeclareAgentCheckpointResult =
+  typeof OrchestrationDeclareAgentCheckpointResult.Type;
+
 export const OrchestrationGetHandoffCheckpointDiffInput = Schema.Struct({
   threadId: ThreadId,
   cwd: TrimmedNonEmptyString,
@@ -2338,6 +2372,10 @@ export const OrchestrationRpcSchemas = {
   getFullThreadDiff: {
     input: OrchestrationGetFullThreadDiffInput,
     output: OrchestrationGetFullThreadDiffResult,
+  },
+  declareAgentCheckpoint: {
+    input: OrchestrationDeclareAgentCheckpointInput,
+    output: OrchestrationDeclareAgentCheckpointResult,
   },
   captureHandoffCheckpoint: {
     input: OrchestrationCaptureHandoffCheckpointInput,

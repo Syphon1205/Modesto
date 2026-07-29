@@ -14,7 +14,6 @@ export const BUILT_IN_COMPOSER_SLASH_COMMANDS = [
   "fork",
   "side",
   "status",
-  "subagents",
   "fast",
   "export",
   "automation",

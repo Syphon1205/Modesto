@@ -2,17 +2,8 @@ import { describe, expect, it } from "vitest";
 import { groupCommandItems, type ComposerCommandItem } from "./ComposerCommandMenu";
 
 describe("groupCommandItems", () => {
-  it("groups mention suggestions as plugins, local, then subagents", () => {
+  it("groups mention suggestions as plugins, then local context", () => {
     const items: ComposerCommandItem[] = [
-      {
-        id: "agent:codex:mini",
-        type: "agent",
-        provider: "codex",
-        alias: "mini",
-        color: "violet",
-        label: "@mini",
-        description: "GPT-5.4 Mini",
-      },
       {
         id: "path:file:/workspace/AGENTS.md",
         type: "path",
@@ -59,17 +50,12 @@ describe("groupCommandItems", () => {
       {
         id: "plugins",
         label: "Plugins",
-        items: [items[2]],
+        items: [items[1]],
       },
       {
         id: "local",
         label: "Local",
-        items: [items[1], items[3]],
-      },
-      {
-        id: "subagents",
-        label: "Subagents",
-        items: [items[0]],
+        items: [items[0], items[2]],
       },
     ]);
   });

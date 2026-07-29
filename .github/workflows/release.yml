@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (for example 1.2.3 or v1.2.3)"
+        description: "Release version (for example 1.2.3, 1.2.3.1, or v1.2.3)"
         required: true
         type: string
       publish_release:
@@ -35,6 +35,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       version: ${{ steps.release_meta.outputs.version }}
+      app_version: ${{ steps.release_meta.outputs.app_version }}
       tag: ${{ steps.release_meta.outputs.tag }}
       is_prerelease: ${{ steps.release_meta.outputs.is_prerelease }}
       make_latest: ${{ steps.release_meta.outputs.make_latest }}
@@ -416,7 +417,7 @@ jobs:
         run: bun run build --filter=@modesto/web --filter=@modesto/cli
 
       - name: Publish CLI package
-        run: node apps/server/scripts/cli.ts publish --tag latest --app-version "${{ needs.preflight.outputs.version }}" --verbose
+        run: node apps/server/scripts/cli.ts publish --tag latest --app-version "${{ needs.preflight.outputs.app_version }}" --verbose
 
   release:
     name: Publish GitHub Release

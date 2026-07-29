@@ -107,6 +107,30 @@ function toRuntimeStatus(session: ProviderSession): "starting" | "running" | "st
   }
 }
 
+export function dedupeProviderSessions(
+  sessions: ReadonlyArray<ProviderSession>,
+  bindingsByThreadId: ReadonlyMap<ThreadId, ProviderRuntimeBinding>,
+): ProviderSession[] {
+  const byThreadId = new Map<ThreadId, ProviderSession>();
+  for (const session of sessions) {
+    const current = byThreadId.get(session.threadId);
+    if (!current) {
+      byThreadId.set(session.threadId, session);
+      continue;
+    }
+    const boundProvider = bindingsByThreadId.get(session.threadId)?.provider;
+    const currentIsBound = current.provider === boundProvider;
+    const candidateIsBound = session.provider === boundProvider;
+    if (
+      (candidateIsBound && !currentIsBound) ||
+      (candidateIsBound === currentIsBound && session.updatedAt > current.updatedAt)
+    ) {
+      byThreadId.set(session.threadId, session);
+    }
+  }
+  return [...byThreadId.values()];
+}
+
 function toRuntimePayloadFromSession(
   session: ProviderSession,
   extra?: {
@@ -1358,7 +1382,7 @@ const makeProviderService = (options?: ProviderServiceLiveOptions) =>
           }
         }
 
-        return activeSessions.map((session) => {
+        const resolvedSessions = activeSessions.map((session) => {
           const binding = bindingsByThreadId.get(session.threadId);
           if (!binding) {
             return session;
@@ -1376,6 +1400,7 @@ const makeProviderService = (options?: ProviderServiceLiveOptions) =>
           }
           return Object.assign({}, session, overrides);
         });
+        return dedupeProviderSessions(resolvedSessions, bindingsByThreadId);
       });
 
     const getCapabilities: ProviderServiceShape["getCapabilities"] = (provider) =>

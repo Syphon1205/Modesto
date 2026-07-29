@@ -285,8 +285,6 @@ import {
 import { ComposerQueuedHeader } from "./chat/ComposerQueuedHeader";
 import { ComposerChromeBubbles } from "./chat/ComposerChromeBubbles";
 import { ComposerInteractionModeControl } from "./chat/ComposerInteractionModeControl";
-import { ComposerMultiAgentControl } from "./chat/ComposerMultiAgentControl";
-import { buildComposerAgentMenuItems } from "../composerAgentMenuItems";
 import GitActionsControl from "./GitActionsControl";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
@@ -1295,7 +1293,7 @@ export default function ChatView({
   const confirmedCustomBinarySessionKeysRef = useRef<Set<string>>(new Set());
   const pendingCustomBinaryPathsByThreadProviderRef = useRef<Map<string, string>>(new Map());
   const [composerCommandPicker, setComposerCommandPicker] = useState<
-    null | "fork-target" | "review-target" | "agents"
+    null | "fork-target" | "review-target"
   >(null);
   const [secondaryChromePlaceholderHeight, setSecondaryChromePlaceholderHeight] = useState(88);
   // Tracks whether the user explicitly dismissed the sidebar for the active turn.
@@ -3464,7 +3462,6 @@ export default function ChatView({
     canOfferForkCommand,
     canOfferSideCommand,
     canOfferExportCommand,
-    dynamicAgents,
   });
   const composerMenuItems = useMemo(() => {
     if (composerCommandPicker === "fork-target") {
@@ -3506,21 +3503,12 @@ export default function ChatView({
         },
       ];
     }
-    if (composerCommandPicker === "agents") {
-      return buildComposerAgentMenuItems({
-        provider: selectedProvider,
-        dynamicAgents,
-      });
-    }
-
     return normalComposerMenuItems;
   }, [
     activeThread?.envMode,
     activeThread?.worktreePath,
     composerCommandPicker,
-    dynamicAgents,
     normalComposerMenuItems,
-    selectedProvider,
   ]);
   const composerMenuOpen = Boolean(composerTrigger || composerCommandPicker);
   const activeComposerMenuItem = useMemo(
@@ -6384,6 +6372,95 @@ export default function ChatView({
       setThreadError,
     ],
   );
+
+  const captureActiveWindow = useCallback(async () => {
+    if (!activeThreadId || !window.desktopBridge?.captureActiveWindow) return;
+    try {
+      const capture = await window.desktopBridge.captureActiveWindow();
+      const file = new File([new Uint8Array(capture.bytes)], capture.name, {
+        type: capture.mimeType,
+      });
+      addComposerImages([file]);
+      const metadata = [
+        `[Active window: ${capture.appName} — ${capture.windowTitle}]`,
+        capture.accessibilityText
+          ? `[Accessibility text]\n${capture.accessibilityText}`
+          : null,
+      ]
+        .filter((line): line is string => line !== null)
+        .join("\n");
+      const currentPrompt =
+        useComposerDraftStore.getState().draftsByThreadId[activeThreadId]?.prompt ?? "";
+      setComposerDraftPrompt(
+        activeThreadId,
+        currentPrompt.trim().length > 0 ? `${currentPrompt}\n\n${metadata}` : metadata,
+      );
+      toastManager.add({
+        type: "success",
+        title: "Window attached",
+        description: `${capture.appName} · ${capture.windowTitle}`,
+      });
+    } catch (error) {
+      toastManager.add({
+        type: "error",
+        title: "Could not capture active window",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Check screen recording permission and try again.",
+      });
+    }
+  }, [activeThreadId, addComposerImages, setComposerDraftPrompt]);
+
+  const declareCheckpoint = useCallback(async () => {
+    const api = readNativeApi();
+    if (!api || !activeThread || !activeProject) return;
+    const cwd = resolveSharedThreadWorkspaceCwd({
+      projectCwd: activeProject.cwd,
+      envMode: activeThread.envMode ?? (activeThread.worktreePath ? "worktree" : "local"),
+      worktreePath: activeThread.worktreePath ?? null,
+    });
+    if (!cwd) return;
+    const summary = window.prompt("What is complete at this checkpoint?")?.trim();
+    if (!summary) return;
+    const nextStep = window.prompt("What should happen next?")?.trim();
+    if (!nextStep) return;
+    const incomplete =
+      window
+        .prompt("What is incomplete? Enter one item per line.", "")
+        ?.split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean) ?? [];
+    const notRun =
+      window
+        .prompt("What was not run? Enter tests or checks one per line.", "")
+        ?.split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean) ?? [];
+    try {
+      const result = await api.orchestration.declareAgentCheckpoint({
+        threadId: activeThread.id,
+        cwd,
+        summary,
+        incomplete,
+        notRun,
+        nextStep,
+      });
+      toastManager.add({
+        type: "success",
+        title: result.unchanged ? "Checkpoint unchanged" : "Checkpoint declared",
+        description: result.unchanged
+          ? "Nothing changed, so the existing checkpoint was reused."
+          : "Git state and handoff notes were captured.",
+      });
+    } catch (error) {
+      toastManager.add({
+        type: "error",
+        title: "Could not declare checkpoint",
+        description: error instanceof Error ? error.message : "Try again after Git recovers.",
+      });
+    }
+  }, [activeProject, activeThread]);
 
   const removeComposerImage = (imageId: string) => {
     removeComposerImageFromDraft(imageId);
@@ -9658,25 +9735,6 @@ export default function ChatView({
     threadId,
   ]);
 
-  const openMultiAgentPicker = useCallback(() => {
-    const agents = buildComposerAgentMenuItems({
-      provider: selectedProvider,
-      dynamicAgents,
-    });
-    if (agents.length === 0) {
-      toastManager.add({
-        type: "warning",
-        title: "No agents available",
-        description:
-          "This provider has no @agent(task) aliases yet. Switch to Codex or Claude, or configure runtime agents.",
-      });
-      return;
-    }
-    setComposerCommandPicker("agents");
-    setComposerHighlightedItemId(agents[0]?.id ?? null);
-    scheduleComposerFocus();
-  }, [dynamicAgents, scheduleComposerFocus, selectedProvider]);
-
   const slashEditorActions = useMemo(
     () => ({
       resolveActiveComposerTrigger,
@@ -9751,9 +9809,6 @@ export default function ChatView({
     openReviewTargetPicker: () => {
       setComposerCommandPicker("review-target");
       setComposerHighlightedItemId("review-target:changes");
-    },
-    openAgentsPicker: () => {
-      openMultiAgentPicker();
     },
     setComposerDraftProviderModelOptions,
     editorActions: slashEditorActions,
@@ -10285,6 +10340,28 @@ export default function ChatView({
     if (!activeThread) return;
     setThreadError(activeThread.id, null);
   }, [activeThread, setThreadError]);
+  const recoverActiveThreadSession = useCallback(async () => {
+    const api = readNativeApi();
+    if (!api || !activeThread) return;
+    try {
+      await api.orchestration.repairState();
+      const snapshot = await api.orchestration.getShellSnapshot();
+      syncServerShellSnapshot(snapshot);
+      setThreadError(activeThread.id, null);
+      toastManager.add({
+        type: "success",
+        title: "Session recovered",
+        description: "Restored state was reconciled. You can retry the last action.",
+      });
+    } catch (error) {
+      toastManager.add({
+        type: "error",
+        title: "Recovery did not finish",
+        description:
+          error instanceof Error ? error.message : "Restart Modesto, then try recovery again.",
+      });
+    }
+  }, [activeThread, setThreadError, syncServerShellSnapshot]);
   const dismissActiveProviderHealthBanner = useCallback(() => {
     if (!activeProviderHealthBannerDismissalKey) return;
     setDismissedProviderHealthBannerKeys((current) => {
@@ -10418,6 +10495,14 @@ export default function ChatView({
         supportsFastMode={composerTraitSelection.caps.supportsFastMode}
         fastModeEnabled={composerTraitSelection.fastModeEnabled}
         onAddPhotos={addComposerImages}
+        onCaptureActiveWindow={
+          typeof window !== "undefined" && window.desktopBridge?.captureActiveWindow
+            ? () => void captureActiveWindow()
+            : undefined
+        }
+        onDeclareCheckpoint={
+          activeProject?.kind === "project" && activeThread ? () => void declareCheckpoint() : undefined
+        }
         onToggleFastMode={toggleFastMode}
       />
       {!isVoiceRecording && !isVoiceTranscribing ? (
@@ -10890,11 +10975,6 @@ export default function ChatView({
                             interactionMode={interactionMode}
                             onInteractionModeChange={handleInteractionModeChange}
                           />
-                          <ComposerMultiAgentControl
-                            active={composerCommandPicker === "agents"}
-                            onOpen={openMultiAgentPicker}
-                          />
-
                           {activeTaskList || sidebarProposedPlan || planSidebarOpen ? (
                             <Button
                               variant="chrome"
@@ -11313,7 +11393,11 @@ export default function ChatView({
           });
         }}
       />
-      <ThreadErrorBanner error={activeThread.error} onDismiss={dismissActiveThreadError} />
+      <ThreadErrorBanner
+        error={activeThread.error}
+        onDismiss={dismissActiveThreadError}
+        onRecover={() => void recoverActiveThreadSession()}
+      />
       <HandoffSeamBanner
         thread={activeThread}
         activeProvider={selectedProvider}

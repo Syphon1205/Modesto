@@ -27,20 +27,21 @@ export interface ResolvedReleaseUpdatePolicy {
   readonly channel: string;
 }
 
-const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
+const VERSION_PATTERN =
+  /^(\d+)\.(\d+)\.(\d+)(?:\.([1-9]\d*)|-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 const CHANNEL_PATTERN = /^[a-z0-9-]+$/;
 
 function parseVersion(value: string): { core: readonly number[]; isPrerelease: boolean } {
   const match = VERSION_PATTERN.exec(value);
   if (!match) throw new Error(`Invalid release version: ${value}`);
   return {
-    core: [Number(match[1]), Number(match[2]), Number(match[3])],
-    isPrerelease: match[4] !== undefined,
+    core: [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4] ?? 0)],
+    isPrerelease: match[5] !== undefined,
   };
 }
 
 function compareCoreVersions(left: readonly number[], right: readonly number[]): number {
-  for (let index = 0; index < 3; index += 1) {
+  for (let index = 0; index < 4; index += 1) {
     const difference = (left[index] ?? 0) - (right[index] ?? 0);
     if (difference !== 0) return difference;
   }

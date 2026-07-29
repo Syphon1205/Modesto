@@ -168,6 +168,8 @@ import type {
   ClientOrchestrationCommand,
   OrchestrationCaptureHandoffCheckpointInput,
   OrchestrationCaptureHandoffCheckpointResult,
+  OrchestrationDeclareAgentCheckpointInput,
+  OrchestrationDeclareAgentCheckpointResult,
   OrchestrationGetFullThreadDiffInput,
   OrchestrationGetFullThreadDiffResult,
   OrchestrationGetHandoffCheckpointDiffInput,
@@ -395,6 +397,17 @@ export interface DesktopWindowState {
   isFullscreen: boolean;
 }
 
+export interface DesktopActiveWindowCaptureResult {
+  readonly name: string;
+  readonly mimeType: "image/png";
+  readonly sizeBytes: number;
+  readonly bytes: ArrayBuffer;
+  readonly appName: string;
+  readonly windowTitle: string;
+  readonly accessibilityText: string | null;
+  readonly capturedAt: string;
+}
+
 export interface ModestoStorageSnapshot {
   readonly version: 1;
   readonly exportedAt: string;
@@ -404,6 +417,7 @@ export interface ModestoStorageSnapshot {
 export interface DesktopBridge {
   getWsUrl: () => string | null;
   pickFolder: () => Promise<string | null>;
+  captureActiveWindow?: () => Promise<DesktopActiveWindowCaptureResult>;
   saveFile?: (input: {
     defaultFilename: string;
     contents: string;
@@ -676,6 +690,9 @@ export interface NativeApi {
     getFullThreadDiff: (
       input: OrchestrationGetFullThreadDiffInput,
     ) => Promise<OrchestrationGetFullThreadDiffResult>;
+    declareAgentCheckpoint: (
+      input: OrchestrationDeclareAgentCheckpointInput,
+    ) => Promise<OrchestrationDeclareAgentCheckpointResult>;
     captureHandoffCheckpoint: (
       input: OrchestrationCaptureHandoffCheckpointInput,
     ) => Promise<OrchestrationCaptureHandoffCheckpointResult>;

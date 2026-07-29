@@ -8,8 +8,9 @@
 // ---------------
 //   - Prepend new releases so the file reads newest-first (the UI sorts too,
 //     but keeping the source tidy makes PRs easier to review).
-//   - `version` must match `apps/web/package.json#version` exactly. The
-//     logic compares versions as semver and only opens the dialog when the
+//   - `version` must match the public release version exposed to the web build.
+//     Four-part patch releases use a separate updater-safe package version.
+//     The logic compares versions numerically and only opens the dialog when the
 //     installed build has a curated entry here.
 //   - `date` is rendered verbatim — pick whatever format you want (e.g.
 //     `"Apr 18"`, `"2026-04-18"`), just be consistent release-to-release.
@@ -26,6 +27,60 @@
 import type { WhatsNewEntry } from "./logic";
 
 export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
+  {
+    version: "0.1.7.1",
+    date: "Jul 29",
+    features: [
+      {
+        id: "palo-alto-patch-teams",
+        title: "A more useful Teams room",
+        description:
+          "Project spaces now surface shared runs, people and agents, attention states, and one filterable timeline for checkpoints, handoffs, reviews, and diffs.",
+        details:
+          "Open a run directly from Teams to watch it, steer it, recover it, or review its work without losing the project-wide context.",
+      },
+      {
+        id: "palo-alto-patch-composer",
+        title: "Simpler, safer chat controls",
+        description:
+          "The agent-selection controls that could crash the composer are gone. Existing agent activity remains readable in conversation history.",
+      },
+      {
+        id: "palo-alto-patch-releases",
+        title: "Patch releases without version churn",
+        description:
+          "Palo Alto patches now use four-part versions such as 0.1.7.1, with updater-safe ordering behind the scenes.",
+      },
+    ],
+  },
+  {
+    version: "0.1.7",
+    date: "Jul 29",
+    features: [
+      {
+        id: "palo-alto-checkpoints",
+        title: "First-class checkpoints and handoffs",
+        description:
+          "Declare a clean seam with the Git diff, checks not run, incomplete work, and the next step. Unchanged declarations reuse the existing checkpoint.",
+        details:
+          "Palo Alto carries the project, branch, live Git state, latest declared checkpoint, and next action across Claude, Codex, Cursor, and OpenCode sessions.",
+      },
+      {
+        id: "palo-alto-active-window",
+        title: "Active window context",
+        description:
+          "Attach the active window screenshot, app, title, and accessibility text available from the operating system.",
+      },
+      {
+        id: "palo-alto-teams",
+        title: "Teams project spaces",
+        description:
+          "Teams now groups human and agent participants around project spaces with a shared timeline for runs, checkpoints, handoffs, diffs, and reviews.",
+        details:
+          "Workflow integrations such as n8n now live under Automations rather than the Teams participant model.",
+      },
+    ],
+  },
   {
     version: "0.1.4",
     date: "Jul 27",
