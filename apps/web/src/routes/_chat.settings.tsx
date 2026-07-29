@@ -74,6 +74,7 @@ import {
 } from "../components/ui/autocomplete";
 import { Button } from "../components/ui/button";
 import { Collapsible, CollapsibleContent } from "../components/ui/collapsible";
+import { DisclosureChevron } from "../components/ui/DisclosureChevron";
 import { Input } from "../components/ui/input";
 import {
   SettingResetButton,
@@ -240,6 +241,7 @@ const PROVIDER_SELECT_OPTIONS = [
   "codex",
   "claudeAgent",
   "cursor",
+  "poolside",
   "gemini",
   "grok",
   "droid",
@@ -269,6 +271,7 @@ type InstallBinarySettingsKey =
   | "claudeBinaryPath"
   | "codexBinaryPath"
   | "cursorBinaryPath"
+  | "poolsideBinaryPath"
   | "geminiBinaryPath"
   | "grokBinaryPath"
   | "droidBinaryPath"
@@ -308,6 +311,7 @@ const PROVIDER_VISIBILITY_OPTIONS: ReadonlyArray<{ provider: ProviderKind; title
   { provider: "codex", title: PROVIDER_DISPLAY_NAMES.codex },
   { provider: "claudeAgent", title: PROVIDER_DISPLAY_NAMES.claudeAgent },
   { provider: "cursor", title: PROVIDER_DISPLAY_NAMES.cursor },
+  { provider: "poolside", title: PROVIDER_DISPLAY_NAMES.poolside },
   { provider: "gemini", title: PROVIDER_DISPLAY_NAMES.gemini },
   { provider: "grok", title: PROVIDER_DISPLAY_NAMES.grok },
   { provider: "droid", title: PROVIDER_DISPLAY_NAMES.droid },
@@ -434,6 +438,23 @@ const INSTALL_PROVIDER_SETTINGS: readonly InstallProviderSettings[] = [
     apiEndpointKey: "cursorApiEndpoint",
     apiEndpointPlaceholder: "https://api2.cursor.sh",
     apiEndpointDescription: "Optional Cursor API endpoint override passed to `cursor-agent -e`.",
+  },
+  {
+    provider: "poolside",
+    title: "Poolside",
+    docs: [
+      { label: "Install", href: "https://docs.poolside.ai/cli/install" },
+      { label: "Setup", href: "https://docs.poolside.ai/cli/cli-reference" },
+      { label: "Config", href: "https://docs.poolside.ai/settings-file-reference" },
+    ],
+    binaryPathKey: "poolsideBinaryPath",
+    binaryPlaceholder: "Poolside Agent CLI path",
+    binaryDescription: (
+      <>
+        Leave blank to use <code>pool</code> from your PATH. Modesto connects to your deployment
+        through <code>pool acp</code>; model weights stay outside Modesto.
+      </>
+    ),
   },
   {
     provider: "gemini",
@@ -721,7 +742,11 @@ function ProviderCredentialControls({
       {status.signInSupported ? (
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-medium text-foreground">
-            {authenticated ? `Signed in to ${title}` : `Sign in to ${title}`}
+            {authenticated
+              ? `Signed in to ${title}`
+              : provider === "poolside"
+                ? "Set up Poolside"
+                : `Sign in to ${title}`}
           </span>
           {authenticated ? (
             <span className="flex items-center gap-1.5 text-xs text-success">
@@ -738,7 +763,7 @@ function ProviderCredentialControls({
               {signInMutation.isPending || awaitingSignIn ? (
                 <Loader2Icon className="size-3.5 animate-spin" />
               ) : null}
-              {awaitingSignIn ? "Waiting…" : "Sign in"}
+              {awaitingSignIn ? "Waiting…" : provider === "poolside" ? "Set up" : "Sign in"}
             </Button>
           )}
         </div>
@@ -921,6 +946,7 @@ function SettingsRouteView() {
     codex: Boolean(settings.codexBinaryPath || settings.codexHomePath),
     claudeAgent: Boolean(settings.claudeBinaryPath),
     cursor: Boolean(settings.cursorBinaryPath || settings.cursorApiEndpoint),
+    poolside: Boolean(settings.poolsideBinaryPath),
     gemini: Boolean(settings.geminiBinaryPath),
     grok: Boolean(settings.grokBinaryPath),
     droid: Boolean(settings.droidBinaryPath),
@@ -976,6 +1002,7 @@ function SettingsRouteView() {
     codex: "",
     claudeAgent: "",
     cursor: "",
+    poolside: "",
     gemini: "",
     grok: "",
     droid: "",
@@ -1030,6 +1057,7 @@ function SettingsRouteView() {
   const codexHomePath = settings.codexHomePath;
   const claudeBinaryPath = settings.claudeBinaryPath;
   const cursorBinaryPath = settings.cursorBinaryPath;
+  const poolsideBinaryPath = settings.poolsideBinaryPath;
   const cursorApiEndpoint = settings.cursorApiEndpoint;
   const geminiBinaryPath = settings.geminiBinaryPath;
   const grokBinaryPath = settings.grokBinaryPath;
@@ -1224,6 +1252,7 @@ function SettingsRouteView() {
     settings.claudeBinaryPath !== defaults.claudeBinaryPath ||
     settings.cursorBinaryPath !== defaults.cursorBinaryPath ||
     settings.cursorApiEndpoint !== defaults.cursorApiEndpoint ||
+    settings.poolsideBinaryPath !== defaults.poolsideBinaryPath ||
     settings.geminiBinaryPath !== defaults.geminiBinaryPath ||
     settings.grokBinaryPath !== defaults.grokBinaryPath ||
     settings.droidBinaryPath !== defaults.droidBinaryPath ||
@@ -1476,6 +1505,7 @@ function SettingsRouteView() {
       codex: false,
       claudeAgent: false,
       cursor: false,
+      poolside: false,
       gemini: false,
       grok: false,
       droid: false,
@@ -1488,6 +1518,7 @@ function SettingsRouteView() {
       codex: "",
       claudeAgent: "",
       cursor: "",
+      poolside: "",
       gemini: "",
       grok: "",
       droid: "",
@@ -2880,7 +2911,7 @@ function SettingsRouteView() {
 
   const renderProvidersPanel = () => (
     <div className="space-y-6">
-      {renderProviderUpdatesSection()}
+      {renderProviderInstallsSection()}
       <SettingsSection title="Provider picker">
         <SettingsRow
           title="Visible providers"
@@ -2950,7 +2981,7 @@ function SettingsRouteView() {
           </DndContext>
         </SettingsRow>
       </SettingsSection>
-      {renderProviderInstallsSection()}
+      {renderProviderUpdatesSection()}
       <CodeReviewSettingsPanel />
     </div>
   );
@@ -3036,8 +3067,13 @@ function SettingsRouteView() {
   );
 
   const renderProviderInstallsSection = () => (
-    <div ref={providerInstallsRef} id={SETTINGS_TARGETS.providerInstalls}>
-      <SettingsSection title="GitHub">
+    <div
+      ref={providerInstallsRef}
+      id={SETTINGS_TARGETS.providerInstalls}
+      className="flex flex-col gap-6"
+    >
+      <div className="order-2">
+        <SettingsSection title="GitHub">
         <SettingsRow
           title="GitHub account"
           description="Connect the GitHub CLI account Modesto uses to push branches and create pull requests."
@@ -3088,8 +3124,10 @@ function SettingsRouteView() {
             )
           }
         />
-      </SettingsSection>
-      <SettingsSection title="Coding providers">
+        </SettingsSection>
+      </div>
+      <div className="order-1">
+        <SettingsSection title="Coding providers">
         <SettingsRow
           title="Installed CLIs"
           description="Install coding CLIs inside Modesto, check versions, and open a row only when you need binary overrides."
@@ -3111,6 +3149,7 @@ function SettingsRouteView() {
                     codexHomePath: defaults.codexHomePath,
                     cursorBinaryPath: defaults.cursorBinaryPath,
                     cursorApiEndpoint: defaults.cursorApiEndpoint,
+                    poolsideBinaryPath: defaults.poolsideBinaryPath,
                     geminiBinaryPath: defaults.geminiBinaryPath,
                     grokBinaryPath: defaults.grokBinaryPath,
                     droidBinaryPath: defaults.droidBinaryPath,
@@ -3128,6 +3167,7 @@ function SettingsRouteView() {
                     codex: false,
                     claudeAgent: false,
                     cursor: false,
+                    poolside: false,
                     gemini: false,
                     grok: false,
                     droid: false,
@@ -3153,6 +3193,8 @@ function SettingsRouteView() {
                       : providerSettings.provider === "cursor"
                         ? settings.cursorBinaryPath !== defaults.cursorBinaryPath ||
                           settings.cursorApiEndpoint !== defaults.cursorApiEndpoint
+                        : providerSettings.provider === "poolside"
+                          ? settings.poolsideBinaryPath !== defaults.poolsideBinaryPath
                         : providerSettings.provider === "gemini"
                           ? settings.geminiBinaryPath !== defaults.geminiBinaryPath
                           : providerSettings.provider === "grok"
@@ -3177,6 +3219,8 @@ function SettingsRouteView() {
                     ? claudeBinaryPath
                     : providerSettings.binaryPathKey === "cursorBinaryPath"
                       ? cursorBinaryPath
+                      : providerSettings.binaryPathKey === "poolsideBinaryPath"
+                        ? poolsideBinaryPath
                       : providerSettings.binaryPathKey === "geminiBinaryPath"
                         ? geminiBinaryPath
                         : providerSettings.binaryPathKey === "grokBinaryPath"
@@ -3258,9 +3302,12 @@ function SettingsRouteView() {
                             }))
                           }
                         >
-                          <span className="min-w-0 flex-1 text-sm font-medium text-foreground">
-                            {providerSettings.title}
-                          </span>
+                          <ProviderOptionLabel
+                            provider={providerSettings.provider}
+                            label={providerSettings.title}
+                            className="min-w-0 flex-1 text-sm font-medium text-foreground"
+                            iconClassName="size-4"
+                          />
                           <span
                             className={cn(
                               "shrink-0 text-[11px]",
@@ -3286,12 +3333,7 @@ function SettingsRouteView() {
                               {providerUpdateLabel}
                             </span>
                           ) : null}
-                          <ChevronDownIcon
-                            className={cn(
-                              "size-4 shrink-0 text-muted-foreground transition-transform",
-                              isOpen && "rotate-180",
-                            )}
-                          />
+                          <DisclosureChevron open={isOpen} className="size-4" />
                         </button>
                         {shouldShowProviderUpdateButton ? (
                           <Button
@@ -3380,6 +3422,8 @@ function SettingsRouteView() {
                                       ? { claudeBinaryPath: nextValue }
                                       : providerSettings.binaryPathKey === "cursorBinaryPath"
                                         ? { cursorBinaryPath: nextValue }
+                                        : providerSettings.binaryPathKey === "poolsideBinaryPath"
+                                          ? { poolsideBinaryPath: nextValue }
                                         : providerSettings.binaryPathKey === "geminiBinaryPath"
                                           ? { geminiBinaryPath: nextValue }
                                           : providerSettings.binaryPathKey === "grokBinaryPath"
@@ -3604,7 +3648,8 @@ function SettingsRouteView() {
             </div>
           </div>
         </SettingsRow>
-      </SettingsSection>
+        </SettingsSection>
+      </div>
     </div>
   );
 

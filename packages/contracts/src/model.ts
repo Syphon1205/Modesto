@@ -144,6 +144,13 @@ export const CursorModelOptions = Schema.Struct({
 });
 export type CursorModelOptions = typeof CursorModelOptions.Type;
 
+// Poolside exposes model parameters over ACP. Keep these values open-ended so
+// tenant-defined and future Poolside models survive persistence without a Modesto release.
+export const PoolsideModelOptions = Schema.Struct({
+  reasoningEffort: Schema.optional(TrimmedNonEmptyString),
+});
+export type PoolsideModelOptions = typeof PoolsideModelOptions.Type;
+
 export const GrokModelOptions = Schema.Struct({
   reasoningEffort: Schema.optional(Schema.Literals(GROK_REASONING_EFFORT_OPTIONS)),
 });
@@ -158,6 +165,7 @@ export const ProviderModelOptions = Schema.Struct({
   codex: Schema.optional(CodexModelOptions),
   claudeAgent: Schema.optional(ClaudeModelOptions),
   cursor: Schema.optional(CursorModelOptions),
+  poolside: Schema.optional(PoolsideModelOptions),
   gemini: Schema.optional(GeminiModelOptions),
   grok: Schema.optional(GrokModelOptions),
   droid: Schema.optional(DroidModelOptions),
@@ -910,6 +918,9 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
       },
     },
   ],
+  // The authenticated Poolside deployment is authoritative. ACP discovery fills
+  // this at runtime (Laguna M.1, Laguna XS.2, Malibu, and future tenant models).
+  poolside: [],
 } as const satisfies Record<ProviderKind, readonly ModelDefinition[]>;
 export type ModelOptionsByProvider = typeof MODEL_OPTIONS_BY_PROVIDER;
 
@@ -922,6 +933,7 @@ export const DEFAULT_MODEL_BY_PROVIDER: Record<ProviderWithDefaultModel, ModelSl
   codex: "gpt-5.5",
   claudeAgent: "claude-sonnet-5",
   cursor: "auto",
+  poolside: "default",
   gemini: "auto-gemini-3",
   grok: "grok-build",
   droid: "claude-opus-4-8",
@@ -982,6 +994,7 @@ export const MODEL_SLUG_ALIASES_BY_PROVIDER: Record<ProviderKind, Record<string,
     "codex-5.3": "gpt-5.3-codex",
     "gemini-3": "gemini-3-pro",
   },
+  poolside: {},
   gemini: {
     auto: "auto-gemini-3",
     "auto-gemini-3": "auto-gemini-3",
@@ -1079,6 +1092,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderKind, string> = {
   codex: "Codex",
   claudeAgent: "Claude",
   cursor: "Cursor",
+  poolside: "Poolside",
   gemini: "Gemini",
   grok: "Grok",
   droid: "Droid",

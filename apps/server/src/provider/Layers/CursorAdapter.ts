@@ -153,6 +153,8 @@ function mergeCursorModelDescriptors(
 export interface CursorAdapterLiveOptions {
   readonly nativeEventLogPath?: string;
   readonly nativeEventLogger?: EventNdjsonLogger;
+  /** Skip Cursor's `models` fallback when this ACP engine wraps another CLI. */
+  readonly acpOnlyModelDiscovery?: boolean;
 }
 
 interface PendingApproval {
@@ -701,6 +703,9 @@ export function makeCursorAdapter(
               : {}),
             ...(cursorSettings.apiEndpoint !== undefined
               ? { apiEndpoint: cursorSettings.apiEndpoint }
+              : {}),
+            ...(cursorSettings.authMethodId !== undefined
+              ? { authMethodId: cursorSettings.authMethodId }
               : {}),
             ...(providerCursorOptions?.binaryPath !== undefined
               ? { binaryPath: providerCursorOptions.binaryPath }
@@ -1545,6 +1550,9 @@ export function makeCursorAdapter(
       const effectiveAcpSettings: CursorAcpRuntimeCursorSettings = {
         binaryPath: effectiveBinaryPath,
         ...(effectiveApiEndpoint ? { apiEndpoint: effectiveApiEndpoint } : {}),
+        ...(cursorSettings.authMethodId !== undefined
+          ? { authMethodId: cursorSettings.authMethodId }
+          : {}),
       };
       const runCursorAcpModelDiscovery = Effect.gen(function* () {
         const runtime = yield* makeCursorAcpRuntime({
@@ -1583,12 +1591,14 @@ export function makeCursorAdapter(
 
       const discovery = runCursorAcpModelDiscovery.pipe(
         Effect.flatMap((acpModels) =>
-          runCursorModelListCommand.pipe(
-            Effect.map((cliModels) => mergeCursorModelDescriptors(acpModels, cliModels)),
-            // ACP is the authoritative source for editable model parameters; keep
-            // it even if the raw CLI variant list is temporarily unavailable.
-            Effect.catch(() => Effect.succeed(acpModels)),
-          ),
+          options?.acpOnlyModelDiscovery
+            ? Effect.succeed(acpModels)
+            : runCursorModelListCommand.pipe(
+                Effect.map((cliModels) => mergeCursorModelDescriptors(acpModels, cliModels)),
+                // ACP is the authoritative source for editable model parameters; keep
+                // it even if the raw CLI variant list is temporarily unavailable.
+                Effect.catch(() => Effect.succeed(acpModels)),
+              ),
         ),
         Effect.map((models) => ({
           models,
@@ -1597,18 +1607,22 @@ export function makeCursorAdapter(
         })),
         // The CLI list still works without an authenticated ACP session and keeps
         // discovery resilient if the extension method is unavailable.
-        Effect.catch(() =>
-          runCursorModelListCommand.pipe(
-            Effect.map(
-              (cliModels) =>
-                ({
-                  models: cliModels,
-                  source: "cursor.cli",
-                  cached: false,
-                }) satisfies ProviderListModelsResult,
-            ),
-          ),
-        ),
+        ...(options?.acpOnlyModelDiscovery
+          ? []
+          : [
+              Effect.catch(() =>
+                runCursorModelListCommand.pipe(
+                  Effect.map(
+                    (cliModels) =>
+                      ({
+                        models: cliModels,
+                        source: "cursor.cli",
+                        cached: false,
+                      }) satisfies ProviderListModelsResult,
+                  ),
+                ),
+              ),
+            ]),
       );
 
       return discovery.pipe(

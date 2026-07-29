@@ -12,7 +12,6 @@ import { useComposerDraftStore } from "../../composerDraftStore";
 
 async function mountMenu(props?: {
   activePlan?: boolean;
-  interactionMode?: "default" | "plan";
   modelSelection?: ModelSelection;
   prompt?: string;
 }) {
@@ -61,9 +60,7 @@ async function mountMenu(props?: {
   const screen = await render(
     <CompactComposerControlsMenu
       activePlan={props?.activePlan ?? false}
-      interactionMode={props?.interactionMode ?? "default"}
       planSidebarOpen={false}
-      runtimeMode="approval-required"
       traitsMenuContent={
         <TraitsMenuContent
           provider={provider}
@@ -74,9 +71,7 @@ async function mountMenu(props?: {
           onPromptChange={onPromptChange}
         />
       }
-      onToggleInteractionMode={vi.fn()}
       onTogglePlanSidebar={vi.fn()}
-      onToggleRuntimeMode={vi.fn()}
     />,
     { container: host },
   );
@@ -186,22 +181,21 @@ describe("CompactComposerControlsMenu", () => {
     });
   });
 
-  it("shows both build and plan mode options", async () => {
+  it("does not show Agent/Plan mode options", async () => {
     await using _ = await mountMenu();
 
     await page.getByLabelText("More composer controls").click();
 
     await vi.waitFor(() => {
       const text = document.body.textContent ?? "";
-      expect(text).toContain("Agent");
-      expect(text).toContain("Plan");
+      expect(text).not.toContain("Agent");
+      expect(text).not.toContain("Plan");
     });
   });
 
   it("shows the plan sidebar toggle when a plan is active", async () => {
     await using _ = await mountMenu({
       activePlan: true,
-      interactionMode: "plan",
     });
 
     await page.getByLabelText("More composer controls").click();

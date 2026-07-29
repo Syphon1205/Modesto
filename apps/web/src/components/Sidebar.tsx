@@ -6556,6 +6556,7 @@ export default function Sidebar() {
           "codex",
           "claude",
           "cursor",
+          "poolside",
           "opencode",
         ],
         shortcutLabel: importThreadShortcutLabel,
@@ -7864,6 +7865,7 @@ function SidebarSearchPaletteController(props: {
         "codex",
         "claudeAgent",
         "cursor",
+        "poolside",
         "gemini",
         "grok",
         "droid",
@@ -7876,7 +7878,18 @@ function SidebarSearchPaletteController(props: {
   const threads = useStore(selectAllThreads);
   const sidebarDisplayThreads = useStore(selectSidebarDisplayThreads);
   const importProviders: ReadonlyArray<ImportProviderKind> = (
-    ["codex", "claudeAgent", "cursor", "gemini", "grok", "droid", "kilo", "opencode", "pi"] as const
+    [
+      "codex",
+      "claudeAgent",
+      "cursor",
+      "poolside",
+      "gemini",
+      "grok",
+      "droid",
+      "kilo",
+      "opencode",
+      "pi",
+    ] as const
   ).filter((provider, index) => supportsThreadImport(importProviderCapabilityQueries[index]?.data));
   const searchPaletteThreads = useMemo<SidebarSearchThread[]>(() => {
     const threadById = new Map(threads.map((thread) => [thread.id, thread] as const));

@@ -1,6 +1,5 @@
 // FILE: ComposerExtrasMenu.tsx
 // Purpose: Hosts the composer `+` menu for attachments and Fast mode.
-// Mode (Agent/Plan) lives on the dedicated footer picker like Cursor/Codex.
 // Layer: Chat composer presentation
 
 import { memo, useId, useRef, type ChangeEvent } from "react";

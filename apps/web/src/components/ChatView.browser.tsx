@@ -2688,11 +2688,6 @@ describe("ChatView timeline estimator parity (full app)", () => {
       await vi.waitFor(
         () => {
           expect(readInteractionMode()).toBe("plan");
-          const modeControl = document.querySelector<HTMLButtonElement>(
-            '[data-testid="composer-interaction-mode"]',
-          );
-          expect(modeControl?.getAttribute("aria-label")).toBe("Mode: Plan");
-          expect(modeControl?.title).toContain("propose a plan");
         },
         { timeout: 8_000, interval: 16 },
       );
@@ -4739,7 +4734,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
     }
   });
 
-  it("enables plan mode from the composer mode picker", async () => {
+  it("enables plan mode with Shift+Tab from the composer", async () => {
     const mounted = await mountChatView({
       viewport: DEFAULT_VIEWPORT,
       snapshot: createSnapshotForTargetUser({
@@ -4749,8 +4744,16 @@ describe("ChatView timeline estimator parity (full app)", () => {
     });
 
     try {
-      await page.getByTestId("composer-interaction-mode").click();
-      await page.getByRole("menuitemradio", { name: /Plan/ }).click();
+      const composerEditor = await waitForComposerEditor();
+      composerEditor.focus();
+      composerEditor.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "Tab",
+          shiftKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
 
       await vi.waitFor(() => {
         expect(useComposerDraftStore.getState().draftsByThreadId[THREAD_ID]?.interactionMode).toBe(
@@ -4762,7 +4765,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
     }
   });
 
-  it("distinguishes plan mode from the plan details sidebar button", async () => {
+  it("keeps plan details sidebar available while in plan mode", async () => {
     const mounted = await mountChatView({
       viewport: DEFAULT_VIEWPORT,
       snapshot: createSnapshotWithSettledPlanAwaitingFollowUp(),
@@ -4772,13 +4775,9 @@ describe("ChatView timeline estimator parity (full app)", () => {
       await waitForServerConfigToApply();
 
       await vi.waitFor(() => {
-        const modeControl = document.querySelector<HTMLButtonElement>(
-          '[data-testid="composer-interaction-mode"]',
-        );
-        expect(modeControl?.getAttribute("aria-label")).toBe("Mode: Plan");
+        expect(document.querySelector('[data-testid="composer-interaction-mode"]')).toBeNull();
         expect(document.querySelector('button[title="Show plan sidebar"]')).toBeNull();
       });
-      await expect.element(page.getByTestId("composer-interaction-mode")).toBeInTheDocument();
       await expect.element(page.getByTestId("composer-multi-agent")).toBeInTheDocument();
       await expect.element(page.getByLabelText("Show plan details sidebar")).toBeInTheDocument();
     } finally {

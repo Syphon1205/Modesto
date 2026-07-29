@@ -24,6 +24,7 @@ import { GrokAdapter } from "../Services/GrokAdapter.ts";
 import { KiloAdapter } from "../Services/KiloAdapter.ts";
 import { OpenCodeAdapter } from "../Services/OpenCodeAdapter.ts";
 import { PiAdapter } from "../Services/PiAdapter.ts";
+import { PoolsideAdapter } from "../Services/PoolsideAdapter.ts";
 
 export interface ProviderAdapterRegistryLiveOptions {
   readonly adapters?: ReadonlyArray<ProviderAdapterShape<ProviderAdapterError>>;
@@ -38,6 +39,7 @@ const makeProviderAdapterRegistry = (options?: ProviderAdapterRegistryLiveOption
             yield* CodexAdapter,
             yield* ClaudeAdapter,
             yield* CursorAdapter,
+            yield* PoolsideAdapter,
             yield* GeminiAdapter,
             yield* GrokAdapter,
             yield* DroidAdapter,

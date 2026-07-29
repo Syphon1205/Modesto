@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildProviderOptionPatch,
+  buildModelSelection,
   formatProviderModelOptionName,
   groupProviderModelOptions,
   groupProviderModelOptionsWithFavorites,
@@ -82,6 +83,32 @@ describe("mergeDynamicModelOptions", () => {
         dynamicModels: [{ slug: "gpt-5.6-sol", name: "GPT-5.6 Sol" }],
       }),
     ).toEqual([{ slug: "gpt-5.6-sol", name: "GPT-5.6 Sol" }]);
+  });
+
+  it("uses the authenticated Poolside deployment as the complete model catalog", () => {
+    expect(
+      mergeDynamicModelOptions({
+        provider: "poolside",
+        staticOptions: [{ slug: "laguna-old", name: "Old Laguna", isCustom: true }],
+        dynamicModels: [
+          { slug: "laguna_m_preview", name: "Laguna M.1" },
+          { slug: "malibu-2.2", name: "Malibu 2.2" },
+          { slug: "future-tenant-model", name: "Future tenant model" },
+        ],
+      }),
+    ).toEqual([
+      { slug: "laguna_m_preview", name: "Laguna M.1" },
+      { slug: "malibu-2.2", name: "Malibu 2.2" },
+      { slug: "future-tenant-model", name: "Future tenant model" },
+    ]);
+  });
+
+  it("builds one Poolside provider selection for every deployment model", () => {
+    expect(buildModelSelection("poolside", "laguna-xs-2", { reasoningEffort: "high" })).toEqual({
+      provider: "poolside",
+      model: "laguna-xs-2",
+      options: { reasoningEffort: "high" },
+    });
   });
 });
 

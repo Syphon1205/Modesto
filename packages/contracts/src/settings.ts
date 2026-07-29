@@ -55,6 +55,12 @@ export const CursorServerProviderSettings = Schema.Struct({
 });
 export type CursorServerProviderSettings = typeof CursorServerProviderSettings.Type;
 
+export const PoolsideServerProviderSettings = Schema.Struct({
+  ...ProviderSettingsBase,
+  binaryPath: StringSetting.pipe(Schema.withDecodingDefault(() => "pool")),
+});
+export type PoolsideServerProviderSettings = typeof PoolsideServerProviderSettings.Type;
+
 export const OpenCodeServerProviderSettings = Schema.Struct({
   ...ProviderSettingsBase,
   binaryPath: StringSetting.pipe(Schema.withDecodingDefault(() => "opencode")),
@@ -135,6 +141,7 @@ export const ServerSettings = Schema.Struct({
     codex: CodexServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
     claudeAgent: ClaudeServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
     cursor: CursorServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
+    poolside: PoolsideServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
     gemini: GeminiServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
     grok: GrokServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
     droid: DroidServerProviderSettings.pipe(Schema.withDecodingDefault(() => ({}))),
@@ -187,6 +194,7 @@ export const ServerSettingsPatch = Schema.Struct({
           apiEndpoint: Schema.optionalKey(StringSetting),
         }),
       ),
+      poolside: Schema.optionalKey(Schema.Struct(ProviderSettingsBasePatch)),
       gemini: Schema.optionalKey(Schema.Struct(ProviderSettingsBasePatch)),
       grok: Schema.optionalKey(Schema.Struct(ProviderSettingsBasePatch)),
       droid: Schema.optionalKey(Schema.Struct(ProviderSettingsBasePatch)),

@@ -82,6 +82,14 @@ export function useProviderModelCatalog(input: {
       enabled: selectedProvider === "cursor" || discoveryEnabled,
     }),
   );
+  const poolsideDynamicModelsQuery = useQuery(
+    providerModelsQueryOptions({
+      provider: "poolside",
+      binaryPath: settings.poolsideBinaryPath || null,
+      cwd: discoveryCwd,
+      enabled: selectedProvider === "poolside" || discoveryEnabled,
+    }),
+  );
   const geminiModelsQuery = useQuery(
     providerModelsQueryOptions({
       provider: "gemini",
@@ -176,6 +184,14 @@ export function useProviderModelCatalog(input: {
     cursorModelDiscoveryEnabled &&
     !hasResolvedCursorModelDiscovery &&
     (cursorDynamicModelsQuery.isLoading || cursorDynamicModelsQuery.isFetching);
+  const poolsideModelDiscoveryEnabled = selectedProvider === "poolside" || discoveryEnabled;
+  const hasResolvedPoolsideModelDiscovery =
+    poolsideDynamicModelsQuery.data?.source?.startsWith("poolside") === true &&
+    (poolsideDynamicModelsQuery.data.models.length ?? 0) > 0;
+  const poolsideModelDiscoveryPending =
+    poolsideModelDiscoveryEnabled &&
+    !hasResolvedPoolsideModelDiscovery &&
+    (poolsideDynamicModelsQuery.isLoading || poolsideDynamicModelsQuery.isFetching);
   const droidModelDiscoveryEnabled = selectedProvider === "droid";
   const hasResolvedDroidModelDiscovery =
     droidDynamicModelsQuery.data?.source === "droid-acp" &&
@@ -224,6 +240,11 @@ export function useProviderModelCatalog(input: {
         customModelsByProvider.cursor,
         modelHintByProvider?.cursor,
       ),
+      poolside: getAppModelOptions(
+        "poolside",
+        customModelsByProvider.poolside,
+        modelHintByProvider?.poolside,
+      ),
       gemini: getAppModelOptions(
         "gemini",
         customModelsByProvider.gemini,
@@ -251,6 +272,7 @@ export function useProviderModelCatalog(input: {
         cursorDynamicModelsQuery.data === undefined
           ? undefined
           : { ...cursorDynamicModelsQuery.data, models: cursorRuntimeModels },
+      poolside: poolsideDynamicModelsQuery.data,
       gemini: geminiModelsQuery.data,
       grok: grokDynamicModelsQuery.data,
       droid: droidDynamicModelsQuery.data,
@@ -263,6 +285,7 @@ export function useProviderModelCatalog(input: {
       "claudeAgent",
       "codex",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -299,12 +322,14 @@ export function useProviderModelCatalog(input: {
     modelHintByProvider,
     openCodeDynamicModelsQuery.data,
     piDynamicModelsQuery.data,
+    poolsideDynamicModelsQuery.data,
     serverConfigQuery.data?.customModelEndpoints,
   ]);
 
   const loadingModelProviders = useMemo<Partial<Record<ProviderKind, boolean>>>(
     () => ({
       cursor: cursorModelDiscoveryPending,
+      poolside: poolsideModelDiscoveryPending,
       droid: droidModelDiscoveryPending,
       kilo: kiloModelDiscoveryPending,
       opencode: openCodeModelDiscoveryPending,
@@ -312,6 +337,7 @@ export function useProviderModelCatalog(input: {
     }),
     [
       cursorModelDiscoveryPending,
+      poolsideModelDiscoveryPending,
       droidModelDiscoveryPending,
       kiloModelDiscoveryPending,
       openCodeModelDiscoveryPending,
@@ -326,6 +352,7 @@ export function useProviderModelCatalog(input: {
       claudeAgent: claudeDynamicModelsQuery.data?.models ?? [],
       codex: codexDynamicModelsQuery.data?.models ?? [],
       cursor: cursorRuntimeModels,
+      poolside: poolsideDynamicModelsQuery.data?.models ?? [],
       gemini: geminiModelsQuery.data?.models ?? [],
       grok: grokDynamicModelsQuery.data?.models ?? [],
       droid: droidDynamicModelsQuery.data?.models ?? [],
@@ -337,6 +364,7 @@ export function useProviderModelCatalog(input: {
       claudeDynamicModelsQuery.data?.models,
       codexDynamicModelsQuery.data?.models,
       cursorRuntimeModels,
+      poolsideDynamicModelsQuery.data?.models,
       droidDynamicModelsQuery.data?.models,
       geminiModelsQuery.data?.models,
       grokDynamicModelsQuery.data?.models,

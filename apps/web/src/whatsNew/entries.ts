@@ -32,6 +32,17 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
     date: "Jul 29",
     features: [
       {
+        id: "palo-alto-patch-poolside",
+        title: "Poolside, natively",
+        description:
+          "Connect Modesto to Poolside Agent CLI over ACP, resume sessions, honor permissions, and choose the models exposed by your deployment.",
+        image: "/whats-new/0.1.7.1/poolside-provider.svg",
+        imageAlt:
+          "Modesto connected to Poolside over ACP with deployment-provided model choices.",
+        details:
+          "Run Poolside in the active repository without downloading model weights into Modesto. Laguna M.1, Laguna XS.2, Malibu, and future models arrive dynamically from Poolside.",
+      },
+      {
         id: "palo-alto-patch-teams",
         title: "A more useful Teams room",
         description:

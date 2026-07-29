@@ -136,6 +136,7 @@ type CustomModelSettingsKey =
   | "customCodexModels"
   | "customClaudeModels"
   | "customCursorModels"
+  | "customPoolsideModels"
   | "customGeminiModels"
   | "customGrokModels"
   | "customDroidModels"
@@ -156,6 +157,7 @@ const BUILT_IN_MODEL_SLUGS_BY_PROVIDER: Record<ProviderKind, ReadonlySet<string>
   codex: new Set(getModelOptions("codex").map((option) => option.slug)),
   claudeAgent: new Set(getModelOptions("claudeAgent").map((option) => option.slug)),
   cursor: new Set(getModelOptions("cursor").map((option) => option.slug)),
+  poolside: new Set(getModelOptions("poolside").map((option) => option.slug)),
   gemini: new Set(getModelOptions("gemini").map((option) => option.slug)),
   grok: new Set(getModelOptions("grok").map((option) => option.slug)),
   droid: new Set(getModelOptions("droid").map((option) => option.slug)),
@@ -190,6 +192,7 @@ export const AppSettingsSchema = Schema.Struct({
   codexBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   codexHomePath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   cursorBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
+  poolsideBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   cursorApiEndpoint: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   geminiBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
   grokBinaryPath: Schema.String.check(Schema.isMaxLength(4096)).pipe(withDefaults(() => "")),
@@ -260,6 +263,7 @@ export const AppSettingsSchema = Schema.Struct({
   customCodexModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
   customClaudeModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
   customCursorModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
+  customPoolsideModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
   customGeminiModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
   customGrokModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
   customDroidModels: Schema.Array(Schema.String).pipe(withDefaults(() => [])),
@@ -327,6 +331,15 @@ const PROVIDER_CUSTOM_MODEL_CONFIG: Record<ProviderKind, ProviderCustomModelConf
     placeholder: "cursor-model-slug",
     example: "composer-2",
   },
+  poolside: {
+    provider: "poolside",
+    settingsKey: "customPoolsideModels",
+    defaultSettingsKey: "customPoolsideModels",
+    title: "Poolside",
+    description: "Poolside models are discovered from the authenticated deployment over ACP.",
+    placeholder: "deployment-model-id",
+    example: "laguna_m_preview",
+  },
   gemini: {
     provider: "gemini",
     settingsKey: "customGeminiModels",
@@ -388,7 +401,7 @@ export const MODEL_PROVIDER_SETTINGS = Object.values(PROVIDER_CUSTOM_MODEL_CONFI
 // Droid's ACP catalog is authoritative and rejects unknown slugs. Preserve its
 // persisted config for compatibility, but do not offer an editor it cannot honor.
 export const CUSTOM_MODEL_EDITOR_PROVIDER_SETTINGS = MODEL_PROVIDER_SETTINGS.filter(
-  (config) => config.provider !== "droid",
+  (config) => config.provider !== "droid" && config.provider !== "poolside",
 );
 
 export function normalizeCustomModelSlugs(
@@ -490,6 +503,10 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     claudeBinaryPath: normalizeProviderBinaryPathOverride("claudeAgent", settings.claudeBinaryPath),
     codexBinaryPath: normalizeProviderBinaryPathOverride("codex", settings.codexBinaryPath),
     cursorBinaryPath: normalizeProviderBinaryPathOverride("cursor", settings.cursorBinaryPath),
+    poolsideBinaryPath: normalizeProviderBinaryPathOverride(
+      "poolside",
+      settings.poolsideBinaryPath,
+    ),
     geminiBinaryPath: normalizeProviderBinaryPathOverride("gemini", settings.geminiBinaryPath),
     grokBinaryPath: normalizeProviderBinaryPathOverride("grok", settings.grokBinaryPath),
     droidBinaryPath: normalizeProviderBinaryPathOverride("droid", settings.droidBinaryPath),
@@ -506,6 +523,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     customCodexModels: normalizeCustomModelSlugs(settings.customCodexModels, "codex"),
     customClaudeModels: normalizeCustomModelSlugs(settings.customClaudeModels, "claudeAgent"),
     customCursorModels: normalizeCustomModelSlugs(settings.customCursorModels, "cursor"),
+    customPoolsideModels: normalizeCustomModelSlugs(settings.customPoolsideModels, "poolside"),
     customGeminiModels: normalizeCustomModelSlugs(settings.customGeminiModels, "gemini"),
     customGrokModels: normalizeCustomModelSlugs(settings.customGrokModels, "grok"),
     customDroidModels: normalizeCustomModelSlugs(settings.customDroidModels, "droid"),
@@ -525,6 +543,7 @@ function serverSettingsToAppSettings(settings: ServerSettings): Partial<AppSetti
     codexHomePath: settings.providers.codex.homePath,
     cursorApiEndpoint: settings.providers.cursor.apiEndpoint,
     cursorBinaryPath: settings.providers.cursor.binaryPath,
+    poolsideBinaryPath: settings.providers.poolside.binaryPath,
     defaultThreadEnvMode: settings.defaultThreadEnvMode,
     enableAssistantStreaming: settings.enableAssistantStreaming,
     enableProviderUpdateChecks: settings.enableProviderUpdateChecks,
@@ -543,6 +562,7 @@ function serverSettingsToAppSettings(settings: ServerSettings): Partial<AppSetti
     customCodexModels: settings.providers.codex.customModels,
     customClaudeModels: settings.providers.claudeAgent.customModels,
     customCursorModels: settings.providers.cursor.customModels,
+    customPoolsideModels: settings.providers.poolside.customModels,
     customGeminiModels: settings.providers.gemini.customModels,
     customGrokModels: settings.providers.grok.customModels,
     customDroidModels: settings.providers.droid.customModels,
@@ -571,6 +591,7 @@ function hasOwn<Key extends keyof AppSettings>(patch: Partial<AppSettings>, key:
 
 function touchesProviderDiscoverySettings(patch: Partial<AppSettings>): boolean {
   return (
+    hasOwn(patch, "poolsideBinaryPath") ||
     hasOwn(patch, "kiloBinaryPath") ||
     hasOwn(patch, "kiloServerPassword") ||
     hasOwn(patch, "kiloServerUrl") ||
@@ -639,6 +660,16 @@ function appSettingsPatchToServerSettingsPatch(patch: Partial<AppSettings>): Ser
       ...(hasOwn(patch, "cursorBinaryPath") ? { binaryPath: patch.cursorBinaryPath ?? "" } : {}),
       ...(hasOwn(patch, "customCursorModels")
         ? { customModels: patch.customCursorModels ?? [] }
+        : {}),
+    };
+  }
+  if (hasOwn(patch, "poolsideBinaryPath") || hasOwn(patch, "customPoolsideModels")) {
+    providers.poolside = {
+      ...(hasOwn(patch, "poolsideBinaryPath")
+        ? { binaryPath: patch.poolsideBinaryPath ?? "" }
+        : {}),
+      ...(hasOwn(patch, "customPoolsideModels")
+        ? { customModels: patch.customPoolsideModels ?? [] }
         : {}),
     };
   }
@@ -735,6 +766,7 @@ function buildInitialServerSettingsMigrationPatch(settings: AppSettings): Server
     "codexHomePath",
     "cursorApiEndpoint",
     "cursorBinaryPath",
+    "poolsideBinaryPath",
     "defaultThreadEnvMode",
     "enableAssistantStreaming",
     "enableProviderUpdateChecks",
@@ -762,6 +794,7 @@ function buildInitialServerSettingsMigrationPatch(settings: AppSettings): Server
     "customCodexModels",
     "customClaudeModels",
     "customCursorModels",
+    "customPoolsideModels",
     "customGeminiModels",
     "customGrokModels",
     "customDroidModels",
@@ -811,6 +844,7 @@ export function getCustomModelsByProvider(
     codex: getCustomModelsForProvider(settings, "codex"),
     claudeAgent: getCustomModelsForProvider(settings, "claudeAgent"),
     cursor: getCustomModelsForProvider(settings, "cursor"),
+    poolside: getCustomModelsForProvider(settings, "poolside"),
     gemini: getCustomModelsForProvider(settings, "gemini"),
     grok: getCustomModelsForProvider(settings, "grok"),
     droid: getCustomModelsForProvider(settings, "droid"),
@@ -956,6 +990,7 @@ export function getCustomModelOptionsByProvider(
     codex: getAppModelOptions("codex", customModelsByProvider.codex),
     claudeAgent: getAppModelOptions("claudeAgent", customModelsByProvider.claudeAgent),
     cursor: getAppModelOptions("cursor", customModelsByProvider.cursor),
+    poolside: getAppModelOptions("poolside", customModelsByProvider.poolside),
     gemini: getAppModelOptions("gemini", customModelsByProvider.gemini),
     grok: getAppModelOptions("grok", customModelsByProvider.grok),
     droid: getAppModelOptions("droid", customModelsByProvider.droid),
@@ -973,6 +1008,7 @@ export function getProviderStartOptions(
     | "codexHomePath"
     | "cursorApiEndpoint"
     | "cursorBinaryPath"
+    | "poolsideBinaryPath"
     | "geminiBinaryPath"
     | "grokBinaryPath"
     | "droidBinaryPath"
@@ -993,6 +1029,10 @@ export function getProviderStartOptions(
   );
   const codexBinaryPath = normalizeProviderBinaryPathOverride("codex", settings.codexBinaryPath);
   const cursorBinaryPath = normalizeProviderBinaryPathOverride("cursor", settings.cursorBinaryPath);
+  const poolsideBinaryPath = normalizeProviderBinaryPathOverride(
+    "poolside",
+    settings.poolsideBinaryPath,
+  );
   const geminiBinaryPath = normalizeProviderBinaryPathOverride("gemini", settings.geminiBinaryPath);
   const grokBinaryPath = normalizeProviderBinaryPathOverride("grok", settings.grokBinaryPath);
   const droidBinaryPath = normalizeProviderBinaryPathOverride("droid", settings.droidBinaryPath);
@@ -1029,6 +1069,13 @@ export function getProviderStartOptions(
           cursor: {
             ...(cursorBinaryPath ? { binaryPath: cursorBinaryPath } : {}),
             ...(settings.cursorApiEndpoint ? { apiEndpoint: settings.cursorApiEndpoint } : {}),
+          },
+        }
+      : {}),
+    ...(poolsideBinaryPath
+      ? {
+          poolside: {
+            binaryPath: poolsideBinaryPath,
           },
         }
       : {}),
@@ -1125,6 +1172,7 @@ export function getCustomBinaryPathForProvider(
     | "claudeBinaryPath"
     | "codexBinaryPath"
     | "cursorBinaryPath"
+    | "poolsideBinaryPath"
     | "geminiBinaryPath"
     | "grokBinaryPath"
     | "droidBinaryPath"
@@ -1141,6 +1189,8 @@ export function getCustomBinaryPathForProvider(
       return normalizeProviderBinaryPathOverride(provider, settings.claudeBinaryPath);
     case "cursor":
       return normalizeProviderBinaryPathOverride(provider, settings.cursorBinaryPath);
+    case "poolside":
+      return normalizeProviderBinaryPathOverride(provider, settings.poolsideBinaryPath);
     case "gemini":
       return normalizeProviderBinaryPathOverride(provider, settings.geminiBinaryPath);
     case "grok":

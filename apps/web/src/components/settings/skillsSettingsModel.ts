@@ -40,6 +40,7 @@ export const ORIGIN_SECTION_ORDER = [
   "codex",
   "claude",
   "cursor",
+  "poolside",
   "gemini",
   "grok",
   "droid",
@@ -71,6 +72,8 @@ export function skillOriginInfo(scope: string | undefined): SkillOriginInfo {
       return { label: PROVIDER_DISPLAY_NAMES.claudeAgent, provider: "claudeAgent" };
     case "cursor":
       return { label: PROVIDER_DISPLAY_NAMES.cursor, provider: "cursor" };
+    case "poolside":
+      return { label: PROVIDER_DISPLAY_NAMES.poolside, provider: "poolside" };
     case "gemini":
       return { label: PROVIDER_DISPLAY_NAMES.gemini, provider: "gemini" };
     case "grok":

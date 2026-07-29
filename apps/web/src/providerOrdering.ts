@@ -9,6 +9,7 @@ export const DEFAULT_PROVIDER_ORDER: readonly ProviderKind[] = [
   "codex",
   "claudeAgent",
   "cursor",
+  "poolside",
   "gemini",
   "grok",
   "droid",

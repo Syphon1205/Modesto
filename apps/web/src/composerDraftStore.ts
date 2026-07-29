@@ -81,6 +81,7 @@ const COMPOSER_PROVIDER_KINDS = [
   "codex",
   "claudeAgent",
   "cursor",
+  "poolside",
   "gemini",
   "grok",
   "droid",
@@ -1231,6 +1232,14 @@ function makeModelSelection(
           ? { options: options as Extract<ModelSelection, { provider: "cursor" }>["options"] }
           : {}),
       };
+    case "poolside":
+      return {
+        provider,
+        model,
+        ...(options
+          ? { options: options as Extract<ModelSelection, { provider: "poolside" }>["options"] }
+          : {}),
+      };
     case "gemini":
       return {
         provider,
@@ -1299,6 +1308,10 @@ function normalizeProviderModelOptions(
   const cursorCandidate =
     candidate?.cursor && typeof candidate.cursor === "object"
       ? (candidate.cursor as Record<string, unknown>)
+      : null;
+  const poolsideCandidate =
+    candidate?.poolside && typeof candidate.poolside === "object"
+      ? (candidate.poolside as Record<string, unknown>)
       : null;
   const geminiCandidate =
     candidate?.gemini && typeof candidate.gemini === "object"
@@ -1413,6 +1426,11 @@ function normalizeProviderModelOptions(
           ...(cursorContextWindow !== undefined ? { contextWindow: cursorContextWindow } : {}),
         }
       : undefined;
+  const poolsideReasoningEffort = trimStringOrUndefined(poolsideCandidate?.reasoningEffort);
+  const poolside =
+    poolsideReasoningEffort !== undefined
+      ? { reasoningEffort: poolsideReasoningEffort }
+      : undefined;
 
   const geminiThinkingLevel: GeminiThinkingLevel | undefined =
     geminiCandidate?.thinkingLevel === "LOW" || geminiCandidate?.thinkingLevel === "HIGH"
@@ -1477,13 +1495,25 @@ function normalizeProviderModelOptions(
       ? piCandidate.thinkingLevel
       : undefined;
   const pi = piThinkingLevel !== undefined ? { thinkingLevel: piThinkingLevel } : undefined;
-  if (!codex && !claude && !cursor && !gemini && !grok && !droid && !kilo && !opencode && !pi) {
+  if (
+    !codex &&
+    !claude &&
+    !cursor &&
+    !poolside &&
+    !gemini &&
+    !grok &&
+    !droid &&
+    !kilo &&
+    !opencode &&
+    !pi
+  ) {
     return null;
   }
   return {
     ...(codex ? { codex } : {}),
     ...(claude ? { claudeAgent: claude } : {}),
     ...(cursor ? { cursor } : {}),
+    ...(poolside ? { poolside } : {}),
     ...(gemini ? { gemini } : {}),
     ...(grok ? { grok } : {}),
     ...(droid ? { droid } : {}),
@@ -1543,6 +1573,8 @@ function normalizeModelSelection(
                 ? modelOptions?.kilo
                 : provider === "cursor"
                   ? modelOptions?.cursor
+                  : provider === "poolside"
+                    ? modelOptions?.poolside
                   : provider === "opencode"
                     ? modelOptions?.opencode
                     : provider === "pi"
@@ -1564,6 +1596,7 @@ function reconcileProviderScopedModelSelection(
   if (
     current.provider !== "codex" &&
     current.provider !== "cursor" &&
+    current.provider !== "poolside" &&
     current.provider !== "claudeAgent"
   ) {
     return requested;
@@ -1572,7 +1605,9 @@ function reconcileProviderScopedModelSelection(
   const effort =
     current.provider === "claudeAgent"
       ? current.options?.effort
-      : current.provider === "codex" || current.provider === "cursor"
+      : current.provider === "codex" ||
+          current.provider === "cursor" ||
+          current.provider === "poolside"
         ? current.options?.reasoningEffort
         : undefined;
   if (
@@ -1581,12 +1616,16 @@ function reconcileProviderScopedModelSelection(
       provider: requested.provider,
       model: requested.model,
       effort,
-    }) !== "supported"
+    }) === "unsupported"
   ) {
     if (current.provider === "claudeAgent") {
       const { effort: _effort, ...remainingOptions } = current.options ?? {};
       preservedOptions = Object.keys(remainingOptions).length > 0 ? remainingOptions : undefined;
-    } else if (current.provider === "codex" || current.provider === "cursor") {
+    } else if (
+      current.provider === "codex" ||
+      current.provider === "cursor" ||
+      current.provider === "poolside"
+    ) {
       const { reasoningEffort: _reasoningEffort, ...remainingOptions } = current.options ?? {};
       preservedOptions = Object.keys(remainingOptions).length > 0 ? remainingOptions : undefined;
     }

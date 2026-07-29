@@ -599,6 +599,8 @@ function formatProviderLabel(provider: ProviderKind): string {
       return "Claude";
     case "cursor":
       return "Cursor";
+    case "poolside":
+      return "Poolside";
     case "gemini":
       return "Gemini";
     case "grok":

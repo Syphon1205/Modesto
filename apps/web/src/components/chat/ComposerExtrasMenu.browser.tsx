@@ -1,6 +1,5 @@
 // FILE: ComposerExtrasMenu.browser.tsx
 // Purpose: Verifies the composer `+` menu exposes image uploads and Fast mode.
-// Mode (Agent/Plan) lives on the footer picker, not this menu.
 // Layer: Browser UI test
 
 import "../../index.css";

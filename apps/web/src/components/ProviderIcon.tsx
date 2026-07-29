@@ -63,10 +63,22 @@ const OpenCodeProviderIcon = ({
   );
 };
 
+const PoolsideProviderIcon: Icon = ({ className, ...props }) => (
+  <svg viewBox="0 0 24 24" fill="none" className={className} {...props}>
+    <path
+      d="M3 8.2c2.1-1.8 4.2-1.8 6.3 0s4.2 1.8 6.3 0 4.2-1.8 5.4-.7M3 12c2.1-1.8 4.2-1.8 6.3 0s4.2 1.8 6.3 0 4.2-1.8 5.4-.7M3 15.8c2.1-1.8 4.2-1.8 6.3 0s4.2 1.8 6.3 0 4.2-1.8 5.4-.7"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
 export const PROVIDER_ICON_COMPONENT_BY_PROVIDER: Record<ProviderKind, Icon> = {
   codex: OpenAI,
   claudeAgent: ClaudeAI,
   cursor: CursorIcon,
+  poolside: PoolsideProviderIcon,
   gemini: Gemini,
   grok: GrokIcon,
   droid: DroidIcon,

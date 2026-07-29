@@ -16,6 +16,7 @@ const PROVIDER_LABELS: Readonly<Record<string, string>> = {
   codex: "Codex",
   claudeAgent: "Claude",
   cursor: "Cursor",
+  poolside: "Poolside",
   opencode: "OpenCode",
   gemini: "Gemini",
   grok: "Grok",

@@ -3,6 +3,7 @@ import {
   ClaudeModelOptions,
   CodexModelOptions,
   CursorModelOptions,
+  PoolsideModelOptions,
   GeminiModelOptions,
   DroidModelOptions,
   GrokModelOptions,
@@ -57,6 +58,7 @@ export const ProviderKind = Schema.Literals([
   "codex",
   "claudeAgent",
   "cursor",
+  "poolside",
   "gemini",
   "grok",
   "droid",
@@ -100,6 +102,13 @@ export const CursorModelSelection = Schema.Struct({
   options: Schema.optional(CursorModelOptions),
 });
 export type CursorModelSelection = typeof CursorModelSelection.Type;
+
+export const PoolsideModelSelection = Schema.Struct({
+  provider: Schema.Literal("poolside"),
+  model: TrimmedNonEmptyString,
+  options: Schema.optional(PoolsideModelOptions),
+});
+export type PoolsideModelSelection = typeof PoolsideModelSelection.Type;
 
 export const GeminiModelSelection = Schema.Struct({
   provider: Schema.Literal("gemini"),
@@ -147,6 +156,7 @@ export const ModelSelection = Schema.Union([
   CodexModelSelection,
   ClaudeModelSelection,
   CursorModelSelection,
+  PoolsideModelSelection,
   GeminiModelSelection,
   GrokModelSelection,
   DroidModelSelection,
@@ -179,6 +189,10 @@ export const CursorProviderStartOptions = Schema.Struct({
   apiEndpoint: Schema.optional(TrimmedNonEmptyString),
 });
 
+export const PoolsideProviderStartOptions = Schema.Struct({
+  binaryPath: Schema.optional(TrimmedNonEmptyString),
+});
+
 export const GrokProviderStartOptions = Schema.Struct({
   binaryPath: Schema.optional(TrimmedNonEmptyString),
 });
@@ -209,6 +223,7 @@ export const ProviderStartOptions = Schema.Struct({
   codex: Schema.optional(CodexProviderStartOptions),
   claudeAgent: Schema.optional(ClaudeProviderStartOptions),
   cursor: Schema.optional(CursorProviderStartOptions),
+  poolside: Schema.optional(PoolsideProviderStartOptions),
   gemini: Schema.optional(GeminiProviderStartOptions),
   grok: Schema.optional(GrokProviderStartOptions),
   droid: Schema.optional(DroidProviderStartOptions),

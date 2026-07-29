@@ -13,6 +13,7 @@ import { GrokAdapter, GrokAdapterShape } from "../Services/GrokAdapter.ts";
 import { KiloAdapter, KiloAdapterShape } from "../Services/KiloAdapter.ts";
 import { OpenCodeAdapter, OpenCodeAdapterShape } from "../Services/OpenCodeAdapter.ts";
 import { PiAdapter, PiAdapterShape } from "../Services/PiAdapter.ts";
+import { PoolsideAdapter, PoolsideAdapterShape } from "../Services/PoolsideAdapter.ts";
 import { ProviderAdapterRegistry } from "../Services/ProviderAdapterRegistry.ts";
 import { ProviderAdapterRegistryLive } from "./ProviderAdapterRegistry.ts";
 import { ProviderUnsupportedError } from "../Errors.ts";
@@ -67,6 +68,11 @@ const fakeCursorAdapter: CursorAdapterShape = {
   rollbackThread: vi.fn(),
   stopAll: vi.fn(),
   streamEvents: Stream.empty,
+};
+
+const fakePoolsideAdapter: PoolsideAdapterShape = {
+  ...fakeCursorAdapter,
+  provider: "poolside",
 };
 
 const fakeGeminiAdapter: GeminiAdapterShape = {
@@ -179,6 +185,7 @@ const layer = it.layer(
         Layer.succeed(CodexAdapter, fakeCodexAdapter),
         Layer.succeed(ClaudeAdapter, fakeClaudeAdapter),
         Layer.succeed(CursorAdapter, fakeCursorAdapter),
+        Layer.succeed(PoolsideAdapter, fakePoolsideAdapter),
         Layer.succeed(GeminiAdapter, fakeGeminiAdapter),
         Layer.succeed(GrokAdapter, fakeGrokAdapter),
         Layer.succeed(DroidAdapter, fakeDroidAdapter),
@@ -198,6 +205,7 @@ layer("ProviderAdapterRegistryLive", (it) => {
       const codex = yield* registry.getByProvider("codex");
       const claude = yield* registry.getByProvider("claudeAgent");
       const cursor = yield* registry.getByProvider("cursor");
+      const poolside = yield* registry.getByProvider("poolside");
       const gemini = yield* registry.getByProvider("gemini");
       const grok = yield* registry.getByProvider("grok");
       const droid = yield* registry.getByProvider("droid");
@@ -207,6 +215,7 @@ layer("ProviderAdapterRegistryLive", (it) => {
       assert.equal(codex, fakeCodexAdapter);
       assert.equal(claude, fakeClaudeAdapter);
       assert.equal(cursor, fakeCursorAdapter);
+      assert.equal(poolside, fakePoolsideAdapter);
       assert.equal(gemini, fakeGeminiAdapter);
       assert.equal(grok, fakeGrokAdapter);
       assert.equal(droid, fakeDroidAdapter);
@@ -219,6 +228,7 @@ layer("ProviderAdapterRegistryLive", (it) => {
         "codex",
         "claudeAgent",
         "cursor",
+        "poolside",
         "gemini",
         "grok",
         "droid",

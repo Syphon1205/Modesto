@@ -1,0 +1,88 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Poolside logomark: poolside.ai, reversed (dark-background) variant, used to identify the provider in the Palo Alto patch. -->
+  <defs>
+    <linearGradient id="bg" x1="70" y1="24" x2="1130" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#17191F"/>
+      <stop offset=".54" stop-color="#0D0F14"/>
+      <stop offset="1" stop-color="#08090C"/>
+    </linearGradient>
+    <linearGradient id="bridge" x1="505" y1="0" x2="695" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F7F8"/>
+      <stop offset=".5" stop-color="#8B84FF"/>
+      <stop offset="1" stop-color="#4137FF"/>
+    </linearGradient>
+    <linearGradient id="rule" x1="390" y1="0" x2="810" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F7F8" stop-opacity=".16"/>
+      <stop offset=".5" stop-color="#8B84FF"/>
+      <stop offset="1" stop-color="#4137FF" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="poolsideDisc" x1="836" y1="232" x2="968" y2="364" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5A50FF"/>
+      <stop offset="1" stop-color="#3226E0"/>
+    </linearGradient>
+    <radialGradient id="leftGlow">
+      <stop stop-color="#A78BFA" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#A78BFA" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rightGlow">
+      <stop stop-color="#4137FF" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#4137FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="22" stdDeviation="30" flood-color="#000" flood-opacity=".42"/>
+    </filter>
+    <filter id="blur" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="25"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" rx="34" fill="url(#bg)"/>
+  <circle cx="242" cy="330" r="245" fill="url(#leftGlow)" filter="url(#blur)"/>
+  <circle cx="958" cy="330" r="245" fill="url(#rightGlow)" filter="url(#blur)"/>
+  <path d="M54 148H1146M54 566H1146" stroke="#FFFFFF" stroke-opacity=".035"/>
+
+  <text x="600" y="91" fill="#F8F8FA" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="44" font-weight="680" text-anchor="middle" letter-spacing="-1.3">Modesto now supports Poolside</text>
+  <text x="600" y="132" fill="#969AA5" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="18" text-anchor="middle">Your authenticated Poolside deployment, as a first-class provider.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="139" y="186" width="318" height="268" rx="32" fill="#15171D" stroke="#30333C"/>
+    <rect x="743" y="186" width="318" height="268" rx="32" fill="#15171D" stroke="#30333C"/>
+  </g>
+
+  <circle cx="298" cy="298" r="78" fill="#0E1014" stroke="#353943"/>
+  <g transform="translate(248 248)" stroke="#F7F7F8" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 32H39C42 32 43.5 30.5 45 28L55 12"/>
+    <path d="M66 20L60 32C58 36 59 39 62 42L81 58"/>
+    <path d="M14 45L35 51C39 52 41 55 41 59V80"/>
+    <path d="M57 58L70 70"/>
+  </g>
+  <text x="298" y="418" fill="#F7F7F8" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="27" font-weight="650" text-anchor="middle">Modesto</text>
+  <text x="298" y="447" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="14" text-anchor="middle">Agent workspace</text>
+
+  <circle cx="902" cy="298" r="78" fill="url(#poolsideDisc)"/>
+  <svg x="859" y="255" width="86" height="86" viewBox="0 0 128 128">
+    <path d="m35.959 121.526c-11.8772-5.794-21.5249-14.947-27.90834-26.4686-6.23593-11.2582-8.930092-23.9574-7.798832-36.7265.256124-2.8615 2.777032-4.9741 5.639732-4.7214 2.85734.2545 4.97334 2.7778 4.72074 5.641-.94779 10.6955 1.3128 21.3362 6.538 30.7705 4.4985 8.1229 10.9417 14.84 18.8061 19.656l24.4606-50.1633c-9.5744-3.1888-17.5492-1.8007-18.2669-1.6613-.1053.0243-.2071.0414-.3106.0621-2.3841.3992-4.6901-.9038-5.6184-3.0702-1.2811-2.3919-5.1275-8.2384-9.7828-10.5094-4.6552-2.2711-11.8298-1.5385-14.1394-1.0363-1.9474.4252-3.97402-.3009-5.20405-1.8667-1.23003-1.5659-1.4658-3.7015-.5927-5.492 15.45775-31.71872 53.84575-44.93849 85.55925-29.46724 31.7136 15.47124 44.9196 53.82984 29.4886 85.53934-.016.0323-.032.0647-.049.1006-15.485 31.6834-53.8429 44.8774-85.542 29.4134zm33.8009-57.4544-24.4588 50.1594c24.6863 9.222 52.7773-1.024 65.6229-24.3097-1.806-2.7947-4.974-6.8014-8.641-8.5902-4.7375-2.3114-11.6793-1.5543-14.0641-1.0532-.3926.0933-.7839.1383-1.1773.1422-.7048.0034-1.4199-.1363-2.1061-.4355-.7114-.3114-1.3547-.781-1.874-1.386-.2968-.3495-.5421-.7317-.7393-1.1395-.1533-.3062-3.9466-7.6667-12.5659-13.3893zm-38.7651-29.0902c3.9831 1.9431 7.2244 5.0332 9.6483 7.947 7.496-11.4666 17.6688-20.1275 25.527-25.7116 2.9201-2.0736 5.9436-4.0123 8.8552-5.6852-20.4537-4.29467-41.8903 3.8115-54.3197 20.8782 3.2899.2252 6.9209.9284 10.2892 2.5716zm67.5712-11.9611c.4747 3.3248.8105 6.8979.9729 10.4798.4384 9.6049-.1169 22.9086-4.5038 35.8475 3.6589.0981 7.9139.7451 11.8069 2.6443 3.476 1.6959 6.39 4.2614 8.684 6.8223 5.855-20.3405-.95-42.2864-16.9617-55.7903zm-28.7702 29.1142c7.1932 3.5091 12.3927 8.1776 15.9169 12.2023 5.733-18.6289 3.2338-39.4757 1.1469-47.1965-7.3675 3.1085-25.3335 13.9715-36.4767 29.961 5.3459.2981 12.2232 1.5257 19.4129 5.0332z" fill="#FFFFFF"/>
+  </svg>
+  <text x="902" y="418" fill="#F7F7F8" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="27" font-weight="650" text-anchor="middle">Poolside</text>
+  <text x="902" y="447" fill="#8F939E" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" text-anchor="middle">pool acp</text>
+
+  <text x="600" y="272" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="2.4">ACP</text>
+  <path d="M479 298H721" stroke="#292D36" stroke-width="2"/>
+  <path d="M505 298H695" stroke="url(#bridge)" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="505" cy="298" r="7" fill="#F7F7F8"/>
+  <circle cx="600" cy="298" r="8" fill="#8B84FF"/>
+  <circle cx="695" cy="298" r="7" fill="#4137FF"/>
+  <text x="600" y="336" fill="#6C7280" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="13" text-anchor="middle">shared agent transport</text>
+
+  <g font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" text-anchor="middle">
+    <rect x="411" y="492" width="124" height="46" rx="23" fill="#14171D" stroke="#2B2F38"/>
+    <text x="473" y="521" fill="#C3C6CE">Laguna M.1</text>
+    <rect x="551" y="492" width="132" height="46" rx="23" fill="#14171D" stroke="#2B2F38"/>
+    <text x="617" y="521" fill="#C3C6CE">Laguna XS.2</text>
+    <rect x="699" y="492" width="90" height="46" rx="23" fill="#14171D" stroke="#2B2F38"/>
+    <text x="744" y="521" fill="#C3C6CE">Malibu</text>
+  </g>
+
+  <rect x="390" y="586" width="420" height="3" rx="1.5" fill="url(#rule)"/>
+  <text x="600" y="632" fill="#8F939E" font-family="-apple-system,BlinkMacSystemFont,Inter,Arial,sans-serif" font-size="15" text-anchor="middle">Models discovered at runtime &#183; in-session switching &#183; skills, permissions, and resume</text>
+</svg>

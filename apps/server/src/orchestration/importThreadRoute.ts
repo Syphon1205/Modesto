@@ -50,6 +50,8 @@ function providerResumeCursorForImport(provider: ProviderKind, externalId: strin
       return { resume: externalId };
     case "droid":
       return { schemaVersion: 1, sessionId: externalId };
+    case "poolside":
+      return { schemaVersion: 1, sessionId: externalId };
     case "gemini":
       return { sessionId: externalId };
     case "grok":

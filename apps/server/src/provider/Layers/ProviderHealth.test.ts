@@ -32,6 +32,7 @@ import {
   makeCheckGrokProviderStatus,
   makeCheckKiloProviderStatus,
   makeCheckOpenCodeProviderStatus,
+  makeCheckPoolsideProviderStatus,
   parseAuthStatusFromOutput,
   parseClaudeAuthStatusFromOutput,
   providerStatusesEqual,
@@ -120,6 +121,7 @@ const allProvidersDisabledSettings = {
     codex: { enabled: false },
     claudeAgent: { enabled: false },
     cursor: { enabled: false },
+    poolside: { enabled: false },
     gemini: { enabled: false },
     grok: { enabled: false },
     droid: { enabled: false },
@@ -135,6 +137,7 @@ const allProvidersDisabledServerSettings = {
     codex: { ...DEFAULT_SERVER_SETTINGS.providers.codex, enabled: false },
     claudeAgent: { ...DEFAULT_SERVER_SETTINGS.providers.claudeAgent, enabled: false },
     cursor: { ...DEFAULT_SERVER_SETTINGS.providers.cursor, enabled: false },
+    poolside: { ...DEFAULT_SERVER_SETTINGS.providers.poolside, enabled: false },
     gemini: { ...DEFAULT_SERVER_SETTINGS.providers.gemini, enabled: false },
     grok: { ...DEFAULT_SERVER_SETTINGS.providers.grok, enabled: false },
     droid: { ...DEFAULT_SERVER_SETTINGS.providers.droid, enabled: false },
@@ -241,7 +244,7 @@ it.layer(NodeServices.layer)("ProviderHealth", (it) => {
       );
       const codex = statuses.find((status) => status.provider === "codex");
 
-      assert.strictEqual(statuses.length, 9);
+      assert.strictEqual(statuses.length, 10);
       assert.strictEqual(codex?.available, false);
       assert.strictEqual(codex?.message, "Provider is disabled in Modesto settings.");
     });
@@ -380,7 +383,7 @@ it.layer(NodeServices.layer)("ProviderHealth", (it) => {
         const providerHealth = yield* ProviderHealth;
         const statuses = yield* providerHealth.refresh;
 
-        assert.strictEqual(statuses.length, 9);
+        assert.strictEqual(statuses.length, 10);
         for (const status of statuses) {
           assert.strictEqual(status.available, false);
           assert.strictEqual(status.message, "Provider is disabled in Modesto settings.");
@@ -1775,6 +1778,39 @@ it.layer(NodeServices.layer)("ProviderHealth", (it) => {
         assert.strictEqual(status.authStatus, "unknown");
         assert.strictEqual(status.message, "Grok CLI (`grok`) is not installed or not on PATH.");
       }).pipe(Effect.provide(failingSpawnerLayer("spawn grok ENOENT"))),
+    );
+  });
+
+  describe("checkPoolsideProviderStatus", () => {
+    it.effect("detects an installed Poolside CLI without taking ownership of credentials", () =>
+      Effect.gen(function* () {
+        const status = yield* makeCheckPoolsideProviderStatus("/custom/bin/pool");
+        assert.strictEqual(status.provider, "poolside");
+        assert.strictEqual(status.status, "ready");
+        assert.strictEqual(status.available, true);
+        assert.strictEqual(status.authStatus, "unknown");
+        assert.strictEqual(status.version, "1.4.2");
+      }).pipe(
+        Effect.provide(
+          mockSpawnerLayer((args, command) => {
+            assert.strictEqual(command, "/custom/bin/pool");
+            assert.deepStrictEqual(args, ["--version"]);
+            return { stdout: "pool 1.4.2\n", stderr: "", code: 0 };
+          }),
+        ),
+      ),
+    );
+
+    it.effect("reports a missing Poolside CLI with an actionable status", () =>
+      Effect.gen(function* () {
+        const status = yield* makeCheckPoolsideProviderStatus();
+        assert.strictEqual(status.provider, "poolside");
+        assert.strictEqual(status.available, false);
+        assert.strictEqual(
+          status.message,
+          "Poolside Agent CLI (`pool`) is not installed or not on PATH.",
+        );
+      }).pipe(Effect.provide(failingSpawnerLayer("spawn pool ENOENT"))),
     );
   });
 

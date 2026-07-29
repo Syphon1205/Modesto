@@ -24,6 +24,7 @@ import type {
   OpenCodeModelSelection,
   PiModelOptions,
   PiModelSelection,
+  PoolsideModelOptions,
   ProviderKind,
   ProviderModelOptions,
 } from "@modesto/contracts";
@@ -163,10 +164,10 @@ export function mergeDynamicModelOptions(input: {
     });
   }
 
-  // Droid validates model values against its live ACP select options, so an
-  // arbitrary custom slug is guaranteed to fail at session configuration.
+  // ACP-backed catalogs validate model values against their live select
+  // options, so an arbitrary custom slug is guaranteed to fail.
   const customOnlyModels =
-    input.provider === "droid"
+    input.provider === "droid" || input.provider === "poolside"
       ? []
       : input.staticOptions.filter(
           (model) =>
@@ -179,7 +180,8 @@ export function mergeDynamicModelOptions(input: {
     (input.provider === "kilo" ||
       input.provider === "opencode" ||
       input.provider === "cursor" ||
-      input.provider === "droid") &&
+      input.provider === "droid" ||
+      input.provider === "poolside") &&
     normalizedDynamicOptions.length > 0
       ? []
       : staticBuiltInModels.filter((model) => !dynamicNormalizedSlugs.has(model.slug));
@@ -398,6 +400,11 @@ export function buildModelSelection(
   options?: GrokModelOptions | null | undefined,
 ): GrokModelSelection;
 export function buildModelSelection(
+  provider: "poolside",
+  model: string,
+  options?: PoolsideModelOptions | null | undefined,
+): Extract<ModelSelection, { provider: "poolside" }>;
+export function buildModelSelection(
   provider: "droid",
   model: string,
   options?: DroidModelOptions | null | undefined,
@@ -450,6 +457,14 @@ export function buildModelSelection(
             provider,
             model,
             options: options as CursorModelOptions,
+          }
+        : { provider, model };
+    case "poolside":
+      return options
+        ? {
+            provider,
+            model,
+            options: options as PoolsideModelOptions,
           }
         : { provider, model };
     case "gemini":

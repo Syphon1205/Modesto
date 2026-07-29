@@ -133,6 +133,7 @@ const OPENCODE_HEALTH_TIMEOUT_MS = 20_000;
 const CODEX_PROVIDER = "codex" as const;
 const CLAUDE_AGENT_PROVIDER = "claudeAgent" as const;
 const CURSOR_PROVIDER = "cursor" as const;
+const POOLSIDE_PROVIDER = "poolside" as const;
 const GEMINI_PROVIDER = "gemini" as const;
 const GROK_PROVIDER = "grok" as const;
 const DROID_PROVIDER = "droid" as const;
@@ -146,6 +147,7 @@ const PROVIDERS = [
   CODEX_PROVIDER,
   CLAUDE_AGENT_PROVIDER,
   CURSOR_PROVIDER,
+  POOLSIDE_PROVIDER,
   GEMINI_PROVIDER,
   GROK_PROVIDER,
   DROID_PROVIDER,
@@ -1437,6 +1439,72 @@ export const makeCheckDroidProviderStatus = (
 
 export const checkDroidProviderStatus = makeCheckDroidProviderStatus();
 
+// ── Poolside health check ─────────────────────────────────────────
+
+export const makeCheckPoolsideProviderStatus = (
+  binaryPath?: string,
+): Effect.Effect<ServerProviderStatus, never, ChildProcessSpawner.ChildProcessSpawner> =>
+  Effect.gen(function* () {
+    const checkedAt = new Date().toISOString();
+    const executable = nonEmptyTrimmed(binaryPath) ?? "pool";
+    const versionProbe = yield* runProviderCommand(executable, ["--version"]).pipe(
+      Effect.timeoutOption(DEFAULT_TIMEOUT_MS),
+      Effect.result,
+    );
+
+    if (Result.isFailure(versionProbe)) {
+      const error = versionProbe.failure;
+      return {
+        provider: POOLSIDE_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message: isCommandMissingCause(error)
+          ? "Poolside Agent CLI (`pool`) is not installed or not on PATH."
+          : `Failed to execute Poolside Agent CLI: ${error instanceof Error ? error.message : String(error)}.`,
+      } satisfies ServerProviderStatus;
+    }
+    if (Option.isNone(versionProbe.success)) {
+      return {
+        provider: POOLSIDE_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message: "Poolside Agent CLI is installed but its version check timed out.",
+      } satisfies ServerProviderStatus;
+    }
+    const version = versionProbe.success.value;
+    if (version.code !== 0) {
+      const detail = detailFromResult(version);
+      return {
+        provider: POOLSIDE_PROVIDER,
+        status: "error" as const,
+        available: false,
+        authStatus: "unknown" as const,
+        checkedAt,
+        message: detail
+          ? `Poolside Agent CLI is installed but failed to run. ${detail}`
+          : "Poolside Agent CLI is installed but failed to run.",
+      } satisfies ServerProviderStatus;
+    }
+    return {
+      provider: POOLSIDE_PROVIDER,
+      status: "ready" as const,
+      available: true,
+      // Poolside owns tenant/API-key credentials in its native credential store.
+      // A real ACP session remains the authoritative authentication check.
+      authStatus: "unknown" as const,
+      version: parseGenericCliVersion(`${version.stdout}\n${version.stderr}`),
+      checkedAt,
+      message:
+        "Poolside Agent CLI is installed. Modesto uses its existing setup and login; models come from the connected deployment over ACP.",
+    } satisfies ServerProviderStatus;
+  });
+
+export const checkPoolsideProviderStatus = makeCheckPoolsideProviderStatus();
+
 // ── OpenCode health check ───────────────────────────────────────────
 
 export const makeCheckOpenCodeProviderStatus = (
@@ -2166,6 +2234,8 @@ export const ProviderHealthLive = Layer.effect(
           return settings.providers.claudeAgent.binaryPath;
         case "cursor":
           return settings.providers.cursor.binaryPath;
+        case "poolside":
+          return settings.providers.poolside.binaryPath;
         case "gemini":
           return settings.providers.gemini.binaryPath;
         case "grok":
@@ -2357,6 +2427,11 @@ export const ProviderHealthLive = Layer.effect(
                 settings,
                 CURSOR_PROVIDER,
                 makeCheckCursorProviderStatus(settings.providers.cursor.binaryPath),
+              ),
+              checkProviderWhenEnabled(
+                settings,
+                POOLSIDE_PROVIDER,
+                makeCheckPoolsideProviderStatus(settings.providers.poolside.binaryPath),
               ),
               checkProviderWhenEnabled(
                 settings,

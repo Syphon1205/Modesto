@@ -277,14 +277,12 @@ import {
   ChevronRightIcon,
   ComposerSendArrowIcon,
   LayoutSidebarIcon,
-  ListChecksIcon,
   RefreshCwIcon,
   TemporaryThreadIcon,
   XIcon,
 } from "~/lib/icons";
 import { ComposerQueuedHeader } from "./chat/ComposerQueuedHeader";
 import { ComposerChromeBubbles } from "./chat/ComposerChromeBubbles";
-import { ComposerInteractionModeControl } from "./chat/ComposerInteractionModeControl";
 import GitActionsControl from "./GitActionsControl";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
@@ -813,6 +811,8 @@ function getProviderStartOptionsCustomBinaryPath(
       return normalizeCustomBinaryPath(providerOptions?.opencode?.binaryPath);
     case "cursor":
       return normalizeCustomBinaryPath(providerOptions?.cursor?.binaryPath);
+    case "poolside":
+      return normalizeCustomBinaryPath(providerOptions?.poolside?.binaryPath);
     case "pi":
       return normalizeCustomBinaryPath(providerOptions?.pi?.binaryPath);
   }
@@ -2051,6 +2051,7 @@ export default function ChatView({
       codex: resolveHint("codex"),
       claudeAgent: resolveHint("claudeAgent"),
       cursor: resolveHint("cursor"),
+      poolside: resolveHint("poolside"),
       gemini: resolveHint("gemini"),
       grok: resolveHint("grok"),
       droid: resolveHint("droid"),
@@ -2084,6 +2085,16 @@ export default function ChatView({
       binaryPath: settings.cursorBinaryPath || null,
       apiEndpoint: settings.cursorApiEndpoint || null,
       enabled: selectedProvider === "cursor" || lockedProvider === "cursor" || isModelPickerOpen,
+    }),
+  );
+  const poolsideModelDiscoveryEnabled =
+    selectedProvider === "poolside" || lockedProvider === "poolside" || isModelPickerOpen;
+  const poolsideDynamicModelsQuery = useQuery(
+    providerModelsQueryOptions({
+      provider: "poolside",
+      binaryPath: settings.poolsideBinaryPath || null,
+      cwd: providerModelDiscoveryCwd,
+      enabled: poolsideModelDiscoveryEnabled,
     }),
   );
   const geminiModelsQuery = useQuery(
@@ -2171,6 +2182,13 @@ export default function ChatView({
     cursorModelDiscoveryEnabled &&
     !hasResolvedCursorModelDiscovery &&
     (cursorDynamicModelsQuery.isLoading || cursorDynamicModelsQuery.isFetching);
+  const hasResolvedPoolsideModelDiscovery =
+    poolsideDynamicModelsQuery.data?.source?.startsWith("poolside") === true &&
+    (poolsideDynamicModelsQuery.data.models.length ?? 0) > 0;
+  const poolsideModelDiscoveryPending =
+    poolsideModelDiscoveryEnabled &&
+    !hasResolvedPoolsideModelDiscovery &&
+    (poolsideDynamicModelsQuery.isLoading || poolsideDynamicModelsQuery.isFetching);
   const hasResolvedDroidModelDiscovery =
     droidDynamicModelsQuery.data?.source === "droid-acp" &&
     (droidDynamicModelsQuery.data.models.length ?? 0) > 0;
@@ -2218,6 +2236,11 @@ export default function ChatView({
         customModelsByProvider.cursor,
         composerModelHintByProvider.cursor,
       ),
+      poolside: getAppModelOptions(
+        "poolside",
+        customModelsByProvider.poolside,
+        composerModelHintByProvider.poolside,
+      ),
       gemini: getAppModelOptions(
         "gemini",
         customModelsByProvider.gemini,
@@ -2257,6 +2280,7 @@ export default function ChatView({
         cursorDynamicModelsQuery.data === undefined
           ? undefined
           : { ...cursorDynamicModelsQuery.data, models: cursorRuntimeModels },
+      poolside: poolsideDynamicModelsQuery.data,
       gemini: geminiModelsQuery.data,
       grok: grokDynamicModelsQuery.data,
       droid: droidDynamicModelsQuery.data,
@@ -2269,6 +2293,7 @@ export default function ChatView({
       "claudeAgent",
       "codex",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -2305,6 +2330,7 @@ export default function ChatView({
     kiloDynamicModelsQuery.data,
     openCodeDynamicModelsQuery.data,
     piDynamicModelsQuery.data,
+    poolsideDynamicModelsQuery.data,
     serverConfigQuery.data?.customModelEndpoints,
   ]);
   const { modelOptions: composerModelOptions, selectedModel } = useEffectiveComposerModelState({
@@ -2320,6 +2346,7 @@ export default function ChatView({
       claudeAgent: claudeDynamicModelsQuery.data?.models ?? [],
       codex: codexDynamicModelsQuery.data?.models ?? [],
       cursor: cursorRuntimeModels,
+      poolside: poolsideDynamicModelsQuery.data?.models ?? [],
       gemini: geminiModelsQuery.data?.models ?? [],
       grok: grokDynamicModelsQuery.data?.models ?? [],
       droid: droidDynamicModelsQuery.data?.models ?? [],
@@ -2331,6 +2358,7 @@ export default function ChatView({
       claudeDynamicModelsQuery.data?.models,
       codexDynamicModelsQuery.data?.models,
       cursorRuntimeModels,
+      poolsideDynamicModelsQuery.data?.models,
       droidDynamicModelsQuery.data?.models,
       geminiModelsQuery.data?.models,
       grokDynamicModelsQuery.data?.models,
@@ -2343,6 +2371,7 @@ export default function ChatView({
     claudeAgent: claudeDynamicModelsQuery,
     codex: codexDynamicModelsQuery,
     cursor: cursorDynamicModelsQuery,
+    poolside: poolsideDynamicModelsQuery,
     gemini: geminiModelsQuery,
     grok: grokDynamicModelsQuery,
     droid: droidDynamicModelsQuery,
@@ -9197,6 +9226,7 @@ export default function ChatView({
         modelOptionsByProvider={modelOptionsByProvider}
         loadingModelProviders={{
           cursor: cursorModelDiscoveryPending,
+          poolside: poolsideModelDiscoveryPending,
           droid: droidModelDiscoveryPending,
           kilo: kiloModelDiscoveryPending,
           opencode: openCodeModelDiscoveryPending,
@@ -9239,6 +9269,7 @@ export default function ChatView({
       modelOptionsByProvider={modelOptionsByProvider}
       loadingModelProviders={{
         cursor: cursorModelDiscoveryPending,
+        poolside: poolsideModelDiscoveryPending,
         droid: droidModelDiscoveryPending,
         kilo: kiloModelDiscoveryPending,
         opencode: openCodeModelDiscoveryPending,
@@ -10966,34 +10997,28 @@ export default function ChatView({
                         ? null
                         : renderComposerLeadingControls({ iconOnly: false })}
 
-                      {!isVoiceRecording && !isVoiceTranscribing ? (
+                      {!isVoiceRecording &&
+                      !isVoiceTranscribing &&
+                      (activeTaskList || sidebarProposedPlan || planSidebarOpen) ? (
                         <div
                           className="flex items-center gap-0.5"
                           data-testid="composer-mode-toolbar"
                         >
-                          <ComposerInteractionModeControl
-                            interactionMode={interactionMode}
-                            onInteractionModeChange={handleInteractionModeChange}
-                          />
-                          {activeTaskList || sidebarProposedPlan || planSidebarOpen ? (
-                            <Button
-                              variant="chrome"
-                              className={cn(
-                                "min-w-0 shrink-0 justify-start gap-1.5 whitespace-nowrap px-2 sm:px-2.5 [&_svg]:mx-0",
-                                "text-[length:var(--app-font-size-ui-sm,11px)] text-[var(--color-text-foreground-secondary)] sm:text-[length:var(--app-font-size-ui-sm,11px)] font-normal hover:text-[var(--color-text-foreground)]",
-                              )}
-                              size="sm"
-                              type="button"
-                              onClick={togglePlanSidebar}
-                              title={planSidebarToggleTitle}
-                              aria-label={planSidebarToggleTitle}
-                            >
-                              <LayoutSidebarIcon className="size-3.5 opacity-80" />
-                              <span className="sr-only sm:not-sr-only">
-                                {planSidebarToggleLabel}
-                              </span>
-                            </Button>
-                          ) : null}
+                          <Button
+                            variant="chrome"
+                            className={cn(
+                              "min-w-0 shrink-0 justify-start gap-1.5 whitespace-nowrap px-2 sm:px-2.5 [&_svg]:mx-0",
+                              "text-[length:var(--app-font-size-ui-sm,11px)] text-[var(--color-text-foreground-secondary)] sm:text-[length:var(--app-font-size-ui-sm,11px)] font-normal hover:text-[var(--color-text-foreground)]",
+                            )}
+                            size="sm"
+                            type="button"
+                            onClick={togglePlanSidebar}
+                            title={planSidebarToggleTitle}
+                            aria-label={planSidebarToggleTitle}
+                          >
+                            <LayoutSidebarIcon className="size-3.5 opacity-80" />
+                            <span className="sr-only sm:not-sr-only">{planSidebarToggleLabel}</span>
+                          </Button>
                         </div>
                       ) : null}
                     </div>

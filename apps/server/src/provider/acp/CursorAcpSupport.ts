@@ -29,6 +29,11 @@ import {
 export interface CursorAcpRuntimeCursorSettings {
   readonly apiEndpoint?: string;
   readonly binaryPath?: string;
+  /**
+   * Override the ACP authentication method used by the reused runtime.
+   * `null` leaves authentication to the spawned CLI (used by Poolside after `pool login`).
+   */
+  readonly authMethodId?: string | null;
 }
 
 export const CURSOR_PARAMETERIZED_MODEL_PICKER_CAPABILITIES = {
@@ -103,10 +108,12 @@ export const makeCursorAcpRuntime = (
 ): Effect.Effect<AcpSessionRuntimeShape, EffectAcpErrors.AcpError, Scope.Scope> =>
   Effect.gen(function* () {
     const acpContext = yield* Layer.build(
-      AcpSessionRuntime.layer({
-        ...input,
-        spawn: buildCursorAcpSpawnInput(input.cursorSettings, input.cwd),
-        authMethodId: "cursor_login",
+    AcpSessionRuntime.layer({
+      ...input,
+      spawn: buildCursorAcpSpawnInput(input.cursorSettings, input.cwd),
+      ...(input.cursorSettings?.authMethodId === null
+        ? {}
+        : { authMethodId: input.cursorSettings?.authMethodId ?? "cursor_login" }),
         authenticateMeta: { headless: true },
         clientCapabilities: CURSOR_PARAMETERIZED_MODEL_PICKER_CAPABILITIES,
       }).pipe(
