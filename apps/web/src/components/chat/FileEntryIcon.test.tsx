@@ -24,4 +24,22 @@ describe("FileEntryIcon", () => {
 
     expect(markup).toContain("text-muted-foreground");
   });
+
+  it("renders Swift files with a branded language glyph", () => {
+    const markup = renderToStaticMarkup(
+      <FileEntryIcon pathValue="Sources/App.swift" kind="file" />,
+    );
+
+    expect(markup).toContain('data-language-icon="swift"');
+    expect(markup).toContain("#F05138");
+  });
+
+  it("honors inherited color in timeline rows", () => {
+    const markup = renderToStaticMarkup(
+      <FileEntryIcon pathValue="Sources/App.swift" kind="file" colorMode="inherit" />,
+    );
+
+    expect(markup).toContain('data-language-icon="swift"');
+    expect(markup).toContain('fill="currentColor"');
+  });
 });

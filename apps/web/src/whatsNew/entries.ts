@@ -49,6 +49,14 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
           "The agent-selection controls that could crash the composer are gone. Existing agent activity remains readable in conversation history.",
       },
       {
+        id: "palo-alto-patch-workbench",
+        title: "A clearer agent workbench",
+        description:
+          "The browser and desktop layouts now share a focused project-first start screen, compact workspace hierarchy, and branded Swift, Go, and Ruby file icons.",
+        details:
+          "The refreshed first-run path makes the next action obvious instead of leaving a new workspace empty, while preserving Modesto’s existing chats, Git review, Teams, and Automations workflows.",
+      },
+      {
         id: "palo-alto-patch-releases",
         title: "Patch releases without version churn",
         description:

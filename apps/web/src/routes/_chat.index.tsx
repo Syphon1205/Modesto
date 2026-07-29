@@ -4,12 +4,13 @@
 // Depends on: the shared restore/create route surface plus the home-chat new-chat handler.
 
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   RestoreOrCreateChatRoute,
   type RestoreRouteResolver,
 } from "../components/RestoreOrCreateChatRoute";
+import { ProjectStartState } from "../components/ProjectStartState";
 import { readSidebarUiState } from "../components/Sidebar.uiState";
 import { resolveRestorableThreadRoute } from "../chatRouteRestore";
 import { useComposerDraftStore } from "../composerDraftStore";
@@ -18,16 +19,32 @@ import { collectStudioProjectIds } from "../lib/studioProjects";
 import { EMPTY_THREAD_IDS, useStore } from "../store";
 import { useWorkspaceStore } from "../workspaceStore";
 
+const EMPTY_WORKSPACE_FALLBACK_DELAY_MS = 1_200;
+
 function ChatIndexRouteView() {
   const { handleNewChat } = useHandleNewChat();
   const threadIds = useStore((state) => state.threadIds ?? EMPTY_THREAD_IDS);
   const projects = useStore((state) => state.projects);
+  const threadsHydrated = useStore((state) => state.threadsHydrated);
   const sidebarThreadSummaryById = useStore((state) => state.sidebarThreadSummaryById);
   const draftThreadsByThreadId = useComposerDraftStore((state) => state.draftThreadsByThreadId);
   const homeDir = useWorkspaceStore((state) => state.homeDir);
   const chatWorkspaceRoot = useWorkspaceStore((state) => state.chatWorkspaceRoot);
   const studioWorkspaceRoot = useWorkspaceStore((state) => state.studioWorkspaceRoot);
+  const [showEmptyWorkspaceFallback, setShowEmptyWorkspaceFallback] = useState(false);
   const createFreshChat = useCallback(() => handleNewChat({ fresh: true }), [handleNewChat]);
+
+  useEffect(() => {
+    if (threadsHydrated || projects.length > 0 || threadIds.length > 0) {
+      setShowEmptyWorkspaceFallback(false);
+      return;
+    }
+    const timeoutId = window.setTimeout(
+      () => setShowEmptyWorkspaceFallback(true),
+      EMPTY_WORKSPACE_FALLBACK_DELAY_MS,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [projects.length, threadIds.length, threadsHydrated]);
 
   // Home chats restore the last visited route, except Studio threads — those belong to the
   // /studio surface, and restoring one from "/" would silently switch the user into the Studio
@@ -79,6 +96,14 @@ function ChatIndexRouteView() {
     },
     [nonStudioDraftThreadIds, sidebarThreadSummaryById, studioProjectIds, threadIds],
   );
+
+  if (
+    (threadsHydrated || showEmptyWorkspaceFallback) &&
+    projects.length === 0 &&
+    threadIds.length === 0
+  ) {
+    return <ProjectStartState />;
+  }
 
   return (
     <RestoreOrCreateChatRoute

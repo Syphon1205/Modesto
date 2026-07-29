@@ -8,6 +8,7 @@ import { getAttachmentIconName, getFileIconName } from "../../file-icons";
 import { CentralIcon } from "~/lib/central-icons";
 import { cn } from "~/lib/utils";
 import { FolderClosed, FolderOpen } from "../FolderClosed";
+import { isLanguageFileIconName, LanguageFileIcon } from "./LanguageFileIcon";
 
 const FILE_ICON_COLOR_CLASS_BY_ICON_NAME: Record<string, string> = {
   audio: "text-[#38bdf8]",
@@ -83,6 +84,16 @@ export const FileEntryIcon = memo(function FileEntryIcon(props: {
       ? undefined
       : (FILE_ICON_COLOR_CLASS_BY_ICON_NAME[iconName] ??
         FILE_ICON_COLOR_CLASS_BY_ICON_NAME["code-brackets"]);
+
+  if (isLanguageFileIconName(iconName)) {
+    return (
+      <LanguageFileIcon
+        name={iconName}
+        monochrome={props.colorMode === "inherit"}
+        className={cn("size-4 shrink-0", props.className)}
+      />
+    );
+  }
 
   return (
     <CentralIcon

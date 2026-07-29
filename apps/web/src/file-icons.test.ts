@@ -39,9 +39,9 @@ describe("getFileIconName", () => {
 
   it("falls back to the bracket glyph for unknown or icon-less types", () => {
     // Swift/Go/Ruby have no dedicated Central icon, so they use the bracket.
-    assert.equal(getFileIconName("App.swift"), "code-brackets");
-    assert.equal(getFileIconName("main.go"), "code-brackets");
-    assert.equal(getFileIconName("server.rb"), "code-brackets");
+    assert.equal(getFileIconName("App.swift"), "language-swift");
+    assert.equal(getFileIconName("main.go"), "language-go");
+    assert.equal(getFileIconName("server.rb"), "language-ruby");
     assert.equal(getFileIconName("foo.unknown-ext"), "code-brackets");
     assert.equal(getFileIconName("notes"), "code-brackets");
   });

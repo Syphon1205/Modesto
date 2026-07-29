@@ -329,6 +329,7 @@ import {
   sortThreadsForSidebar,
 } from "./Sidebar.logic";
 import type { LastThreadRoute } from "../chatRouteRestore";
+import { OPEN_ADD_PROJECT_EVENT } from "../projectUiEvents";
 import { resolveSubagentPresentationForThread } from "../lib/subagentPresentation";
 import { useCopyPathToClipboard, useCopyThreadIdToClipboard } from "~/hooks/useCopyToClipboard";
 import { DESKTOP_TOP_BAR_TRAFFIC_LIGHT_GUTTER_CLASS } from "~/hooks/useDesktopTopBarGutter";
@@ -2912,6 +2913,16 @@ export default function Sidebar() {
     setAddProjectError(null);
     setShowManualPathInput(false);
     setAddingProject((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenAddProject = () => {
+      setAddProjectError(null);
+      setShowManualPathInput(false);
+      setAddingProject(true);
+    };
+    window.addEventListener(OPEN_ADD_PROJECT_EVENT, handleOpenAddProject);
+    return () => window.removeEventListener(OPEN_ADD_PROJECT_EVENT, handleOpenAddProject);
   }, []);
 
   const currentProjectShortcutTargetId = useMemo(
