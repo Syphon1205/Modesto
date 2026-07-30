@@ -10,17 +10,17 @@
   </p>
 
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.7.2</strong></a>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.8</strong></a>
     &nbsp;·&nbsp;
-    <a href="#san-mateo--v016">What’s new</a>
+    <a href="#shared-context--v018">What’s new</a>
     &nbsp;·&nbsp;
     <a href="https://github.com/Syphon1205/Modesto/releases">All releases</a>
   </p>
 
   <p>
-    <img alt="Latest release: v0.1.6" src="https://img.shields.io/badge/release-v0.1.6-7c8cff?style=flat-square" />
+    <img alt="Latest release: v0.1.8" src="https://img.shields.io/badge/release-v0.1.8-7c8cff?style=flat-square" />
     <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-2dd4bf?style=flat-square" />
-    <img alt="Platforms: macOS and Windows" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows-64748b?style=flat-square" />
+    <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-64748b?style=flat-square" />
   </p>
 </div>
 
@@ -43,33 +43,33 @@ that produced it.
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.6/Modesto-0.1.6-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.6/Modesto-0.1.6-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.6/Modesto-0.1.6-x64.exe) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.AppImage) |
 
 Every stable release also includes updater metadata, so Modesto can discover
 future updates from inside the app. Verify downloads with
-[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.6/SHA256SUMS.txt).
+[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/SHA256SUMS.txt).
 
 > Download Modesto only from this repository’s
 > [Releases](https://github.com/Syphon1205/Modesto/releases) page.
 
-## San Mateo · v0.1.6
+## Shared Context · v0.1.8
 
-San Mateo makes the composer more honest about what will happen next—and more
-useful when the work has visual context.
+Shared Context helps one agent pick up where another left off—without rebuilding
+the story from chat alone.
 
-- **Agent and Plan are separate modes.** Agent executes the next turn; Plan
-  structures the work first. Claude delegation is a separate action, shown only
-  where it can run end to end.
-- **Visual context stays with the task.** Attach screenshots and images directly
-  to the composer, alongside browser previews, diffs, and app output.
-- **Settings are simpler.** One Plugin Library, one Git & PRs destination, and
-  safer views for MCP and hook configuration.
-- **The composer mention crash is fixed.** Opening installed-plugin suggestions
-  no longer references an undefined search query.
+- **Shared context bundles** connect files, sessions, checkpoints, Git changes,
+  sources, terminal activity, and unfinished tasks into one portable brief.
+- **Checkpoints resume and compare.** Restore a seam, compare any two refs, or
+  hand a checkpoint to another provider with the important context attached.
+- **Workspace timeline** records agent starts, edits, searches, tests,
+  checkpoints, handoffs, and commits across the project.
+- **Teams shows coordinated work.** Assignments, reviews, shared runs, and
+  agent activity replace a generic chat room.
 
-[Read the complete San Mateo release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.6)
+[Read the complete Shared Context release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.8)
 
 ## Get started
 
