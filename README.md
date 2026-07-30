@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.8</strong></a>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.8.2</strong></a>
     &nbsp;·&nbsp;
     <a href="#shared-context--v018">What’s new</a>
     &nbsp;·&nbsp;
@@ -18,7 +18,7 @@
   </p>
 
   <p>
-    <img alt="Latest release: v0.1.8" src="https://img.shields.io/badge/release-v0.1.8-7c8cff?style=flat-square" />
+    <img alt="Latest release: v0.1.8.2" src="https://img.shields.io/badge/release-v0.1.8.2-7c8cff?style=flat-square" />
     <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-2dd4bf?style=flat-square" />
     <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-64748b?style=flat-square" />
   </p>
@@ -43,19 +43,29 @@ that produced it.
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.AppImage) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8.2/Modesto-0.1.8.2-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8.2/Modesto-0.1.8.2-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8.2/Modesto-0.1.8.2-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8.2/Modesto-0.1.8.2-x64.AppImage) |
 
 Every stable release also includes updater metadata, so Modesto can discover
 future updates from inside the app. Verify downloads with
-[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/SHA256SUMS.txt).
+[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8.2/SHA256SUMS.txt).
 
 > Download Modesto only from this repository’s
 > [Releases](https://github.com/Syphon1205/Modesto/releases) page.
 
-## Shared Context · v0.1.8
+## Providers patch · v0.1.8.2
+
+This patch brings Settings → Providers back and restores missing model catalog entries.
+
+- **Providers tab** no longer crashes with `process is not defined`.
+- **Poolside** shows Laguna / Malibu seeds while discovery loads.
+- **Hugging Face, Qwen, and Kimi** stay visible in the OpenCode catalog, with correct Cursor upstream grouping.
+
+[Read the complete 0.1.8.2 release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.8.2)
+
+## Previously in v0.1.8 · Shared Context
 
 Shared Context helps one agent pick up where another left off—without rebuilding
 the story from chat alone.
@@ -68,8 +78,6 @@ the story from chat alone.
   checkpoints, handoffs, and commits across the project.
 - **Teams shows coordinated work.** Assignments, reviews, shared runs, and
   agent activity replace a generic chat room.
-
-[Read the complete Shared Context release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.8)
 
 ## Get started
 
