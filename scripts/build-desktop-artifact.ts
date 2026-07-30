@@ -564,10 +564,9 @@ const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     directories: {
       buildResources: "apps/desktop/resources",
     },
-    // Slower to pack, meaningfully smaller installer/zip; worth it for a
-    // release artifact. Electron itself ships ~220 locale bundles we don't
-    // localize into — keep only the one we actually use.
-    compression: "maximum",
+    // Prefer faster packing on constrained CI/cloud hosts; electron-builder's
+    // "maximum" Deflate pass can spend 15+ minutes per macOS zip alone.
+    compression: "normal",
     electronLanguages: ["en-US", "en"],
   };
   const publishConfig = resolveGitHubPublishConfig();
@@ -836,7 +835,9 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
   yield* runCommand(
     options.platform === "win"
       ? stageInstallProcess`bun install --production --os win32 --cpu ${options.arch}`
-      : stageInstallProcess`bun install --production`,
+      : options.platform === "mac"
+        ? stageInstallProcess`bun install --production --os darwin --cpu ${options.arch}`
+        : stageInstallProcess`bun install --production`,
   );
 
   yield* Effect.log(

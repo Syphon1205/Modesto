@@ -98,6 +98,9 @@ export function createDesktopPlatformBuildConfig(
 
     return {
       ...nativePackaging,
+      // Prebuilds cover node-pty/keytar; rebuilding on Linux cannot cross-compile
+      // native Darwin modules and blocks packaging before electron-builder runs.
+      npmRebuild: false,
       mac,
       ...(input.target === "dmg"
         ? {
