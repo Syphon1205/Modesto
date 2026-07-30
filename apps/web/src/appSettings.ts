@@ -859,12 +859,16 @@ export function getAppModelOptions(
   customModels: readonly string[],
   selectedModel?: string | null,
 ): AppModelOption[] {
-  const options: AppModelOption[] = getModelOptions(provider).map(({ slug, name }) => ({
-    provider,
-    slug,
-    name,
-    isCustom: false,
-  }));
+  const options: AppModelOption[] = getModelOptions(provider).map(
+    ({ slug, name, upstreamProviderId, upstreamProviderName }) => ({
+      provider,
+      slug,
+      name,
+      isCustom: false,
+      ...(upstreamProviderId ? { upstreamProviderId } : {}),
+      ...(upstreamProviderName ? { upstreamProviderName } : {}),
+    }),
+  );
   const seen = new Set(options.map((option) => option.slug));
   const trimmedSelectedModel = selectedModel?.trim().toLowerCase();
 

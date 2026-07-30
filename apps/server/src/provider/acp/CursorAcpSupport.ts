@@ -297,13 +297,21 @@ function inferCursorUpstreamProvider(choice: CursorAcpSelectOption): {
   if (token.includes("grok")) {
     return { upstreamProviderId: "xai", upstreamProviderName: "xAI" };
   }
-  if (token.includes("kimi")) {
+  if (token.includes("kimi") || token.includes("moonshot")) {
     return { upstreamProviderId: "moonshot", upstreamProviderName: "Moonshot AI" };
+  }
+  if (
+    token.includes("huggingface") ||
+    token.includes("hugging-face") ||
+    token.includes("hugging face") ||
+    /(^|[^a-z])hf([^a-z]|$)/u.test(token)
+  ) {
+    return { upstreamProviderId: "huggingface", upstreamProviderName: "Hugging Face" };
   }
   if (token.includes("deepseek")) {
     return { upstreamProviderId: "deepseek", upstreamProviderName: "DeepSeek" };
   }
-  if (token.includes("qwen")) {
+  if (token.includes("qwen") || token.includes("alibaba")) {
     return { upstreamProviderId: "alibaba", upstreamProviderName: "Alibaba" };
   }
   if (token.includes("llama")) {

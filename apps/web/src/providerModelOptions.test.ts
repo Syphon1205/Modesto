@@ -103,6 +103,61 @@ describe("mergeDynamicModelOptions", () => {
     ]);
   });
 
+  it("keeps curated OpenCode Hugging Face, Qwen, and Kimi seeds when discovery is partial", () => {
+    expect(
+      mergeDynamicModelOptions({
+        provider: "opencode",
+        staticOptions: [
+          {
+            slug: "openai/gpt-5",
+            name: "OpenAI GPT-5",
+            upstreamProviderId: "openai",
+            upstreamProviderName: "OpenAI",
+          },
+          {
+            slug: "opencode-go/kimi-k2.6",
+            name: "Kimi K2.6",
+            upstreamProviderId: "moonshot",
+            upstreamProviderName: "Moonshot AI",
+          },
+          {
+            slug: "openrouter/qwen/qwen3-coder",
+            name: "Qwen3 Coder",
+            upstreamProviderId: "alibaba",
+            upstreamProviderName: "Alibaba",
+          },
+          {
+            slug: "huggingface/Qwen/Qwen2.5-Coder-32B-Instruct",
+            name: "Qwen2.5 Coder 32B",
+            upstreamProviderId: "huggingface",
+            upstreamProviderName: "Hugging Face",
+          },
+        ],
+        dynamicModels: [{ slug: "openai/gpt-5", name: "GPT-5", upstreamProviderId: "openai" }],
+      }),
+    ).toEqual([
+      { slug: "openai/gpt-5", name: "OpenAI GPT-5", upstreamProviderId: "openai" },
+      {
+        slug: "opencode-go/kimi-k2.6",
+        name: "Kimi K2.6",
+        upstreamProviderId: "moonshot",
+        upstreamProviderName: "Moonshot AI",
+      },
+      {
+        slug: "openrouter/qwen/qwen3-coder",
+        name: "Qwen3 Coder",
+        upstreamProviderId: "alibaba",
+        upstreamProviderName: "Alibaba",
+      },
+      {
+        slug: "huggingface/Qwen/Qwen2.5-Coder-32B-Instruct",
+        name: "Qwen2.5 Coder 32B",
+        upstreamProviderId: "huggingface",
+        upstreamProviderName: "Hugging Face",
+      },
+    ]);
+  });
+
   it("builds one Poolside provider selection for every deployment model", () => {
     expect(buildModelSelection("poolside", "laguna-xs-2", { reasoningEffort: "high" })).toEqual({
       provider: "poolside",

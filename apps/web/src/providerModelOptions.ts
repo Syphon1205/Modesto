@@ -176,13 +176,13 @@ export function mergeDynamicModelOptions(input: {
   const staticBuiltInModels = input.staticOptions.filter(
     (model) => !("isCustom" in model) || model.isCustom !== true,
   );
+  const discoveryOwnsCatalog =
+    input.provider === "kilo" ||
+    input.provider === "cursor" ||
+    input.provider === "droid" ||
+    input.provider === "poolside";
   const missingStaticBuiltIns =
-    (input.provider === "kilo" ||
-      input.provider === "opencode" ||
-      input.provider === "cursor" ||
-      input.provider === "droid" ||
-      input.provider === "poolside") &&
-    normalizedDynamicOptions.length > 0
+    discoveryOwnsCatalog && normalizedDynamicOptions.length > 0
       ? []
       : staticBuiltInModels.filter((model) => !dynamicNormalizedSlugs.has(model.slug));
 

@@ -1184,7 +1184,9 @@ function SettingsRouteView() {
   });
   const { modelOptionsByProvider: gitWritingCatalogOptionsByProvider } = useProviderModelCatalog({
     selectedProvider: currentGitTextGenerationProvider,
-    discoveryEnabled: activeSection === "models",
+    // Warm discovery on Models and Providers so Poolside / OpenCode / Cursor
+    // catalogs (Hugging Face, Qwen, Kimi, Laguna, …) are ready when browsing.
+    discoveryEnabled: activeSection === "models" || activeSection === "providers",
     cwd: providerModelDiscoveryCwd,
     modelHintByProvider: gitWritingModelHintByProvider,
   });

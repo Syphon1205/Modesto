@@ -134,6 +134,9 @@ export default defineConfig({
         (pkg as { modestoReleaseVersion?: string }).modestoReleaseVersion ??
         pkg.version,
     ),
+    // Electron renderer has no Node process. Keep NODE_ENV replaced at build time;
+    // bootstrap `processShim` covers bare `process` / `process.env` access.
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
   },
   resolve: {
     tsconfigPaths: true,

@@ -457,6 +457,16 @@ type ModelDefinition = {
   readonly slug: string;
   readonly name: string;
   readonly capabilities: ModelCapabilities;
+  readonly upstreamProviderId?: string;
+  readonly upstreamProviderName?: string;
+};
+
+const EMPTY_STATIC_MODEL_CAPABILITIES: ModelCapabilities = {
+  reasoningEffortLevels: [],
+  supportsFastMode: false,
+  supportsThinkingToggle: false,
+  promptInjectedEffortLevels: [],
+  contextWindowOptions: [],
 };
 
 /**
@@ -839,26 +849,44 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
     {
       slug: "openai/gpt-5",
       name: "OpenAI GPT-5",
-      capabilities: {
-        reasoningEffortLevels: [],
-        supportsFastMode: false,
-        supportsThinkingToggle: false,
-        promptInjectedEffortLevels: [],
-        contextWindowOptions: [],
-      },
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+      upstreamProviderId: "openai",
+      upstreamProviderName: "OpenAI",
+    },
+    {
+      slug: "huggingface/Qwen/Qwen2.5-Coder-32B-Instruct",
+      name: "Qwen2.5 Coder 32B",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+      upstreamProviderId: "huggingface",
+      upstreamProviderName: "Hugging Face",
+    },
+    {
+      slug: "openrouter/qwen/qwen3-coder",
+      name: "Qwen3 Coder",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+      upstreamProviderId: "alibaba",
+      upstreamProviderName: "Alibaba",
+    },
+    {
+      slug: "opencode-go/kimi-k2.6",
+      name: "Kimi K2.6",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+      upstreamProviderId: "moonshot",
+      upstreamProviderName: "Moonshot AI",
+    },
+    {
+      slug: "kimi-for-coding/k2p6",
+      name: "Kimi K2.6 Coding",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+      upstreamProviderId: "kimi-for-coding",
+      upstreamProviderName: "Kimi For Coding",
     },
   ],
   kilo: [
     {
       slug: "kilo/kilo-auto/free",
       name: "Kilo Auto Free",
-      capabilities: {
-        reasoningEffortLevels: [],
-        supportsFastMode: false,
-        supportsThinkingToggle: false,
-        promptInjectedEffortLevels: [],
-        contextWindowOptions: [],
-      },
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
     },
   ],
   pi: [],
@@ -866,24 +894,12 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
     {
       slug: "auto",
       name: "Auto",
-      capabilities: {
-        reasoningEffortLevels: [],
-        supportsFastMode: false,
-        supportsThinkingToggle: false,
-        promptInjectedEffortLevels: [],
-        contextWindowOptions: [],
-      },
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
     },
     {
       slug: "composer-2",
       name: "Composer 2",
-      capabilities: {
-        reasoningEffortLevels: [],
-        supportsFastMode: false,
-        supportsThinkingToggle: false,
-        promptInjectedEffortLevels: [],
-        contextWindowOptions: [],
-      },
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
     },
     {
       slug: "claude-opus-4-6",
@@ -909,18 +925,33 @@ export const MODEL_OPTIONS_BY_PROVIDER = {
     {
       slug: "gemini-3-pro",
       name: "Gemini 3 Pro",
-      capabilities: {
-        reasoningEffortLevels: [],
-        supportsFastMode: false,
-        supportsThinkingToggle: false,
-        promptInjectedEffortLevels: [],
-        contextWindowOptions: [],
-      },
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
     },
   ],
-  // The authenticated Poolside deployment is authoritative. ACP discovery fills
-  // this at runtime (Laguna M.1, Laguna XS.2, Malibu, and future tenant models).
-  poolside: [],
+  // Offline seeds while ACP discovery is pending. Live Poolside deployments remain
+  // authoritative and replace these once listModels returns.
+  poolside: [
+    {
+      slug: "default",
+      name: "Default",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+    },
+    {
+      slug: "laguna-m.1",
+      name: "Laguna M.1",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+    },
+    {
+      slug: "laguna-xs.2",
+      name: "Laguna XS.2",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+    },
+    {
+      slug: "malibu",
+      name: "Malibu",
+      capabilities: EMPTY_STATIC_MODEL_CAPABILITIES,
+    },
+  ],
 } as const satisfies Record<ProviderKind, readonly ModelDefinition[]>;
 export type ModelOptionsByProvider = typeof MODEL_OPTIONS_BY_PROVIDER;
 
@@ -994,7 +1025,16 @@ export const MODEL_SLUG_ALIASES_BY_PROVIDER: Record<ProviderKind, Record<string,
     "codex-5.3": "gpt-5.3-codex",
     "gemini-3": "gemini-3-pro",
   },
-  poolside: {},
+  poolside: {
+    default: "default",
+    laguna: "laguna-m.1",
+    "laguna-m1": "laguna-m.1",
+    "laguna-m.1": "laguna-m.1",
+    "laguna-xs": "laguna-xs.2",
+    "laguna-xs2": "laguna-xs.2",
+    "laguna-xs.2": "laguna-xs.2",
+    malibu: "malibu",
+  },
   gemini: {
     auto: "auto-gemini-3",
     "auto-gemini-3": "auto-gemini-3",

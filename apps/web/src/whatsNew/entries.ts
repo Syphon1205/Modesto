@@ -28,6 +28,24 @@ import type { WhatsNewEntry } from "./logic";
 
 export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
   {
+    version: "0.1.8.2",
+    date: "Jul 30",
+    features: [
+      {
+        id: "providers-tab-process-shim",
+        title: "Providers settings stays up",
+        description:
+          "Settings → Providers no longer crashes with process is not defined, so Poolside installs, visibility, and updates are reachable again.",
+      },
+      {
+        id: "poolside-hf-qwen-kimi-catalog",
+        title: "Poolside, Hugging Face, Qwen, and Kimi in the catalog",
+        description:
+          "Poolside shows Laguna/Malibu seeds while discovery loads, OpenCode keeps Hugging Face / Qwen / Kimi curated models, and Cursor tags those upstreams correctly.",
+      },
+    ],
+  },
+  {
     version: "0.1.8",
     date: "Jul 30",
     features: [
