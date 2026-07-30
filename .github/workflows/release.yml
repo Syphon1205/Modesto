@@ -228,6 +228,11 @@ jobs:
             platform: win
             target: nsis
             arch: x64
+          - label: Linux x64
+            runner: ubuntu-24.04
+            platform: linux
+            target: AppImage
+            arch: x64
     steps:
       - name: Checkout
         uses: actions/checkout@v6

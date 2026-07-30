@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.1.7.2-6366f1.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.1.8-6366f1.svg?style=flat-square" />
   <img alt="License: Proprietary" src="https://img.shields.io/badge/license-Proprietary-64748b.svg?style=flat-square" />
   <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
   <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="#features">Features</a> ·
   <a href="#download">Download</a> ·
-  <a href="#whats-new-in-v0172">What's new</a> ·
+  <a href="#whats-new-in-v018">What's new</a> ·
   <a href="#workspaces">Workspaces</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#roadmap">Roadmap</a> ·
@@ -32,22 +32,34 @@ Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Factory Droid, 
 
 <br />
 
-## Download v0.1.4
+## Download v0.1.8
 
-**v0.1.4 — San Leandro is the current stable release.**
+**v0.1.8 — Shared Context is the current stable release.**
 
 | Platform              | Download                                                                                                   |
 | --------------------- | ---------------------------------------------------------------------------------------------------------- |
-| macOS — Apple Silicon | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.1.4/Modesto-0.1.4-arm64.dmg)  |
-| macOS — Intel         | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.1.4/Modesto-0.1.4-x64.dmg)    |
-| Windows — x64         | [Download installer](https://github.com/Syphon1205/Modesto/releases/download/v0.1.4/Modesto-0.1.4-x64.exe) |
+| macOS — Apple Silicon | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.dmg)  |
+| macOS — Intel         | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.dmg)    |
+| Windows — x64         | [Download installer](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.exe) |
+| Linux — x64           | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.AppImage) |
 
-The macOS builds are Developer ID signed and notarized by Apple. Existing release
-installations receive v0.1.4 through Modesto's built-in updater. See the
-[full release and changelog](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.4)
+Existing installations receive v0.1.8 through Modesto's built-in updater. See the
+[full release and changelog](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.8)
 for every artifact.
 
-## What's new in v0.1.7.2
+
+## What's new in v0.1.8
+
+- **Shared context** connects files, sessions, checkpoints, Git changes, sources,
+  terminal activity, and unfinished tasks so another agent can pick up the thread.
+- **Resumable checkpoints** can be compared, restored, resumed, and handed to
+  another provider with the important context attached.
+- **Workspace timeline** shows agent starts, edits, searches, tests, checkpoints,
+  handoffs, and commits across a project.
+- **Teams** surfaces shared work, assignments, reviews, and agent activity instead
+  of reading like generic chat.
+
+## Previously in v0.1.7.2
 
 - **Recoverable sessions** clear stuck Working states on runtime errors, make
   Recover session interrupt and rebuild state, and bound hung provider starts.

@@ -1,6 +1,6 @@
 {
   "name": "@modesto/web",
-  "version": "0.1.8-patch.2",
+  "version": "0.1.8",
   "private": true,
   "type": "module",
   "scripts": {
@@ -79,6 +79,5 @@
     "vite": "^8.0.0",
     "vitest": "catalog:",
     "vitest-browser-react": "^2.0.5"
-  },
-  "modestoReleaseVersion": "0.1.7.2"
+  }
 }
