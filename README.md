@@ -43,8 +43,8 @@ that produced it.
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download ZIP](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.zip) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download ZIP](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.zip) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.dmg) |
 | **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.exe) |
 | **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.AppImage) |
 
