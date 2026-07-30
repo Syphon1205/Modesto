@@ -7,7 +7,6 @@ import { Schema } from "effect";
 
 export const FAVORITE_MODEL_STORAGE_KEYS = {
   cursor: "modesto:cursor-favourite-models:v1",
-  poolside: "modesto:poolside-favourite-models:v1",
   kilo: "modesto:kilo-favourite-models:v1",
   opencode: "modesto:opencode-favourite-models:v1",
   pi: "modesto:pi-favourite-models:v1",
@@ -20,7 +19,6 @@ const FavoriteModelSlugsSchema = Schema.Array(Schema.String);
 export function supportsModelFavorites(provider: ProviderKind): provider is FavoriteModelProvider {
   return (
     provider === "cursor" ||
-    provider === "poolside" ||
     provider === "kilo" ||
     provider === "opencode" ||
     provider === "pi"

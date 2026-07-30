@@ -7882,7 +7882,6 @@ function SidebarSearchPaletteController(props: {
       "codex",
       "claudeAgent",
       "cursor",
-      "poolside",
       "gemini",
       "grok",
       "droid",

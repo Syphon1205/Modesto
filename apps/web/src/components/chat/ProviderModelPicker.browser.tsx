@@ -20,6 +20,10 @@ const MODEL_OPTIONS_BY_PROVIDER = {
     { slug: "auto", name: "Auto" },
     { slug: "composer-2", name: "Composer 2" },
   ],
+  poolside: [
+    { slug: "laguna-m.1", name: "Laguna M.1" },
+    { slug: "malibu", name: "Malibu" },
+  ],
   gemini: [
     { slug: "auto-gemini-3", name: "Auto Gemini 3" },
     { slug: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },

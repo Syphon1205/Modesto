@@ -73,8 +73,9 @@ export function listCloudAgentProviders(input: {
 
 export function defaultCloudAgentModelSelection(provider: ProviderKind): ModelSelection {
   if (provider === "pi") {
-    const model = MODEL_OPTIONS_BY_PROVIDER.pi[0]?.slug ?? "default";
-    return { provider, model };
+    // Pi has no static built-ins; ACP discovery fills the live catalog.
+    const piModels = MODEL_OPTIONS_BY_PROVIDER.pi as ReadonlyArray<{ readonly slug: string }>;
+    return { provider, model: piModels[0]?.slug ?? "default" };
   }
   return { provider, model: DEFAULT_MODEL_BY_PROVIDER[provider] };
 }

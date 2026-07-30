@@ -6,7 +6,7 @@ import {
   filterCloudAgentModelSelections,
   isCloudAgentProviderEnabled,
   listCloudAgentProviders,
-} from "./cloudAgents.ts";
+} from "./cloudAgents";
 
 function withProviders(
   patch: Partial<ServerSettings["providers"]>,
