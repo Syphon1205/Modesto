@@ -175,16 +175,24 @@ import type {
   ClientOrchestrationCommand,
   OrchestrationCaptureHandoffCheckpointInput,
   OrchestrationCaptureHandoffCheckpointResult,
+  OrchestrationCompareCheckpointsInput,
+  OrchestrationCompareCheckpointsResult,
   OrchestrationDeclareAgentCheckpointInput,
   OrchestrationDeclareAgentCheckpointResult,
   OrchestrationGetFullThreadDiffInput,
   OrchestrationGetFullThreadDiffResult,
   OrchestrationGetHandoffCheckpointDiffInput,
   OrchestrationGetHandoffCheckpointDiffResult,
+  OrchestrationGetSharedContextBundleInput,
+  OrchestrationGetSharedContextBundleResult,
+  OrchestrationGetWorkspaceTimelineInput,
+  OrchestrationGetWorkspaceTimelineResult,
   OrchestrationImportThreadInput,
   OrchestrationImportThreadResult,
   OrchestrationGetTurnDiffInput,
   OrchestrationGetTurnDiffResult,
+  OrchestrationResumeFromCheckpointInput,
+  OrchestrationResumeFromCheckpointResult,
   OrchestrationRestoreHandoffCheckpointInput,
   OrchestrationRestoreHandoffCheckpointResult,
   OrchestrationEvent,
@@ -688,6 +696,12 @@ export interface NativeApi {
   orchestration: {
     getSnapshot: () => Promise<OrchestrationReadModel>;
     getShellSnapshot: () => Promise<OrchestrationShellSnapshot>;
+    getSharedContextBundle: (
+      input: OrchestrationGetSharedContextBundleInput,
+    ) => Promise<OrchestrationGetSharedContextBundleResult>;
+    getWorkspaceTimeline: (
+      input: OrchestrationGetWorkspaceTimelineInput,
+    ) => Promise<OrchestrationGetWorkspaceTimelineResult>;
     dispatchCommand: (command: ClientOrchestrationCommand) => Promise<{ sequence: number }>;
     importThread: (
       input: OrchestrationImportThreadInput,
@@ -697,6 +711,12 @@ export interface NativeApi {
     getFullThreadDiff: (
       input: OrchestrationGetFullThreadDiffInput,
     ) => Promise<OrchestrationGetFullThreadDiffResult>;
+    compareCheckpoints: (
+      input: OrchestrationCompareCheckpointsInput,
+    ) => Promise<OrchestrationCompareCheckpointsResult>;
+    resumeFromCheckpoint: (
+      input: OrchestrationResumeFromCheckpointInput,
+    ) => Promise<OrchestrationResumeFromCheckpointResult>;
     declareAgentCheckpoint: (
       input: OrchestrationDeclareAgentCheckpointInput,
     ) => Promise<OrchestrationDeclareAgentCheckpointResult>;

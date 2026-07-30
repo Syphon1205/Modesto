@@ -1,5 +1,7 @@
 import {
   OrchestrationGetTurnDiffResult,
+  type OrchestrationCompareCheckpointsInput,
+  type OrchestrationCompareCheckpointsResult,
   type OrchestrationGetFullThreadDiffInput,
   type OrchestrationGetFullThreadDiffResult,
   type OrchestrationGetTurnDiffResult as OrchestrationGetTurnDiffResultType,
@@ -49,6 +51,94 @@ const make = Effect.gen(function* () {
   const projectionSnapshotQuery = yield* ProjectionSnapshotQuery;
   const checkpointStore = yield* CheckpointStore;
   const checkpointDiffBlobStore = yield* CheckpointDiffBlobStore;
+
+  const compareCheckpoints: CheckpointDiffQueryShape["compareCheckpoints"] = (
+    input: OrchestrationCompareCheckpointsInput,
+  ) =>
+    Effect.gen(function* () {
+      const operation = "CheckpointDiffQuery.compareCheckpoints";
+      const threadContext = yield* projectionSnapshotQuery.getThreadCheckpointContext(
+        input.threadId,
+      );
+      if (Option.isNone(threadContext)) {
+        return yield* new CheckpointInvariantError({
+          operation,
+          detail: `Thread '${input.threadId}' not found.`,
+        });
+      }
+
+      const workspaceCwd = resolveThreadWorkspaceCwd({
+        thread: {
+          projectId: threadContext.value.projectId,
+          envMode: threadContext.value.envMode,
+          worktreePath: threadContext.value.worktreePath,
+        },
+        projects: [
+          {
+            id: threadContext.value.projectId,
+            kind: threadContext.value.projectKind,
+            workspaceRoot: threadContext.value.workspaceRoot,
+          },
+        ],
+      });
+      if (!workspaceCwd) {
+        return yield* new CheckpointInvariantError({
+          operation,
+          detail: `Workspace path missing for thread '${input.threadId}' when comparing checkpoints.`,
+        });
+      }
+
+      const fromExists = yield* checkpointStore.hasCheckpointRef({
+        cwd: workspaceCwd,
+        checkpointRef: input.fromCheckpointRef,
+      });
+      if (!fromExists) {
+        const turnCount =
+          threadContext.value.checkpoints.find(
+            (checkpoint) => checkpoint.checkpointRef === input.fromCheckpointRef,
+          )?.checkpointTurnCount ?? 0;
+        return yield* new CheckpointUnavailableError({
+          threadId: input.threadId,
+          turnCount,
+          detail: `Checkpoint ref '${input.fromCheckpointRef}' is unavailable.`,
+        });
+      }
+      const toExists =
+        input.toCheckpointRef === input.fromCheckpointRef
+          ? true
+          : yield* checkpointStore.hasCheckpointRef({
+              cwd: workspaceCwd,
+              checkpointRef: input.toCheckpointRef,
+            });
+      if (!toExists) {
+        const turnCount =
+          threadContext.value.checkpoints.find(
+            (checkpoint) => checkpoint.checkpointRef === input.toCheckpointRef,
+          )?.checkpointTurnCount ?? 0;
+        return yield* new CheckpointUnavailableError({
+          threadId: input.threadId,
+          turnCount,
+          detail: `Checkpoint ref '${input.toCheckpointRef}' is unavailable.`,
+        });
+      }
+
+      const diff =
+        input.fromCheckpointRef === input.toCheckpointRef
+          ? ""
+          : yield* checkpointStore.diffCheckpoints({
+              cwd: workspaceCwd,
+              fromCheckpointRef: input.fromCheckpointRef,
+              toCheckpointRef: input.toCheckpointRef,
+              fallbackFromToHead: false,
+              ignoreWhitespace: input.ignoreWhitespace ?? true,
+            });
+      return {
+        threadId: input.threadId,
+        fromCheckpointRef: input.fromCheckpointRef,
+        toCheckpointRef: input.toCheckpointRef,
+        diff,
+      } satisfies OrchestrationCompareCheckpointsResult;
+    });
 
   const getTurnDiff: CheckpointDiffQueryShape["getTurnDiff"] = (input) =>
     Effect.gen(function* () {
@@ -343,6 +433,7 @@ const make = Effect.gen(function* () {
     });
 
   return {
+    compareCheckpoints,
     getTurnDiff,
     getFullThreadDiff,
   } satisfies CheckpointDiffQueryShape;

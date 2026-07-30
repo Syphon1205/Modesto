@@ -101,6 +101,20 @@ it("buildHandoffBootstrapText includes agent checkpoint when captured", () => {
   assert.include(text!, "durable hidden checkpoint");
 });
 
+it("buildHandoffBootstrapText carries the shared context narrative to the next provider", () => {
+  const thread = baseThread({
+    handoff: {
+      ...baseThread().handoff!,
+      contextArtifactIds: ["task:server", "checkpoint:one"],
+      contextNarrative: "## Continue from here\n- Wire the shared-context RPC.",
+    },
+  });
+  const text = buildHandoffBootstrapText(thread);
+  assert.isNotNull(text);
+  assert.include(text!, "SHARED CONTEXT BUNDLE:");
+  assert.include(text!, "Wire the shared-context RPC.");
+});
+
 it("buildHandoffBootstrapText omits diff ack when not pending", () => {
   const thread = baseThread({
     handoff: {

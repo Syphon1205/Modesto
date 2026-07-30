@@ -244,7 +244,12 @@ export function buildHandoffBootstrapText(
   if (thread.handoff === null) {
     return null;
   }
-  if (importedMessages.length === 0 && !thread.handoff.summary && !thread.handoff.objective) {
+  if (
+    importedMessages.length === 0 &&
+    !thread.handoff.summary &&
+    !thread.handoff.objective &&
+    !thread.handoff.contextNarrative
+  ) {
     return null;
   }
 
@@ -260,6 +265,9 @@ export function buildHandoffBootstrapText(
   }
   if (thread.handoff.objective?.trim()) {
     sections.push(`Next step:\n${thread.handoff.objective.trim()}`);
+  }
+  if (thread.handoff.contextNarrative?.trim()) {
+    sections.push(`SHARED CONTEXT BUNDLE:\n${thread.handoff.contextNarrative.trim()}`);
   }
 
   const stepsSection = formatUnfinishedSteps(thread.handoff.unfinishedSteps ?? []);

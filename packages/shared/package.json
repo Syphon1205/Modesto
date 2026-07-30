@@ -171,6 +171,14 @@
     "./npmPlatformCliRuntime": {
       "types": "./src/npmPlatformCliRuntime.ts",
       "import": "./src/npmPlatformCliRuntime.ts"
+    },
+    "./sharedContext": {
+      "types": "./src/sharedContext.ts",
+      "import": "./src/sharedContext.ts"
+    },
+    "./workspaceTimeline": {
+      "types": "./src/workspaceTimeline.ts",
+      "import": "./src/workspaceTimeline.ts"
     }
   },
   "scripts": {

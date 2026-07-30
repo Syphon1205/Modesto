@@ -719,6 +719,10 @@ export function createWsNativeApi(): NativeApi {
     orchestration: {
       getSnapshot: () => transport.request(ORCHESTRATION_WS_METHODS.getSnapshot),
       getShellSnapshot: () => transport.request(ORCHESTRATION_WS_METHODS.getShellSnapshot),
+      getSharedContextBundle: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.getSharedContextBundle, input),
+      getWorkspaceTimeline: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.getWorkspaceTimeline, input),
       dispatchCommand: (command) => {
         return transport.request(ORCHESTRATION_WS_METHODS.dispatchCommand, {
           command: omitNullUserInputAnswers(command),
@@ -729,6 +733,10 @@ export function createWsNativeApi(): NativeApi {
       getTurnDiff: (input) => transport.request(ORCHESTRATION_WS_METHODS.getTurnDiff, input),
       getFullThreadDiff: (input) =>
         transport.request(ORCHESTRATION_WS_METHODS.getFullThreadDiff, input),
+      compareCheckpoints: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.compareCheckpoints, input),
+      resumeFromCheckpoint: (input) =>
+        transport.request(ORCHESTRATION_WS_METHODS.resumeFromCheckpoint, input),
       declareAgentCheckpoint: (input) =>
         transport.request(ORCHESTRATION_WS_METHODS.declareAgentCheckpoint, input),
       captureHandoffCheckpoint: (input) =>

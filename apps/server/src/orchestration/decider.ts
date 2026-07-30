@@ -552,6 +552,8 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
             summary: command.summary ?? null,
             objective: command.objective ?? null,
             unfinishedSteps: command.unfinishedSteps ?? [],
+            contextArtifactIds: command.contextArtifactIds ?? [],
+            contextNarrative: command.contextNarrative ?? null,
             repoSnapshot: command.repoSnapshot ?? null,
             diffAckStatus: resolveHandoffDiffAckStatus({
               explicit: command.diffAckStatus,

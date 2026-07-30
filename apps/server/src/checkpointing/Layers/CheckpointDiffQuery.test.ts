@@ -81,6 +81,84 @@ function makeFullThreadDiffContext(input: {
 }
 
 describe("CheckpointDiffQueryLive", () => {
+  it("compares explicit checkpoint refs after validating their workspace refs", async () => {
+    const projectId = ProjectId.makeUnsafe("project-compare");
+    const threadId = ThreadId.makeUnsafe("thread-compare");
+    const fromCheckpointRef = CheckpointRef.makeUnsafe("refs/modesto/checkpoints/from");
+    const toCheckpointRef = CheckpointRef.makeUnsafe("refs/modesto/checkpoints/to");
+    const checkedRefs: CheckpointRef[] = [];
+    const threadCheckpointContext = makeThreadCheckpointContext({
+      projectId,
+      threadId,
+      workspaceRoot: "/tmp/workspace",
+      worktreePath: null,
+      checkpointTurnCount: 1,
+      checkpointRef: toCheckpointRef,
+    });
+    const checkpointStore: CheckpointStoreShape = {
+      isGitRepository: () => Effect.succeed(true),
+      captureCheckpoint: () => Effect.void,
+      copyCheckpointRef: () => Effect.succeed(true),
+      hasCheckpointRef: ({ checkpointRef }) =>
+        Effect.sync(() => {
+          checkedRefs.push(checkpointRef);
+          return true;
+        }),
+      resolveCheckpointTreeOid: () => Effect.succeed(null),
+      resolveHeadCommitOid: () => Effect.succeed(null),
+      resolveWorkingTreeOid: () => Effect.succeed(null),
+      restoreCheckpoint: () => Effect.succeed(true),
+      reverseCheckpointDiff: () => Effect.succeed(true),
+      diffCheckpoints: ({ ignoreWhitespace }) =>
+        Effect.succeed(ignoreWhitespace ? "whitespace ignored" : "full diff"),
+      deleteCheckpointRefs: () => Effect.void,
+    };
+    const layer = CheckpointDiffQueryLive.pipe(
+      Layer.provideMerge(Layer.succeed(CheckpointStore, checkpointStore)),
+      Layer.provideMerge(Layer.succeed(CheckpointDiffBlobStore, unusedCheckpointDiffBlobStore)),
+      Layer.provideMerge(
+        Layer.succeed(ProjectionSnapshotQuery, {
+          getSnapshot: () => Effect.die("unused"),
+          getCommandReadModel: () => Effect.die("unused"),
+          getCounts: () => Effect.die("unused"),
+          getSnapshotSequence: () => Effect.die("unused"),
+          getShellSnapshot: () => Effect.die("unused"),
+          getActiveProjectByWorkspaceRoot: () => Effect.die("unused"),
+          getProjectShellById: () => Effect.die("unused"),
+          getFirstActiveThreadIdByProjectId: () => Effect.die("unused"),
+          getThreadCheckpointContext: () => Effect.succeed(Option.some(threadCheckpointContext)),
+          listGeneratedImageActivitiesByTurn: () => Effect.die("unused"),
+          getFullThreadDiffContext: () => Effect.die("unused"),
+          getThreadShellById: () => Effect.die("unused"),
+          findSyntheticSubagentParentThread: () => Effect.die("unused"),
+          getThreadDetailById: () => Effect.die("unused"),
+          getThreadDetailForExportById: () => Effect.die("unused"),
+          getThreadDetailSnapshotById: () => Effect.die("unused"),
+        }),
+      ),
+    );
+
+    const result = await Effect.runPromise(
+      Effect.gen(function* () {
+        const query = yield* CheckpointDiffQuery;
+        return yield* query.compareCheckpoints({
+          threadId,
+          fromCheckpointRef,
+          toCheckpointRef,
+          ignoreWhitespace: false,
+        });
+      }).pipe(Effect.provide(layer)),
+    );
+
+    expect(checkedRefs).toEqual([fromCheckpointRef, toCheckpointRef]);
+    expect(result).toEqual({
+      threadId,
+      fromCheckpointRef,
+      toCheckpointRef,
+      diff: "full diff",
+    });
+  });
+
   it("prefers exact turn-start checkpoints for single-turn diffs", async () => {
     const projectId = ProjectId.makeUnsafe("project-1");
     const threadId = ThreadId.makeUnsafe("thread-1");

@@ -22,6 +22,7 @@ import {
   ProjectCreateCommand,
   THREAD_NOTES_MAX_CHARS,
   THREAD_MARKER_LABEL_MAX_CHARS,
+  ThreadHandoff,
   ThreadMetaUpdatedPayload,
   ThreadTurnStartCommand,
   ThreadCreatedPayload,
@@ -49,6 +50,29 @@ const decodeClientOrchestrationCommand = Schema.decodeUnknownEffect(ClientOrches
 const decodeOrchestrationCommand = Schema.decodeUnknownEffect(OrchestrationCommand);
 const decodeOrchestrationEvent = Schema.decodeUnknownEffect(OrchestrationEvent);
 const decodeThreadPullRequest = Schema.decodeUnknownEffect(OrchestrationThreadPullRequest);
+const decodeThreadHandoff = Schema.decodeUnknownEffect(ThreadHandoff);
+
+it.effect("defaults shared handoff context fields for legacy persisted rows", () =>
+  Effect.gen(function* () {
+    const handoff = yield* decodeThreadHandoff({
+      sourceThreadId: "thread-source",
+      sourceProvider: "codex",
+      importedAt: "2026-01-01T00:00:00.000Z",
+      bootstrapStatus: "completed",
+      summary: null,
+      objective: null,
+      unfinishedSteps: [],
+      repoSnapshot: null,
+      diffAckStatus: "not_required",
+      checkpointRef: null,
+      baseCheckpointRef: null,
+      baseHeadSha: null,
+      checkpointStatus: "not_applicable",
+    });
+    assert.deepStrictEqual(handoff.contextArtifactIds, []);
+    assert.equal(handoff.contextNarrative, null);
+  }),
+);
 
 it.effect("decodes last-known PRs persisted before draft/mergeability/diff fields existed", () =>
   Effect.gen(function* () {

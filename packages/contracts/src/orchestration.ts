@@ -32,11 +32,15 @@ import {
 export const ORCHESTRATION_WS_METHODS = {
   getSnapshot: "orchestration.getSnapshot",
   getShellSnapshot: "orchestration.getShellSnapshot",
+  getSharedContextBundle: "orchestration.getSharedContextBundle",
+  getWorkspaceTimeline: "orchestration.getWorkspaceTimeline",
   dispatchCommand: "orchestration.dispatchCommand",
   importThread: "orchestration.importThread",
   repairState: "orchestration.repairState",
   getTurnDiff: "orchestration.getTurnDiff",
   getFullThreadDiff: "orchestration.getFullThreadDiff",
+  compareCheckpoints: "orchestration.compareCheckpoints",
+  resumeFromCheckpoint: "orchestration.resumeFromCheckpoint",
   declareAgentCheckpoint: "orchestration.declareAgentCheckpoint",
   captureHandoffCheckpoint: "orchestration.captureHandoffCheckpoint",
   getHandoffCheckpointDiff: "orchestration.getHandoffCheckpointDiff",
@@ -314,6 +318,12 @@ export const ContextSourceKind = Schema.Literals([
   "working-tree",
   "modesto-summary",
   "external",
+  "checkpoint",
+  "terminal",
+  "web-source",
+  "task",
+  "plan",
+  "session",
 ]);
 export type ContextSourceKind = typeof ContextSourceKind.Type;
 
@@ -342,6 +352,72 @@ export const ContextProvenance = Schema.Struct({
   ),
 });
 export type ContextProvenance = typeof ContextProvenance.Type;
+
+/** Durable or derived context that can be carried between sessions and providers. */
+export const ContextArtifactKind = Schema.Literals([
+  "session",
+  "file",
+  "checkpoint",
+  "git-change",
+  "source",
+  "terminal",
+  "unfinished-task",
+  "plan",
+  "pin",
+  "note",
+  "handoff",
+  "review",
+]);
+export type ContextArtifactKind = typeof ContextArtifactKind.Type;
+
+export const ContextArtifact = Schema.Struct({
+  id: TrimmedNonEmptyString,
+  kind: ContextArtifactKind,
+  label: TrimmedNonEmptyString,
+  summary: Schema.String,
+  freshness: ContextFreshness,
+  path: Schema.optional(TrimmedNonEmptyString),
+  turnId: Schema.optional(TurnId),
+  messageId: Schema.optional(MessageId),
+  checkpointRef: Schema.optional(CheckpointRef),
+  activityId: Schema.optional(EventId),
+  createdAt: Schema.optional(IsoDateTime),
+});
+export type ContextArtifact = typeof ContextArtifact.Type;
+
+export const SharedContextBundle = Schema.Struct({
+  threadId: ThreadId,
+  projectId: ProjectId,
+  generatedAt: IsoDateTime,
+  title: TrimmedNonEmptyString,
+  provider: ProviderKind,
+  narrative: Schema.String,
+  artifacts: Schema.Array(ContextArtifact),
+});
+export type SharedContextBundle = typeof SharedContextBundle.Type;
+
+export const WorkspaceTimelineCategory = Schema.Literals([
+  "agent-start",
+  "edit",
+  "search",
+  "test",
+  "checkpoint",
+  "handoff",
+  "commit",
+  "review",
+  "task",
+  "run",
+  "other",
+]);
+export type WorkspaceTimelineCategory = typeof WorkspaceTimelineCategory.Type;
+
+export const WorkspaceTimelineFilter = Schema.Struct({
+  categories: Schema.optional(Schema.Array(WorkspaceTimelineCategory)).pipe(
+    Schema.withDecodingDefault(() => []),
+  ),
+  threadIds: Schema.optional(Schema.Array(ThreadId)).pipe(Schema.withDecodingDefault(() => [])),
+});
+export type WorkspaceTimelineFilter = typeof WorkspaceTimelineFilter.Type;
 
 export const PROVIDER_SEND_TURN_MAX_INPUT_CHARS = 120_000;
 export const PROVIDER_SEND_TURN_MAX_ATTACHMENTS = 8;
@@ -566,6 +642,12 @@ export const ThreadHandoff = Schema.Struct({
   unfinishedSteps: Schema.optional(Schema.Array(ThreadHandoffStep)).pipe(
     Schema.withDecodingDefault(() => []),
   ),
+  contextArtifactIds: Schema.optional(Schema.Array(TrimmedNonEmptyString)).pipe(
+    Schema.withDecodingDefault(() => []),
+  ),
+  contextNarrative: Schema.optional(Schema.NullOr(Schema.String)).pipe(
+    Schema.withDecodingDefault(() => null),
+  ),
   repoSnapshot: Schema.optional(Schema.NullOr(ThreadHandoffRepoSnapshot)).pipe(
     Schema.withDecodingDefault(() => null),
   ),
@@ -670,6 +752,22 @@ export const OrchestrationThreadActivity = Schema.Struct({
   createdAt: IsoDateTime,
 });
 export type OrchestrationThreadActivity = typeof OrchestrationThreadActivity.Type;
+
+export const WorkspaceTimelineItem = Schema.Struct({
+  id: TrimmedNonEmptyString,
+  projectId: ProjectId,
+  threadId: ThreadId,
+  threadTitle: TrimmedNonEmptyString,
+  provider: ProviderKind,
+  category: WorkspaceTimelineCategory,
+  label: TrimmedNonEmptyString,
+  kind: TrimmedNonEmptyString,
+  createdAt: IsoDateTime,
+  tone: OrchestrationThreadActivityTone,
+  relatedCheckpointRef: Schema.optional(CheckpointRef),
+  relatedTurnId: Schema.optional(TurnId),
+});
+export type WorkspaceTimelineItem = typeof WorkspaceTimelineItem.Type;
 
 const OrchestrationLatestTurnState = Schema.Literals([
   "running",
@@ -1059,6 +1157,12 @@ const ThreadHandoffCreateCommand = Schema.Struct({
   ),
   unfinishedSteps: Schema.optional(Schema.Array(ThreadHandoffStep)).pipe(
     Schema.withDecodingDefault(() => []),
+  ),
+  contextArtifactIds: Schema.optional(Schema.Array(TrimmedNonEmptyString)).pipe(
+    Schema.withDecodingDefault(() => []),
+  ),
+  contextNarrative: Schema.optional(Schema.NullOr(Schema.String)).pipe(
+    Schema.withDecodingDefault(() => null),
   ),
   repoSnapshot: Schema.optional(Schema.NullOr(ThreadHandoffRepoSnapshot)).pipe(
     Schema.withDecodingDefault(() => null),
@@ -2240,6 +2344,64 @@ export type OrchestrationGetFullThreadDiffInput = typeof OrchestrationGetFullThr
 export const OrchestrationGetFullThreadDiffResult = ThreadTurnDiff;
 export type OrchestrationGetFullThreadDiffResult = typeof OrchestrationGetFullThreadDiffResult.Type;
 
+export const OrchestrationGetSharedContextBundleInput = Schema.Struct({
+  threadId: ThreadId,
+});
+export type OrchestrationGetSharedContextBundleInput =
+  typeof OrchestrationGetSharedContextBundleInput.Type;
+
+export const OrchestrationGetSharedContextBundleResult = SharedContextBundle;
+export type OrchestrationGetSharedContextBundleResult =
+  typeof OrchestrationGetSharedContextBundleResult.Type;
+
+export const OrchestrationCompareCheckpointsInput = Schema.Struct({
+  threadId: ThreadId,
+  fromCheckpointRef: CheckpointRef,
+  toCheckpointRef: CheckpointRef,
+  ignoreWhitespace: Schema.optional(Schema.Boolean),
+});
+export type OrchestrationCompareCheckpointsInput = typeof OrchestrationCompareCheckpointsInput.Type;
+
+export const OrchestrationCompareCheckpointsResult = Schema.Struct({
+  threadId: ThreadId,
+  fromCheckpointRef: CheckpointRef,
+  toCheckpointRef: CheckpointRef,
+  diff: Schema.String,
+});
+export type OrchestrationCompareCheckpointsResult =
+  typeof OrchestrationCompareCheckpointsResult.Type;
+
+export const OrchestrationResumeFromCheckpointInput = Schema.Struct({
+  threadId: ThreadId,
+  checkpointTurnCount: NonNegativeInt,
+  scope: Schema.Literals(["files", "thread"]),
+});
+export type OrchestrationResumeFromCheckpointInput =
+  typeof OrchestrationResumeFromCheckpointInput.Type;
+
+export const OrchestrationResumeFromCheckpointResult = Schema.Struct({
+  threadId: ThreadId,
+  /** True once the existing checkpoint-revert command has been accepted. */
+  resumed: Schema.Boolean,
+  contextBundle: SharedContextBundle,
+});
+export type OrchestrationResumeFromCheckpointResult =
+  typeof OrchestrationResumeFromCheckpointResult.Type;
+
+export const OrchestrationGetWorkspaceTimelineInput = Schema.Struct({
+  projectId: ProjectId,
+  limit: Schema.optional(PositiveInt),
+});
+export type OrchestrationGetWorkspaceTimelineInput =
+  typeof OrchestrationGetWorkspaceTimelineInput.Type;
+
+export const OrchestrationGetWorkspaceTimelineResult = Schema.Struct({
+  projectId: ProjectId,
+  items: Schema.Array(WorkspaceTimelineItem),
+});
+export type OrchestrationGetWorkspaceTimelineResult =
+  typeof OrchestrationGetWorkspaceTimelineResult.Type;
+
 export const OrchestrationCaptureHandoffCheckpointInput = Schema.Struct({
   cwd: TrimmedNonEmptyString,
   sourceThreadId: ThreadId,
@@ -2368,6 +2530,14 @@ export const OrchestrationRpcSchemas = {
     input: OrchestrationGetShellSnapshotInput,
     output: OrchestrationGetShellSnapshotResult,
   },
+  getSharedContextBundle: {
+    input: OrchestrationGetSharedContextBundleInput,
+    output: OrchestrationGetSharedContextBundleResult,
+  },
+  getWorkspaceTimeline: {
+    input: OrchestrationGetWorkspaceTimelineInput,
+    output: OrchestrationGetWorkspaceTimelineResult,
+  },
   repairState: {
     input: OrchestrationRepairStateInput,
     output: OrchestrationRepairStateResult,
@@ -2387,6 +2557,14 @@ export const OrchestrationRpcSchemas = {
   getFullThreadDiff: {
     input: OrchestrationGetFullThreadDiffInput,
     output: OrchestrationGetFullThreadDiffResult,
+  },
+  compareCheckpoints: {
+    input: OrchestrationCompareCheckpointsInput,
+    output: OrchestrationCompareCheckpointsResult,
+  },
+  resumeFromCheckpoint: {
+    input: OrchestrationResumeFromCheckpointInput,
+    output: OrchestrationResumeFromCheckpointResult,
   },
   declareAgentCheckpoint: {
     input: OrchestrationDeclareAgentCheckpointInput,

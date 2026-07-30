@@ -27,6 +27,8 @@ import { clamp } from "effect/Number";
 import { Effect, FileSystem, Layer, Option, Path, Queue, Schema, Stream } from "effect";
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from "effect/unstable/http";
 import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
+import { buildSharedContextBundle } from "@modesto/shared/sharedContext";
+import { buildWorkspaceTimeline } from "@modesto/shared/workspaceTimeline";
 
 import { AutomationService } from "./automation/Services/AutomationService";
 import { OpenClawService } from "./openclaw/Services/OpenClawService";
@@ -823,6 +825,36 @@ export const makeWsRpcLayer = () =>
         providerService,
       });
 
+      const loadSharedContextBundle = Effect.fnUntraced(function* (input: {
+        readonly threadId: ThreadId;
+        readonly checkpointTurnCount?: number;
+      }) {
+        const thread = yield* projectionReadModelQuery.getThreadDetailById(input.threadId);
+        if (Option.isNone(thread)) {
+          return yield* new WsRpcError({
+            message: `Thread '${input.threadId}' was not found.`,
+          });
+        }
+        if (input.checkpointTurnCount !== undefined) {
+          const hasCheckpoint =
+            input.checkpointTurnCount === 0 ||
+            thread.value.checkpoints.some(
+              (checkpoint) => checkpoint.checkpointTurnCount === input.checkpointTurnCount,
+            );
+          if (!hasCheckpoint) {
+            return yield* new WsRpcError({
+              message: `Checkpoint turn ${input.checkpointTurnCount} is unavailable for thread '${input.threadId}'.`,
+            });
+          }
+        }
+        return buildSharedContextBundle({
+          thread: thread.value,
+          ...(input.checkpointTurnCount !== undefined
+            ? { checkpointTurnCount: input.checkpointTurnCount }
+            : {}),
+        });
+      });
+
       // Terminal-first threads are created with the generic "New terminal" placeholder.
       // The tracker buffers per-terminal input and, once a meaningful command is submitted,
       // surfaces a safe title used to auto-rename the thread on its first command.
@@ -1084,6 +1116,29 @@ export const makeWsRpcLayer = () =>
             projectionReadModelQuery.getShellSnapshot(),
             "Failed to load orchestration shell snapshot",
           ),
+        [ORCHESTRATION_WS_METHODS.getSharedContextBundle]: (input) =>
+          rpcEffect(
+            loadSharedContextBundle({ threadId: input.threadId }),
+            "Failed to build shared context",
+          ),
+        [ORCHESTRATION_WS_METHODS.getWorkspaceTimeline]: (input) =>
+          rpcEffect(
+            projectionReadModelQuery.getSnapshot().pipe(
+              Effect.map((snapshot) => ({
+                projectId: input.projectId,
+                items: buildWorkspaceTimeline(
+                  snapshot.threads.filter(
+                    (thread) => thread.projectId === input.projectId && thread.deletedAt === null,
+                  ),
+                  {
+                    projectId: input.projectId,
+                    ...(input.limit !== undefined ? { limit: input.limit } : {}),
+                  },
+                ),
+              })),
+            ),
+            "Failed to load workspace timeline",
+          ),
         [ORCHESTRATION_WS_METHODS.repairState]: () =>
           rpcEffect(orchestrationEngine.repairState(), "Failed to repair orchestration state"),
         [ORCHESTRATION_WS_METHODS.getTurnDiff]: (input) =>
@@ -1092,6 +1147,43 @@ export const makeWsRpcLayer = () =>
           rpcEffect(
             checkpointDiffQuery.getFullThreadDiff(input),
             "Failed to load full thread diff",
+          ),
+        [ORCHESTRATION_WS_METHODS.compareCheckpoints]: (input) =>
+          rpcEffect(checkpointDiffQuery.compareCheckpoints(input), "Failed to compare checkpoints"),
+        [ORCHESTRATION_WS_METHODS.resumeFromCheckpoint]: (input) =>
+          rpcEffect(
+            Effect.gen(function* () {
+              if (input.scope === "files" && input.checkpointTurnCount === 0) {
+                return yield* new WsRpcError({
+                  message: "File-only checkpoint resume requires a completed turn checkpoint.",
+                });
+              }
+              // Capture the continuation context before the asynchronous revert
+              // reactor trims newer thread state.
+              const contextBundle = yield* loadSharedContextBundle({
+                threadId: input.threadId,
+                checkpointTurnCount: input.checkpointTurnCount,
+              });
+              const createdAt = new Date().toISOString();
+              yield* runtimeStartup.enqueueCommand(
+                orchestrationEngine.dispatch({
+                  type: "thread.checkpoint.revert",
+                  commandId: CommandId.makeUnsafe(
+                    `server:resume-checkpoint:${crypto.randomUUID()}`,
+                  ),
+                  threadId: input.threadId,
+                  turnCount: input.checkpointTurnCount,
+                  scope: input.scope,
+                  createdAt,
+                }),
+              );
+              return {
+                threadId: input.threadId,
+                resumed: true,
+                contextBundle,
+              };
+            }),
+            "Failed to resume from checkpoint",
           ),
         [ORCHESTRATION_WS_METHODS.declareAgentCheckpoint]: (input) =>
           rpcEffect(

@@ -267,6 +267,24 @@ export const WsOrchestrationGetShellSnapshotRpc = Rpc.make(
   },
 );
 
+export const WsOrchestrationGetSharedContextBundleRpc = Rpc.make(
+  ORCHESTRATION_WS_METHODS.getSharedContextBundle,
+  {
+    payload: OrchestrationRpcSchemas.getSharedContextBundle.input,
+    success: OrchestrationRpcSchemas.getSharedContextBundle.output,
+    error: WsRpcError,
+  },
+);
+
+export const WsOrchestrationGetWorkspaceTimelineRpc = Rpc.make(
+  ORCHESTRATION_WS_METHODS.getWorkspaceTimeline,
+  {
+    payload: OrchestrationRpcSchemas.getWorkspaceTimeline.input,
+    success: OrchestrationRpcSchemas.getWorkspaceTimeline.output,
+    error: WsRpcError,
+  },
+);
+
 export const WsOrchestrationRepairStateRpc = Rpc.make(ORCHESTRATION_WS_METHODS.repairState, {
   payload: OrchestrationRpcSchemas.repairState.input,
   success: OrchestrationRpcSchemas.repairState.output,
@@ -284,6 +302,24 @@ export const WsOrchestrationGetFullThreadDiffRpc = Rpc.make(
   {
     payload: OrchestrationRpcSchemas.getFullThreadDiff.input,
     success: OrchestrationRpcSchemas.getFullThreadDiff.output,
+    error: WsRpcError,
+  },
+);
+
+export const WsOrchestrationCompareCheckpointsRpc = Rpc.make(
+  ORCHESTRATION_WS_METHODS.compareCheckpoints,
+  {
+    payload: OrchestrationRpcSchemas.compareCheckpoints.input,
+    success: OrchestrationRpcSchemas.compareCheckpoints.output,
+    error: WsRpcError,
+  },
+);
+
+export const WsOrchestrationResumeFromCheckpointRpc = Rpc.make(
+  ORCHESTRATION_WS_METHODS.resumeFromCheckpoint,
+  {
+    payload: OrchestrationRpcSchemas.resumeFromCheckpoint.input,
+    success: OrchestrationRpcSchemas.resumeFromCheckpoint.output,
     error: WsRpcError,
   },
 );
@@ -1119,9 +1155,13 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationImportThreadRpc,
   WsOrchestrationGetSnapshotRpc,
   WsOrchestrationGetShellSnapshotRpc,
+  WsOrchestrationGetSharedContextBundleRpc,
+  WsOrchestrationGetWorkspaceTimelineRpc,
   WsOrchestrationRepairStateRpc,
   WsOrchestrationGetTurnDiffRpc,
   WsOrchestrationGetFullThreadDiffRpc,
+  WsOrchestrationCompareCheckpointsRpc,
+  WsOrchestrationResumeFromCheckpointRpc,
   WsOrchestrationDeclareAgentCheckpointRpc,
   WsOrchestrationCaptureHandoffCheckpointRpc,
   WsOrchestrationGetHandoffCheckpointDiffRpc,

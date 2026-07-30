@@ -7,6 +7,8 @@
  * @module CheckpointDiffQuery
  */
 import type {
+  OrchestrationCompareCheckpointsInput,
+  OrchestrationCompareCheckpointsResult,
   OrchestrationGetFullThreadDiffInput,
   OrchestrationGetFullThreadDiffResult,
   OrchestrationGetTurnDiffInput,
@@ -21,6 +23,14 @@ import type { CheckpointServiceError } from "../Errors.ts";
  * CheckpointDiffQueryShape - Service API for checkpoint diff queries.
  */
 export interface CheckpointDiffQueryShape {
+  /**
+   * Compare two explicit checkpoint refs after verifying both belong to an
+   * available thread workspace.
+   */
+  readonly compareCheckpoints: (
+    input: OrchestrationCompareCheckpointsInput,
+  ) => Effect.Effect<OrchestrationCompareCheckpointsResult, CheckpointServiceError>;
+
   /**
    * Read the patch diff for a single turn checkpoint transition.
    *
