@@ -910,24 +910,30 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     );
 
     if (hasMacUpdateManifest) {
-      yield* Effect.log("[desktop-artifact] Repacking and validating macOS update zip...");
-      const finalizedZip = yield* Effect.tryPromise({
-        try: () =>
-          finalizeMacUpdateZip({
-            stageDistDir,
-            signed: options.signed,
-            verbose: options.verbose,
-          }),
-        catch: (cause) =>
-          new BuildScriptError({
-            message: "macOS update zip finalization failed.",
-            cause,
-          }),
-      });
-      if (finalizedZip.removedZipBlockmapPath) {
+      if (process.platform !== "darwin") {
         yield* Effect.log(
-          `[desktop-artifact] Removed stale macOS zip blockmap (${path.basename(finalizedZip.removedZipBlockmapPath)}).`,
+          "[desktop-artifact] Skipping macOS update zip ditto/codesign finalization on non-macOS hosts; shipping the electron-builder zip as built.",
         );
+      } else {
+        yield* Effect.log("[desktop-artifact] Repacking and validating macOS update zip...");
+        const finalizedZip = yield* Effect.tryPromise({
+          try: () =>
+            finalizeMacUpdateZip({
+              stageDistDir,
+              signed: options.signed,
+              verbose: options.verbose,
+            }),
+          catch: (cause) =>
+            new BuildScriptError({
+              message: "macOS update zip finalization failed.",
+              cause,
+            }),
+        });
+        if (finalizedZip.removedZipBlockmapPath) {
+          yield* Effect.log(
+            `[desktop-artifact] Removed stale macOS zip blockmap (${path.basename(finalizedZip.removedZipBlockmapPath)}).`,
+          );
+        }
       }
     } else {
       yield* Effect.log(

@@ -71,8 +71,17 @@ export function createDesktopPlatformBuildConfig(
   };
 
   if (input.platform === "mac") {
+    const hostIsMac = process.platform === "darwin";
+    const macTargets =
+      input.target === "dmg"
+        ? hostIsMac
+          ? [input.target, "zip"]
+          : // DMG authoring still needs Apple tooling (hdiutil/dmgbuild Mach-O helpers).
+            // On Linux release hosts, ship the Squirrel.Mac zip payload instead.
+            ["zip"]
+        : [input.target];
     const mac = {
-      target: input.target === "dmg" ? [input.target, "zip"] : [input.target],
+      target: macTargets,
       icon: MAC_DMG_ICON_PATH,
       category: "public.app-category.developer-tools",
       hardenedRuntime: true,
@@ -102,7 +111,7 @@ export function createDesktopPlatformBuildConfig(
       // native Darwin modules and blocks packaging before electron-builder runs.
       npmRebuild: false,
       mac,
-      ...(input.target === "dmg"
+      ...(input.target === "dmg" && process.platform === "darwin"
         ? {
             dmg: {
               title: "Modesto",
