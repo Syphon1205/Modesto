@@ -46,6 +46,7 @@ import { EnvironmentLocalServersSection } from "./EnvironmentLocalServersSection
 import { EnvironmentPullRequestSection } from "./EnvironmentPullRequestSection";
 import { EnvironmentMarkersSection } from "./EnvironmentMarkersSection";
 import { EnvironmentStudioOutputsSection } from "./EnvironmentStudioOutputsSection";
+import { EnvironmentSharedContextSection } from "./EnvironmentSharedContextSection";
 import { EnvironmentNotesSection } from "./EnvironmentNotesSection";
 import { EnvironmentPinnedSection } from "./EnvironmentPinnedSection";
 import { EnvironmentProjectInstructionsSection } from "./EnvironmentProjectInstructionsSection";
@@ -368,6 +369,13 @@ export function EnvironmentPanel({
         <>
           <EnvironmentSectionDivider />
           <EnvironmentRecapSection recap={recap} markdownCwd={markdownCwd} />
+        </>
+      ) : null}
+
+      {activeThreadId ? (
+        <>
+          <EnvironmentSectionDivider />
+          <EnvironmentSharedContextSection activeThreadId={activeThreadId} enabled={open} />
         </>
       ) : null}
 

@@ -4,7 +4,9 @@
 // Exports: MessagesTimeline
 
 import {
+  PROVIDER_DISPLAY_NAMES,
   type MessageId,
+  type ProviderKind,
   type ProviderMentionReference,
   ThreadId,
   type ThreadMarker,
@@ -52,6 +54,7 @@ import {
   CircleCheckIcon,
   CircleQuestionIcon,
   ClockIcon,
+  EllipsisIcon,
   EyeIcon,
   GitHubIcon,
   HammerIcon,
@@ -71,6 +74,15 @@ import {
 } from "~/lib/icons";
 import { pinActionLabel } from "~/lib/pin";
 import { Button } from "../ui/button";
+import {
+  Menu,
+  MenuItem,
+  MenuPopup,
+  MenuSub,
+  MenuSubPopup,
+  MenuSubTrigger,
+  MenuTrigger,
+} from "../ui/menu";
 import { AutomationCreatedCard } from "./AutomationCreatedCard";
 import { buildExpandedImagePreview, ExpandedImagePreview } from "./ExpandedImagePreview";
 import { ProposedPlanCard } from "./ProposedPlanCard";
@@ -410,6 +422,10 @@ interface MessagesTimelineProps {
   revertTurnCountByUserMessageId: Map<MessageId, number>;
   onRevertUserMessage: (messageId: MessageId) => void;
   onUndoTurnFiles?: (turnCounts: readonly number[]) => void;
+  onCompareCheckpoint?: (summary: TurnDiffSummary) => void;
+  onResumeFromCheckpoint?: (summary: TurnDiffSummary, scope: "files" | "thread") => void;
+  checkpointHandoffProviders?: readonly ProviderKind[];
+  onHandoffFromCheckpoint?: (summary: TurnDiffSummary, provider: ProviderKind) => void;
   onEditUserMessage?: (messageId: MessageId, text: string) => boolean | Promise<boolean>;
   activeTurnId?: TurnId | null;
   isRevertingCheckpoint: boolean;
@@ -467,6 +483,10 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   revertTurnCountByUserMessageId,
   onRevertUserMessage,
   onUndoTurnFiles,
+  onCompareCheckpoint,
+  onResumeFromCheckpoint,
+  checkpointHandoffProviders = [],
+  onHandoffFromCheckpoint,
   onEditUserMessage,
   activeTurnId,
   isRevertingCheckpoint,
@@ -1632,6 +1652,18 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                     !turnSummary.checkpointRef.startsWith("provider-diff:") &&
                     checkpointTurnCounts.length > 0 &&
                     onUndoTurnFiles !== undefined;
+                  const canUseCheckpoint =
+                    turnSummary.status !== "missing" &&
+                    turnSummary.status !== "error" &&
+                    turnSummary.checkpointRef !== undefined &&
+                    !turnSummary.checkpointRef.startsWith("provider-diff:") &&
+                    checkpointTurnCount !== undefined;
+                  const showCheckpointActions =
+                    canUseCheckpoint &&
+                    (onCompareCheckpoint !== undefined ||
+                      onResumeFromCheckpoint !== undefined ||
+                      (onHandoffFromCheckpoint !== undefined &&
+                        checkpointHandoffProviders.length > 0));
                   const totalAdditions = checkpointFiles.reduce(
                     (sum, file) => sum + (file.additions ?? 0),
                     0,
@@ -1757,6 +1789,60 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                             style={{ fontSize: chatTypographyStyle.fontSize }}
                             onClick={() => onOpenTurnDiff(turnSummary.turnId)}
                           />
+                          {showCheckpointActions ? (
+                            <Menu modal={false}>
+                              <MenuTrigger
+                                render={
+                                  <button
+                                    type="button"
+                                    className="inline-flex size-6 items-center justify-center rounded-md text-muted-foreground/70 transition-colors hover:bg-[var(--color-background-button-secondary-hover)] hover:text-foreground"
+                                    aria-label="Checkpoint actions"
+                                  />
+                                }
+                              >
+                                <EllipsisIcon className="size-3.5" />
+                              </MenuTrigger>
+                              <MenuPopup align="end" side="bottom" className="w-48">
+                                {onCompareCheckpoint ? (
+                                  <MenuItem onClick={() => onCompareCheckpoint(turnSummary)}>
+                                    Compare with previous
+                                  </MenuItem>
+                                ) : null}
+                                {onResumeFromCheckpoint ? (
+                                  <>
+                                    <MenuItem
+                                      onClick={() => onResumeFromCheckpoint(turnSummary, "files")}
+                                    >
+                                      Resume files from here
+                                    </MenuItem>
+                                    <MenuItem
+                                      onClick={() => onResumeFromCheckpoint(turnSummary, "thread")}
+                                    >
+                                      Resume thread from here
+                                    </MenuItem>
+                                  </>
+                                ) : null}
+                                {onHandoffFromCheckpoint &&
+                                checkpointHandoffProviders.length > 0 ? (
+                                  <MenuSub>
+                                    <MenuSubTrigger>Hand to provider</MenuSubTrigger>
+                                    <MenuSubPopup className="w-44">
+                                      {checkpointHandoffProviders.map((provider) => (
+                                        <MenuItem
+                                          key={provider}
+                                          onClick={() =>
+                                            onHandoffFromCheckpoint(turnSummary, provider)
+                                          }
+                                        >
+                                          {PROVIDER_DISPLAY_NAMES[provider]}
+                                        </MenuItem>
+                                      ))}
+                                    </MenuSubPopup>
+                                  </MenuSub>
+                                ) : null}
+                              </MenuPopup>
+                            </Menu>
+                          ) : null}
                           {canExpandFileList ? (
                             <button
                               type="button"

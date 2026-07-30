@@ -1,8 +1,14 @@
-import { CheckpointRef, MessageId, type GitStatusResult, type ModelSelection } from "@modesto/contracts";
+import {
+  CheckpointRef,
+  MessageId,
+  type GitStatusResult,
+  type ModelSelection,
+} from "@modesto/contracts";
 import { describe, expect, it } from "vitest";
 import {
   buildDefaultHandoffObjective,
   buildDefaultHandoffSummary,
+  buildContextAwareHandoffSummary,
   buildHandoffSeamPresentation,
   buildHandoffUnfinishedSteps,
   buildThreadHandoffRepoSnapshotFromGit,
@@ -73,6 +79,7 @@ describe("threadHandoff", () => {
     expect(resolveAvailableHandoffTargetProviders("codex")).toEqual([
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -83,6 +90,7 @@ describe("threadHandoff", () => {
     expect(resolveAvailableHandoffTargetProviders("claudeAgent")).toEqual([
       "codex",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -93,6 +101,7 @@ describe("threadHandoff", () => {
     expect(resolveAvailableHandoffTargetProviders("cursor")).toEqual([
       "codex",
       "claudeAgent",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -104,6 +113,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "grok",
       "droid",
       "kilo",
@@ -114,6 +124,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "droid",
       "kilo",
@@ -124,6 +135,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "kilo",
@@ -134,6 +146,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -144,6 +157,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -154,6 +168,7 @@ describe("threadHandoff", () => {
       "codex",
       "claudeAgent",
       "cursor",
+      "poolside",
       "gemini",
       "grok",
       "droid",
@@ -174,15 +189,25 @@ describe("threadHandoff", () => {
     expect(summary).toBe("I'll add the dialog and repo snapshot capture.");
   });
 
+  it("marks a handoff summary when shared context is attached", () => {
+    expect(
+      buildContextAwareHandoffSummary(
+        "Implemented the Teams assignments view.",
+        "# Shared context\n\n- Run focused tests",
+      ),
+    ).toBe(
+      "Implemented the Teams assignments view.\n\nContext attached from the shared workspace.",
+    );
+    expect(buildContextAwareHandoffSummary("", "# Shared context")).toBe("# Shared context");
+  });
+
   it("builds a scannable handoff seam presentation", () => {
     const presentation = buildHandoffSeamPresentation({
       handoff: {
         sourceProvider: "claudeAgent",
         summary: "Implemented authentication callback handling.",
         objective: "Add refresh retry handling and run auth integration tests.",
-        unfinishedSteps: [
-          { id: "1", text: "Token refresh logic is incomplete.", status: "todo" },
-        ],
+        unfinishedSteps: [{ id: "1", text: "Token refresh logic is incomplete.", status: "todo" }],
         repoSnapshot: {
           headSha: "abc",
           branch: "feature/auth",

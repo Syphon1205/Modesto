@@ -174,6 +174,7 @@ import {
   resolveEnvironmentPanelVisible,
   resolveProjectScriptTerminalTarget,
   resolvePromptHistoryNavigation,
+  resolvePreviousComparableCheckpoint,
   shouldHandlePromptHistoryNavigationKey,
   shouldEnableComposerPastedTextCollapse,
   shouldConsumePendingCustomBinaryConfirmation,
@@ -249,6 +250,7 @@ import {
   MAX_TERMINALS_PER_GROUP,
   type ChatMessage,
   type Thread,
+  type TurnDiffSummary,
 } from "../types";
 import { useTheme } from "../hooks/useTheme";
 import { useThreadWorkspaceHandoff } from "../hooks/useThreadWorkspaceHandoff";
@@ -6412,9 +6414,7 @@ export default function ChatView({
       addComposerImages([file]);
       const metadata = [
         `[Active window: ${capture.appName} — ${capture.windowTitle}]`,
-        capture.accessibilityText
-          ? `[Accessibility text]\n${capture.accessibilityText}`
-          : null,
+        capture.accessibilityText ? `[Accessibility text]\n${capture.accessibilityText}` : null,
       ]
         .filter((line): line is string => line !== null)
         .join("\n");
@@ -6643,6 +6643,107 @@ export default function ChatView({
     [activeThread, hasLiveTurn, isConnecting, isRevertingCheckpoint, isSendBusy, setThreadError],
   );
 
+  const onCompareCheckpoint = useCallback(
+    async (summary: TurnDiffSummary) => {
+      const api = readNativeApi();
+      if (!api || !activeThread || !summary.checkpointRef) return;
+      const previous = resolvePreviousComparableCheckpoint(activeThread.turnDiffSummaries, summary);
+      if (!previous?.checkpointRef) {
+        toastManager.add({
+          type: "warning",
+          title: "No earlier checkpoint",
+          description: "This is the first durable checkpoint available for comparison.",
+        });
+        return;
+      }
+      try {
+        const result = await api.orchestration.compareCheckpoints({
+          threadId: activeThread.id,
+          fromCheckpointRef: previous.checkpointRef,
+          toCheckpointRef: summary.checkpointRef,
+        });
+        const totals = summarizePatchTotals(result.diff);
+        toastManager.add({
+          type: "success",
+          title: "Checkpoint comparison ready",
+          description: totals
+            ? `${totals.fileCount} file${totals.fileCount === 1 ? "" : "s"} · +${totals.additions}/-${totals.deletions}`
+            : "No file changes between these checkpoints.",
+          ...(result.diff.trim() ? { data: { copyText: result.diff } } : {}),
+        });
+      } catch (error) {
+        toastManager.add({
+          type: "error",
+          title: "Could not compare checkpoints",
+          description: error instanceof Error ? error.message : "An error occurred.",
+        });
+      }
+    },
+    [activeThread],
+  );
+
+  const onResumeFromCheckpoint = useCallback(
+    async (summary: TurnDiffSummary, scope: "files" | "thread") => {
+      const api = readNativeApi();
+      if (
+        !api ||
+        !activeThread ||
+        summary.checkpointTurnCount === undefined ||
+        isRevertingCheckpoint
+      ) {
+        return;
+      }
+      if (hasLiveTurn || isSendBusy || isConnecting) {
+        setThreadError(
+          activeThread.id,
+          "Interrupt the current turn before resuming from a checkpoint.",
+        );
+        return;
+      }
+      const confirmed = await api.dialogs.confirm(
+        scope === "thread"
+          ? "Resume the entire thread from this checkpoint? Later messages and file changes will be reverted."
+          : "Restore files to this checkpoint while keeping the conversation history?",
+      );
+      if (!confirmed) return;
+
+      setIsRevertingCheckpoint(true);
+      setThreadError(activeThread.id, null);
+      try {
+        const result = await api.orchestration.resumeFromCheckpoint({
+          threadId: activeThread.id,
+          checkpointTurnCount: summary.checkpointTurnCount,
+          scope,
+        });
+        const snapshot = await api.orchestration.getShellSnapshot();
+        syncServerShellSnapshot(snapshot);
+        toastManager.add({
+          type: "success",
+          title: scope === "thread" ? "Thread resumed" : "Files restored",
+          description: `${result.contextBundle.artifacts.length} shared context artifact${
+            result.contextBundle.artifacts.length === 1 ? "" : "s"
+          } preserved.`,
+        });
+      } catch (error) {
+        setThreadError(
+          activeThread.id,
+          error instanceof Error ? error.message : "Failed to resume from checkpoint.",
+        );
+      } finally {
+        setIsRevertingCheckpoint(false);
+      }
+    },
+    [
+      activeThread,
+      hasLiveTurn,
+      isConnecting,
+      isRevertingCheckpoint,
+      isSendBusy,
+      setThreadError,
+      syncServerShellSnapshot,
+    ],
+  );
+
   const onCreateHandoffThread = useCallback(
     async (targetProvider: ProviderKind) => {
       if (!activeThread || handoffDisabled) {
@@ -6659,6 +6760,32 @@ export default function ChatView({
             error instanceof Error
               ? error.message
               : "An error occurred while creating the handoff thread.",
+        });
+      }
+    },
+    [activeThread, handoffDisabled, openHandoffDialog],
+  );
+
+  const onHandoffFromCheckpoint = useCallback(
+    async (summary: TurnDiffSummary, targetProvider: ProviderKind) => {
+      const api = readNativeApi();
+      if (!api || !activeThread || handoffDisabled) return;
+      try {
+        const bundle = await api.orchestration.getSharedContextBundle({
+          threadId: activeThread.id,
+        });
+        const checkpointLabel =
+          summary.checkpointTurnCount === undefined
+            ? "Selected checkpoint"
+            : `Checkpoint ${summary.checkpointTurnCount}`;
+        await openHandoffDialog(activeThread, targetProvider, {
+          summary: `${checkpointLabel}\n\n${bundle.narrative}`,
+        });
+      } catch (error) {
+        toastManager.add({
+          type: "error",
+          title: "Could not prepare checkpoint handoff",
+          description: error instanceof Error ? error.message : "An error occurred.",
         });
       }
     },
@@ -9876,11 +10003,15 @@ export default function ChatView({
           });
         } else {
           const insertAt = snapshot.expandedCursor;
-          const needsLeadingSpace =
-            insertAt > 0 && !/\s/.test(snapshot.value[insertAt - 1] ?? " ");
-          applyPromptReplacement(insertAt, insertAt, `${needsLeadingSpace ? " " : ""}@${item.alias}()`, {
-            cursorOffset: -1,
-          });
+          const needsLeadingSpace = insertAt > 0 && !/\s/.test(snapshot.value[insertAt - 1] ?? " ");
+          applyPromptReplacement(
+            insertAt,
+            insertAt,
+            `${needsLeadingSpace ? " " : ""}@${item.alias}()`,
+            {
+              cursorOffset: -1,
+            },
+          );
         }
         scheduleComposerFocus();
         return;
@@ -10554,7 +10685,9 @@ export default function ChatView({
             : undefined
         }
         onDeclareCheckpoint={
-          activeProject?.kind === "project" && activeThread ? () => void declareCheckpoint() : undefined
+          activeProject?.kind === "project" && activeThread
+            ? () => void declareCheckpoint()
+            : undefined
         }
         onToggleFastMode={toggleFastMode}
       />
@@ -10784,14 +10917,12 @@ export default function ChatView({
                   changes={
                     repoDiffTotals.hasChanges || activeTurnLiveDiffState.hasChanges
                       ? {
-                          additions:
-                            activeTurnLiveDiffState.hasChanges
-                              ? activeTurnLiveDiffState.additions
-                              : repoDiffTotals.additions,
-                          deletions:
-                            activeTurnLiveDiffState.hasChanges
-                              ? activeTurnLiveDiffState.deletions
-                              : repoDiffTotals.deletions,
+                          additions: activeTurnLiveDiffState.hasChanges
+                            ? activeTurnLiveDiffState.additions
+                            : repoDiffTotals.additions,
+                          deletions: activeTurnLiveDiffState.hasChanges
+                            ? activeTurnLiveDiffState.deletions
+                            : repoDiffTotals.deletions,
                           hasChanges: true,
                         }
                       : null
@@ -11563,6 +11694,10 @@ export default function ChatView({
                     revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
                     onRevertUserMessage={onRevertUserMessage}
                     onUndoTurnFiles={onUndoTurnFiles}
+                    onCompareCheckpoint={onCompareCheckpoint}
+                    onResumeFromCheckpoint={onResumeFromCheckpoint}
+                    checkpointHandoffProviders={handoffTargetProviders}
+                    onHandoffFromCheckpoint={onHandoffFromCheckpoint}
                     onEditUserMessage={onEditUserMessage}
                     isRevertingCheckpoint={isRevertingCheckpoint}
                     onExpandTimelineImage={onExpandTimelineImage}

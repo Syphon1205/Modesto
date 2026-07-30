@@ -535,6 +535,27 @@ export function resolveActiveTurnLiveDiffState(input: {
   };
 }
 
+export function resolvePreviousComparableCheckpoint(
+  summaries: ReadonlyArray<TurnDiffSummary>,
+  selected: TurnDiffSummary,
+): TurnDiffSummary | null {
+  const selectedTurnCount = selected.checkpointTurnCount;
+  if (selectedTurnCount === undefined) return null;
+  return (
+    summaries
+      .filter(
+        (candidate) =>
+          candidate.checkpointRef !== undefined &&
+          !candidate.checkpointRef.startsWith("provider-diff:") &&
+          candidate.checkpointTurnCount !== undefined &&
+          candidate.checkpointTurnCount < selectedTurnCount,
+      )
+      .toSorted(
+        (left, right) => (right.checkpointTurnCount ?? 0) - (left.checkpointTurnCount ?? 0),
+      )[0] ?? null
+  );
+}
+
 export function buildLocalDraftThread(
   threadId: ThreadId,
   draftThread: DraftThreadState,

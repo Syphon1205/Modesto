@@ -328,6 +328,17 @@ export function buildDefaultHandoffSummary(thread: Pick<Thread, "title" | "messa
   return resolveThreadHandoffTitle(thread);
 }
 
+export function buildContextAwareHandoffSummary(
+  summary: string,
+  contextNarrative: string | null | undefined,
+): string {
+  const normalizedSummary = summary.trim();
+  if (!contextNarrative?.trim()) return normalizedSummary;
+  if (normalizedSummary.length === 0) return contextNarrative.trim();
+  if (/context attached/i.test(normalizedSummary)) return normalizedSummary;
+  return `${normalizedSummary}\n\nContext attached from the shared workspace.`;
+}
+
 export function buildDefaultHandoffObjective(
   thread: Pick<Thread, "title" | "messages" | "notes">,
 ): string {
@@ -360,8 +371,8 @@ export function buildHandoffUnfinishedSteps(
   const steps: ThreadHandoffStep[] = [];
   const seen = new Set<string>();
 
-  const latestOpenPlan = [...thread.proposedPlans]
-    .reverse()
+  const latestOpenPlan = thread.proposedPlans
+    .toReversed()
     .find((plan) => plan.implementedAt === null);
   if (latestOpenPlan) {
     for (const [index, item] of parseMarkdownTaskItems(latestOpenPlan.planMarkdown).entries()) {

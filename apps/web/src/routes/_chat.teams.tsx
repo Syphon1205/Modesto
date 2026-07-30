@@ -1,6 +1,10 @@
-import { PROVIDER_DISPLAY_NAMES, type ProjectId } from "@modesto/contracts";
+import {
+  PROVIDER_DISPLAY_NAMES,
+  type ProjectId,
+  type WorkspaceTimelineItem,
+} from "@modesto/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { RouteInsetSurface } from "~/components/RouteInsetSurface";
 import { SidebarHeaderNavigationControls } from "~/components/SidebarHeaderNavigationControls";
@@ -20,30 +24,45 @@ import {
   ChangesIcon,
   CheckCircle2Icon,
   DiffIcon,
+  FlaskConicalIcon,
+  GitCommitIcon,
   HandoffIcon,
+  ListTodoIcon,
+  PencilIcon,
   ReviewIcon,
+  SearchIcon,
   UsersIcon,
   type LucideIcon,
 } from "~/lib/icons";
 import { formatRelativeTime } from "~/lib/relativeTime";
 import {
+  buildTeamsAssignments,
   buildTeamsParticipants,
+  buildTeamsReviews,
   buildTeamsRuns,
   buildTeamsTimeline,
+  buildTeamsTimelineFromWorkspace,
   TEAMS_TIMELINE_FILTERS,
+  type TeamsAssignmentStatus,
   type TeamsRunStatus,
   type TeamsTimelineFilter,
 } from "~/lib/teamsSpace";
 import { cn } from "~/lib/utils";
+import { readNativeApi } from "~/nativeApi";
 import { useStore } from "~/store";
 
 const FILTER_LABELS: Record<TeamsTimelineFilter, string> = {
   all: "All",
   runs: "Runs",
+  assignments: "Assignments",
+  reviews: "Reviews",
   checkpoints: "Checkpoints",
   handoffs: "Handoffs",
-  reviews: "Reviews",
+  edits: "Edits",
   diffs: "Diffs",
+  searches: "Searches",
+  tests: "Tests",
+  commits: "Commits",
 };
 
 const RUN_STATUS_CLASS_NAMES: Record<TeamsRunStatus, string> = {
@@ -54,20 +73,30 @@ const RUN_STATUS_CLASS_NAMES: Record<TeamsRunStatus, string> = {
   ready: "bg-muted-foreground/50",
 };
 
-const TIMELINE_ICONS: Record<Exclude<TeamsTimelineFilter, "all">, LucideIcon> = {
-  runs: ActivityIcon,
-  checkpoints: CheckCircle2Icon,
-  handoffs: HandoffIcon,
-  reviews: ReviewIcon,
-  diffs: DiffIcon,
+const ASSIGNMENT_STATUS_LABELS: Record<TeamsAssignmentStatus, string> = {
+  todo: "To do",
+  doing: "In progress",
+  blocked: "Blocked",
+  done: "Done",
+  ready: "Ready",
+  waiting: "Needs you",
+  failed: "Recovery",
 };
 
-function TeamsMetric(props: {
-  label: string;
-  value: number;
-  detail: string;
-  icon: LucideIcon;
-}) {
+const TIMELINE_ICONS: Record<Exclude<TeamsTimelineFilter, "all">, LucideIcon> = {
+  runs: ActivityIcon,
+  assignments: ListTodoIcon,
+  reviews: ReviewIcon,
+  checkpoints: CheckCircle2Icon,
+  handoffs: HandoffIcon,
+  edits: PencilIcon,
+  diffs: DiffIcon,
+  searches: SearchIcon,
+  tests: FlaskConicalIcon,
+  commits: GitCommitIcon,
+};
+
+function TeamsMetric(props: { label: string; value: number; detail: string; icon: LucideIcon }) {
   const Icon = props.icon;
   return (
     <div className="min-w-0 rounded-lg border border-border/70 bg-background/45 p-3">
@@ -89,36 +118,58 @@ function TeamsRouteView() {
     projects[0]?.id ?? null,
   );
   const [timelineFilter, setTimelineFilter] = useState<TeamsTimelineFilter>("all");
+  const [workspaceTimeline, setWorkspaceTimeline] =
+    useState<ReadonlyArray<WorkspaceTimelineItem> | null>(null);
   const selectedProject =
     projects.find((project) => project.id === selectedProjectId) ?? projects[0] ?? null;
   const spaceThreads = useMemo(
     () =>
-      selectedProject
-        ? threads.filter((thread) => thread.projectId === selectedProject.id)
-        : [],
+      selectedProject ? threads.filter((thread) => thread.projectId === selectedProject.id) : [],
     [selectedProject, threads],
   );
   const runs = useMemo(() => buildTeamsRuns(spaceThreads), [spaceThreads]);
+  const assignments = useMemo(() => buildTeamsAssignments(spaceThreads), [spaceThreads]);
+  const reviews = useMemo(() => buildTeamsReviews(spaceThreads), [spaceThreads]);
   const participants = useMemo(
     () => buildTeamsParticipants(spaceThreads, runs),
     [runs, spaceThreads],
   );
   const timeline = useMemo(
-    () => buildTeamsTimeline(spaceThreads, timelineFilter),
-    [spaceThreads, timelineFilter],
+    () =>
+      workspaceTimeline
+        ? buildTeamsTimelineFromWorkspace(workspaceTimeline, timelineFilter)
+        : buildTeamsTimeline(spaceThreads, timelineFilter),
+    [spaceThreads, timelineFilter, workspaceTimeline],
   );
+  useEffect(() => {
+    let cancelled = false;
+    setWorkspaceTimeline(null);
+    if (!selectedProject) return () => undefined;
+    const api = readNativeApi();
+    if (!api) return () => undefined;
+    void api.orchestration
+      .getWorkspaceTimeline({ projectId: selectedProject.id, limit: 160 })
+      .then((result) => {
+        if (!cancelled && result.projectId === selectedProject.id) {
+          setWorkspaceTimeline(result.items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setWorkspaceTimeline(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProject]);
   const activeRunCount = runs.filter(
     (run) => run.status === "running" || run.status === "waiting",
   ).length;
   const attentionCount = runs.filter(
     (run) => run.status === "waiting" || run.status === "failed",
   ).length;
-  const checkpointCount = spaceThreads.reduce(
-    (count, thread) =>
-      count +
-      thread.activities.filter((activity) => activity.kind.includes("checkpoint")).length,
-    0,
-  );
+  const openAssignmentCount = assignments.filter(
+    (assignment) => assignment.status !== "done",
+  ).length;
   const trafficLightGutter = useDesktopTopBarTrafficLightGutterClassName();
   const windowControlsGutter = useDesktopTopBarWindowControlsGutterClassName();
 
@@ -220,7 +271,7 @@ function TeamsRouteView() {
                   <TeamsMetric
                     label="Active work"
                     value={activeRunCount}
-                    detail="Runs working or waiting"
+                    detail="Runs currently working"
                     icon={ActivityIcon}
                   />
                   <TeamsMetric
@@ -230,13 +281,106 @@ function TeamsRouteView() {
                     icon={UsersIcon}
                   />
                   <TeamsMetric
-                    label="Checkpoints"
-                    value={checkpointCount}
-                    detail="Clean handoff seams"
-                    icon={CheckCircle2Icon}
+                    label="Open assignments"
+                    value={openAssignmentCount}
+                    detail="Plans, handoffs, and follow-ups"
+                    icon={ListTodoIcon}
                   />
                 </div>
               </div>
+
+              <section>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-medium">Shared work</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Assignments collected from plans, handoff steps, and runs that need a person.
+                    </p>
+                  </div>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {openAssignmentCount} open
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
+                  {assignments.slice(0, 8).map((assignment) => (
+                    <button
+                      key={assignment.id}
+                      type="button"
+                      onClick={() => openThread(assignment.threadId)}
+                      className="rounded-lg border border-border/70 bg-background/45 p-3 text-left transition-colors hover:bg-[var(--color-background-elevated-secondary)]"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-background-elevated-secondary)] text-muted-foreground">
+                          <ListTodoIcon className="size-3.5" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {assignment.label}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                            {PROVIDER_DISPLAY_NAMES[assignment.provider]} · {assignment.title}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-xs">
+                            {ASSIGNMENT_STATUS_LABELS[assignment.status]}
+                          </span>
+                          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                            {formatRelativeTime(assignment.updatedAt)}
+                          </span>
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                  {selectedProject && assignments.length === 0 ? (
+                    <div className="col-span-full rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                      No open assignments. Plans and handoff follow-ups will collect here.
+                    </div>
+                  ) : null}
+                </div>
+              </section>
+
+              <section>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-medium">Reviews</h2>
+                    <p className="text-xs text-muted-foreground">
+                      Agent review activity and work returned across handoff seams.
+                    </p>
+                  </div>
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    {reviews.length} visible
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {reviews.slice(0, 5).map((review) => (
+                    <button
+                      key={review.id}
+                      type="button"
+                      onClick={() => openThread(review.threadId)}
+                      className="flex w-full items-start gap-3 rounded-lg border border-border/70 bg-background/40 p-3 text-left transition-colors hover:bg-[var(--color-background-elevated-secondary)]"
+                    >
+                      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-[var(--color-background-elevated-secondary)] text-muted-foreground">
+                        <ReviewIcon className="size-3.5" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{review.label}</span>
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                          {PROVIDER_DISPLAY_NAMES[review.provider]} · {review.title}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs capitalize text-muted-foreground">
+                        {review.status} · {formatRelativeTime(review.updatedAt)}
+                      </span>
+                    </button>
+                  ))}
+                  {selectedProject && reviews.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                      Review requests and returned handoffs will appear here.
+                    </div>
+                  ) : null}
+                </div>
+              </section>
 
               <section>
                 <div className="mb-2 flex items-center justify-between gap-3">
@@ -294,9 +438,9 @@ function TeamsRouteView() {
 
               <section>
                 <div className="mb-3">
-                  <h2 className="text-sm font-medium">Shared timeline</h2>
+                  <h2 className="text-sm font-medium">Workspace timeline</h2>
                   <p className="text-xs text-muted-foreground">
-                    The project audit trail, authored by people and agents alike.
+                    Starts, edits, searches, tests, checkpoints, handoffs, reviews, and commits.
                   </p>
                 </div>
                 <div className="mb-3 flex flex-wrap gap-1">
@@ -345,7 +489,11 @@ function TeamsRouteView() {
                   })}
                   {selectedProject && timeline.length === 0 ? (
                     <div className="rounded-lg border border-dashed border-border p-7 text-center text-sm text-muted-foreground">
-                      No {timelineFilter === "all" ? "shared activity" : FILTER_LABELS[timelineFilter].toLowerCase()} yet.
+                      No{" "}
+                      {timelineFilter === "all"
+                        ? "shared activity"
+                        : FILTER_LABELS[timelineFilter].toLowerCase()}{" "}
+                      yet.
                     </div>
                   ) : null}
                 </div>

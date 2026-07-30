@@ -28,6 +28,24 @@ import type { WhatsNewEntry } from "./logic";
 
 export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
   {
+    version: "0.1.8",
+    date: "Jul 30",
+    features: [
+      {
+        id: "shared-context-coordination",
+        title: "Shared context across agent work",
+        description:
+          "Portable context bundles keep checkpoints, files, plans, sources, and unfinished work attached across provider handoffs.",
+      },
+      {
+        id: "workspace-timeline-teams",
+        title: "A Teams space for coordination",
+        description:
+          "Teams now collects assignments, reviews, shared runs, subagents, and a workspace timeline for edits, searches, tests, checkpoints, handoffs, and commits.",
+      },
+    ],
+  },
+  {
     version: "0.1.7.2",
     date: "Jul 29",
     features: [
@@ -73,8 +91,7 @@ export const WHATS_NEW_ENTRIES: readonly WhatsNewEntry[] = [
         description:
           "Connect Modesto to Poolside Agent CLI over ACP, resume sessions, honor permissions, and choose the models exposed by your deployment.",
         image: "/whats-new/0.1.7.1/poolside-provider.svg",
-        imageAlt:
-          "Modesto connected to Poolside over ACP with deployment-provided model choices.",
+        imageAlt: "Modesto connected to Poolside over ACP with deployment-provided model choices.",
         details:
           "Run Poolside in the active repository without downloading model weights into Modesto. Laguna M.1, Laguna XS.2, Malibu, and future models arrive dynamically from Poolside.",
       },

@@ -30,6 +30,7 @@ import {
   resolveEnvironmentPanelPreferenceAfterFirstSend,
   resolveEnvironmentPanelPreferenceUpdate,
   resolveEnvironmentPanelVisible,
+  resolvePreviousComparableCheckpoint,
   resolveProjectScriptTerminalTarget,
   resolveQueuedSteerGateTransition,
   resolveRuntimeModeAfterApprovalDecision,
@@ -1069,6 +1070,48 @@ describe("resolveActiveTurnLiveDiffState", () => {
       hasChanges: true,
       files: [],
     });
+  });
+});
+
+describe("resolvePreviousComparableCheckpoint", () => {
+  it("selects the nearest earlier durable checkpoint", () => {
+    const summaries = [1, 2, 4].map((checkpointTurnCount) => ({
+      turnId: TurnId.makeUnsafe(`turn-${checkpointTurnCount}`),
+      completedAt: `2026-07-30T10:0${checkpointTurnCount}:00.000Z`,
+      files: [],
+      checkpointRef: CheckpointRef.makeUnsafe(`refs/modesto/checkpoint-${checkpointTurnCount}`),
+      checkpointTurnCount,
+    }));
+
+    expect(resolvePreviousComparableCheckpoint(summaries, summaries[2]!)).toMatchObject({
+      checkpointTurnCount: 2,
+      checkpointRef: CheckpointRef.makeUnsafe("refs/modesto/checkpoint-2"),
+    });
+    expect(resolvePreviousComparableCheckpoint(summaries, summaries[0]!)).toBeNull();
+  });
+
+  it("ignores provider-only diff references", () => {
+    const selected = {
+      turnId: TurnId.makeUnsafe("turn-3"),
+      completedAt: "2026-07-30T10:03:00.000Z",
+      files: [],
+      checkpointRef: CheckpointRef.makeUnsafe("refs/modesto/checkpoint-3"),
+      checkpointTurnCount: 3,
+    };
+    expect(
+      resolvePreviousComparableCheckpoint(
+        [
+          {
+            ...selected,
+            turnId: TurnId.makeUnsafe("turn-2"),
+            checkpointRef: CheckpointRef.makeUnsafe("provider-diff:turn-2"),
+            checkpointTurnCount: 2,
+          },
+          selected,
+        ],
+        selected,
+      ),
+    ).toBeNull();
   });
 });
 

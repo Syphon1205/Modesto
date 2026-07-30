@@ -76,6 +76,12 @@ interface ChatTranscriptPaneProps {
   onOpenAutomation?: ComponentProps<typeof MessagesTimeline>["onOpenAutomation"];
   onRevertUserMessage: (messageId: MessageId) => void;
   onUndoTurnFiles?: ComponentProps<typeof MessagesTimeline>["onUndoTurnFiles"];
+  onCompareCheckpoint?: ComponentProps<typeof MessagesTimeline>["onCompareCheckpoint"];
+  onResumeFromCheckpoint?: ComponentProps<typeof MessagesTimeline>["onResumeFromCheckpoint"];
+  checkpointHandoffProviders?: ComponentProps<
+    typeof MessagesTimeline
+  >["checkpointHandoffProviders"];
+  onHandoffFromCheckpoint?: ComponentProps<typeof MessagesTimeline>["onHandoffFromCheckpoint"];
   onEditUserMessage?: (messageId: MessageId, text: string) => boolean | Promise<boolean>;
   onScrollToBottom: () => void;
   onToggleWorkGroup?: (groupId: string) => void;
@@ -133,6 +139,10 @@ export const ChatTranscriptPane = memo(function ChatTranscriptPane({
   onOpenAutomation,
   onRevertUserMessage,
   onUndoTurnFiles,
+  onCompareCheckpoint,
+  onResumeFromCheckpoint,
+  checkpointHandoffProviders,
+  onHandoffFromCheckpoint,
   onEditUserMessage,
   onScrollToBottom,
   onToggleWorkGroup,
@@ -217,6 +227,10 @@ export const ChatTranscriptPane = memo(function ChatTranscriptPane({
             revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
             onRevertUserMessage={onRevertUserMessage}
             {...(onUndoTurnFiles ? { onUndoTurnFiles } : {})}
+            {...(onCompareCheckpoint ? { onCompareCheckpoint } : {})}
+            {...(onResumeFromCheckpoint ? { onResumeFromCheckpoint } : {})}
+            {...(checkpointHandoffProviders ? { checkpointHandoffProviders } : {})}
+            {...(onHandoffFromCheckpoint ? { onHandoffFromCheckpoint } : {})}
             {...(onEditUserMessage ? { onEditUserMessage } : {})}
             isRevertingCheckpoint={isRevertingCheckpoint}
             onImageExpand={onExpandTimelineImage}

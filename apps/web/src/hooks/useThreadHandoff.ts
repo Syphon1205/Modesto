@@ -6,6 +6,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { type ProviderKind } from "@modesto/contracts";
+import { formatSharedContextNarrative } from "@modesto/shared/sharedContext";
 import { resolveThreadWorkspaceCwd } from "@modesto/shared/threadEnvironment";
 import { useComposerDraftStore } from "../composerDraftStore";
 import { useProviderStatusesForLocalConfig } from "./useProviderStatusesForLocalConfig";
@@ -13,6 +14,7 @@ import { useRefreshProviderStatusesNow } from "./useProviderStatusRefresh";
 import {
   buildDefaultHandoffObjective,
   buildDefaultHandoffSummary,
+  buildContextAwareHandoffSummary,
   buildHandoffUnfinishedSteps,
   buildThreadHandoffImportedActivities,
   buildThreadHandoffImportedMessages,
@@ -73,8 +75,8 @@ export function prepareThreadHandoffDraft(
   thread: Thread,
   targetProvider: ProviderKind,
 ): Omit<ThreadHandoffDraft, "repoSnapshot" | "diffAckStatus" | "repoSnapshotLoading"> {
-  const latestDeclaredCheckpoint = [...thread.activities]
-    .reverse()
+  const latestDeclaredCheckpoint = thread.activities
+    .toReversed()
     .find((activity) => activity.kind === "agent.checkpoint.declared");
   const checkpointPayload =
     latestDeclaredCheckpoint?.payload &&
@@ -170,7 +172,11 @@ export function useThreadHandoff() {
   );
 
   const openHandoffDialog = useCallback(
-    async (thread: Thread, targetProvider: ProviderKind) => {
+    async (
+      thread: Thread,
+      targetProvider: ProviderKind,
+      options: { readonly summary?: string } = {},
+    ) => {
       const project = resolveProjectForThread(thread);
       if (!project) {
         throw new Error("Project not found for handoff thread.");
@@ -197,6 +203,7 @@ export function useThreadHandoff() {
       const baseDraft = prepareThreadHandoffDraft(thread, targetProvider);
       const initialDraft: ThreadHandoffDraft = {
         ...baseDraft,
+        ...(options.summary?.trim() ? { summary: options.summary.trim() } : {}),
         repoSnapshot: null,
         diffAckStatus: "not_required",
         repoSnapshotLoading: true,
@@ -252,6 +259,10 @@ export function useThreadHandoff() {
         const createdAt = new Date().toISOString();
         const importedMessages = buildThreadHandoffImportedMessages(thread);
         const importedActivities = buildThreadHandoffImportedActivities(thread);
+        const contextBundle = await api.orchestration
+          .getSharedContextBundle({ threadId: thread.id })
+          .catch(() => null);
+        const contextNarrative = contextBundle ? formatSharedContextNarrative(contextBundle) : null;
         const { copyTransferableComposerState, stickyModelSelectionByProvider } =
           useComposerDraftStore.getState();
         const normalizedSteps = draft.unfinishedSteps
@@ -311,9 +322,11 @@ export function useThreadHandoff() {
             null,
           createBranchFlowCompleted: thread.createBranchFlowCompleted ?? false,
           importedMessages: [...importedMessages],
-          summary: draft.summary.trim(),
+          summary: buildContextAwareHandoffSummary(draft.summary, contextNarrative),
           objective: draft.objective.trim(),
           unfinishedSteps: normalizedSteps,
+          contextNarrative,
+          contextArtifactIds: contextBundle?.artifacts.map((artifact) => artifact.id) ?? [],
           repoSnapshot: draft.repoSnapshot,
           diffAckStatus: draft.diffAckStatus,
           checkpointRef: checkpointCapture.checkpointRef,
