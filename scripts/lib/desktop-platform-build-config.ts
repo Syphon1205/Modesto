@@ -156,6 +156,11 @@ export function createDesktopPlatformBuildConfig(
     // This lets NSIS updates replace the existing installation and own its uninstaller.
     nsis: {
       guid: WINDOWS_INSTALLER_GUID,
+      // Cross-compiling Windows installers from Linux does not need Wine for the
+      // one-click NSIS payload itself. Differential packages require running the
+      // built installer under Wine to extract the embedded uninstaller; keep that
+      // off so release hosts without a working 32-bit Wine prefix can still ship.
+      differentialPackage: false,
     },
     win: {
       target: [input.target],
