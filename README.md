@@ -10,15 +10,15 @@
   </p>
 
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.8</strong></a>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.9</strong></a>
     &nbsp;·&nbsp;
-    <a href="#shared-context--v018">What’s new</a>
+    <a href="#provider-install--v019">What’s new</a>
     &nbsp;·&nbsp;
     <a href="https://github.com/Syphon1205/Modesto/releases">All releases</a>
   </p>
 
   <p>
-    <img alt="Latest release: v0.1.8" src="https://img.shields.io/badge/release-v0.1.8-7c8cff?style=flat-square" />
+    <img alt="Latest release: v0.1.9" src="https://img.shields.io/badge/release-v0.1.9-7c8cff?style=flat-square" />
     <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-2dd4bf?style=flat-square" />
     <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-64748b?style=flat-square" />
   </p>
@@ -43,33 +43,33 @@ that produced it.
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/Modesto-0.1.8-x64.AppImage) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.AppImage) |
 
 Every stable release also includes updater metadata, so Modesto can discover
 future updates from inside the app. Verify downloads with
-[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.8/SHA256SUMS.txt).
+[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/SHA256SUMS.txt).
 
 > Download Modesto only from this repository’s
 > [Releases](https://github.com/Syphon1205/Modesto/releases) page.
 
-## Shared Context · v0.1.8
+## Provider Install · v0.1.9
 
-Shared Context helps one agent pick up where another left off—without rebuilding
-the story from chat alone.
+Provider Install makes CLI setup a first-class part of Modesto—so the agents you
+can run are the ones you have actually installed and verified.
 
-- **Shared context bundles** connect files, sessions, checkpoints, Git changes,
-  sources, terminal activity, and unfinished tasks into one portable brief.
-- **Checkpoints resume and compare.** Restore a seam, compare any two refs, or
-  hand a checkpoint to another provider with the important context attached.
-- **Workspace timeline** records agent starts, edits, searches, tests,
-  checkpoints, handoffs, and commits across the project.
-- **Teams shows coordinated work.** Assignments, reviews, shared runs, and
-  agent activity replace a generic chat room.
+- **Install Poolside, Kimi, and Qwen** from Provider Tools: detect, install,
+  verify, sign in, repair, update, and remove on supported platforms.
+- **Installed means healthy.** An install only succeeds after Modesto finds the
+  executable and a version or health probe passes.
+- **Composer shows ready providers first**, then ones that need login, then Add
+  provider. Uninstalled providers stay in Provider Tools only.
+- **Validated CLIs own the picker.** The manual visibility list is no longer the
+  source of truth.
 
-[Read the complete Shared Context release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.8)
+[Read the complete Provider Install release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.9)
 
 ## Get started
 
