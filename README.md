@@ -10,17 +10,18 @@
   </p>
 
   <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.1.9</strong></a>
+    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download v0.2.0</strong></a>
     &nbsp;·&nbsp;
-    <a href="#provider-install--v019">What’s new</a>
+    <a href="#command-line-interface">Install the CLI</a>
     &nbsp;·&nbsp;
     <a href="https://github.com/Syphon1205/Modesto/releases">All releases</a>
   </p>
 
   <p>
-    <img alt="Latest release: v0.1.9" src="https://img.shields.io/badge/release-v0.1.9-7c8cff?style=flat-square" />
+    <img alt="Latest release: v0.2.0" src="https://img.shields.io/badge/release-v0.2.0-7c8cff?style=flat-square" />
     <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-2dd4bf?style=flat-square" />
     <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-64748b?style=flat-square" />
+    <a href="https://www.npmjs.com/package/@modestocode/cli"><img alt="npm: @modestocode/cli" src="https://img.shields.io/npm/v/%40modestocode%2Fcli?style=flat-square&label=cli&color=f5a524" /></a>
   </p>
 </div>
 
@@ -43,38 +44,65 @@ that produced it.
 
 | Platform | Requirements | Download |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/Modesto-0.1.9-x64.AppImage) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download DMG](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download EXE](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x64.AppImage) |
 
 Every stable release also includes updater metadata, so Modesto can discover
-future updates from inside the app. Verify downloads with
-[SHA-256 checksums](https://github.com/Syphon1205/Modesto/releases/download/v0.1.9/SHA256SUMS.txt).
+future updates from inside the app.
 
 > Download Modesto only from this repository’s
 > [Releases](https://github.com/Syphon1205/Modesto/releases) page.
 
-## Provider Install · v0.1.9
+## Command-Line Interface
 
-Provider Install makes CLI setup a first-class part of Modesto—so the agents you
-can run are the ones you have actually installed and verified.
+<p>
+  <a href="https://www.npmjs.com/package/@modestocode/cli"><img alt="npm version" src="https://img.shields.io/npm/v/%40modestocode%2Fcli?style=flat-square&color=6073cc" /></a>
+  <img alt="Node/Bun" src="https://img.shields.io/badge/runtime-Node%20%7C%20Bun-2dd4bf?style=flat-square" />
+</p>
 
-- **Install Poolside, Kimi, and Qwen** from Provider Tools: detect, install,
-  verify, sign in, repair, update, and remove on supported platforms.
-- **Installed means healthy.** An install only succeeds after Modesto finds the
-  executable and a version or health probe passes.
-- **Composer shows ready providers first**, then ones that need login, then Add
-  provider. Uninstalled providers stay in Provider Tools only.
-- **Validated CLIs own the picker.** The manual visibility list is no longer the
-  source of truth.
+Prefer a terminal over a desktop window? `modesto` is the same workspace as a
+CLI—same providers, same projects, same conversations, just rendered as text.
 
-[Read the complete Provider Install release notes →](https://github.com/Syphon1205/Modesto/releases/tag/v0.1.9)
+```bash
+npm install -g @modestocode/cli
+```
+
+Then just run it:
+
+```bash
+modesto
+```
+
+That drops you straight into the full-screen terminal UI: a live session list,
+a composer, `/` for slash commands, `ctrl+p` for the command palette, and
+`ctrl+g` for help. A couple of other entry points if you want them:
+
+| Command | What it does |
+| --- | --- |
+| `modesto` | Launches the full-screen terminal UI. |
+| `modesto chat` | A lighter, single-pane chat client—same engine, simpler UI. |
+| `modesto serve` | Runs Modesto as a local HTTP/WebSocket server (what the desktop app uses under the hood). |
+
+The CLI shares the same projects, threads, and provider connections as the
+desktop app—start a task in one, pick it back up in the other.
+
+<details>
+<summary><strong>Requirements</strong></summary>
+
+The full-screen `tui` mode renders through a native terminal graphics layer
+that currently requires [Bun](https://bun.sh). If you're running under plain
+Node, `modesto` will automatically relaunch itself under Bun when it's
+installed, or point you to `modesto chat`/`modesto serve` as a fallback if it
+isn't.
+
+</details>
 
 ## Get started
 
-1. Download the installer for your computer.
-2. Install and open Modesto.
+1. Download the installer for your computer, or install the CLI above.
+2. Install and open Modesto (or run `modesto`).
 3. Choose a provider and sign in to your own account when prompted.
 4. Open a project and start a task.
 
@@ -85,13 +113,11 @@ the bundled runtime changes.
 <details>
 <summary><strong>First-launch security notices</strong></summary>
 
-The current macOS builds use hardened-runtime ad-hoc signatures and are not
-Apple notarized. Gatekeeper may require **System Settings → Privacy & Security
-→ Open Anyway** on first launch.
-
-The current Windows installer is unsigned, so SmartScreen may require **More
-info → Run anyway**. Confirm the download came from this repository’s Releases
-page before continuing.
+macOS and Windows desktop builds are code-signed; macOS builds are also
+notarized by Apple, so they should open without a Gatekeeper warning. If you
+ever see one anyway, confirm the download came from this repository's
+[Releases](https://github.com/Syphon1205/Modesto/releases) page before
+continuing.
 
 </details>
 
