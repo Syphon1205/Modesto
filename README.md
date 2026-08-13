@@ -18,7 +18,7 @@
   </p>
 
   <p>
-    <img alt="Latest release: v0.2.0" src="https://img.shields.io/badge/release-v0.2.0-7c8cff?style=flat-square" />
+    <img alt="Latest release: v0.3.0" src="https://img.shields.io/badge/release-v0.3.0-7c8cff?style=flat-square" />
     <img alt="Release channel: stable" src="https://img.shields.io/badge/channel-stable-2dd4bf?style=flat-square" />
     <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-111111?style=flat-square" />
     <a href="https://www.npmjs.com/package/@modestocode/cli"><img alt="npm: @modestocode/cli" src="https://img.shields.io/npm/v/%40modestocode%2Fcli?style=flat-square&label=cli&color=f5a524" /></a>
@@ -76,26 +76,26 @@ Your provider credentials stay local. Your choice of agent stays yours.
 
 ## Download Modesto
 
-**v0.2.0 — Mountain View** is the current stable release.
+**v0.3.0 — Cowork** is the current stable release.
 
 | Platform | Requirements | Installer |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download `.exe`](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download `.AppImage`](https://github.com/Syphon1205/Modesto/releases/download/v0.2.0/Modesto-0.2.0-x86_64.AppImage) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.3.0/Modesto-0.3.0-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.3.0/Modesto-0.3.0-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download `.exe`](https://github.com/Syphon1205/Modesto/releases/download/v0.3.0/Modesto-0.3.0-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download `.AppImage`](https://github.com/Syphon1205/Modesto/releases/download/v0.3.0/Modesto-0.3.0-x86_64.AppImage) |
 
 macOS builds are Developer ID signed and notarized by Apple. Installed copies update through Modesto's built-in updater. The [latest release](https://github.com/Syphon1205/Modesto/releases/latest) always has the complete artifact list and release notes.
 
-## What's new in v0.2.0
+## What's new in v0.3.0
 
-- **A standalone `modesto` CLI and full-screen TUI** for starting, resuming, and inspecting sessions from the terminal.
-- **Local model routers** for OpenAI-compatible endpoints including Ollama, LM Studio, vLLM, OpenRouter, Portkey, and LiteLLM.
-- **Plan, Ask, and Debug modes** for deliberate planning, read-only questions, and diagnostic work.
-- **A rebuilt composer menu** with search, interaction modes, Skills, MCP servers, image attachments, and Fast mode.
-- **Stronger provider management** for installing, detecting, authenticating, repairing, updating, and removing supported CLIs.
+- **Cowork workspace** for research, local tasks, connected tools, and multi-session agent work alongside Code.
+- **Connected apps and tools** with separate Cowork MCP storage, real OAuth, provider-aware discovery, and connections shared with Codex, Claude, Gemini, and ACP providers.
+- **Better live control** with Stop, Steer, and Queue actions while an agent is running, plus clearer transcript navigation and keyboard controls.
+- **Session tabs, groups, and an integrated terminal** for keeping parallel work organized without leaving the workspace.
+- **Stronger artifacts and reliability** with destination controls, file-size context, lazy editor loading, better recovery, and fixes for hung sends, blank reloads, stale turn state, and hidden older chats.
 
-Read the [complete v0.2.0 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v0.2.0).
+Read the [complete v0.3.0 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v0.3.0).
 
 ## Command-line interface
 
