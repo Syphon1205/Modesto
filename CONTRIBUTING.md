@@ -2,9 +2,9 @@
 
 Thanks for your interest in Modesto.
 
-This GitHub repository is the public release and distribution home for Modesto
-desktop builds. We welcome bug reports and focused feedback; large unsolicited
-feature PRs are unlikely to be reviewed right now.
+Modesto is open source under the MIT License. This repository is the public
+home for desktop builds, release notes, and the published source snapshot.
+Bug reports, focused fixes, and thoughtful contributions are welcome.
 
 ## How to help
 
@@ -16,11 +16,11 @@ feature PRs are unlikely to be reviewed right now.
 
 ## Pull requests
 
-We are not actively soliciting contributions. You can still open a PR, but
-please keep it small and focused. Bug fixes are the most likely to be reviewed;
-large feature dumps are likely to be closed.
+Please keep PRs small and focused. Bug fixes and clear regressions are the
+most likely to be reviewed quickly; large unsolicited feature dumps are harder
+to land.
 
-If you do open a PR, explain:
+If you open a PR, explain:
 
 - what changed
 - why the change is needed
@@ -31,7 +31,7 @@ If you do open a PR, explain:
 
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
-- [License](LICENSE) (Proprietary — Copyright © 2026 Tanner Davidson)
+- [License](LICENSE) (MIT — Copyright © 2026 Tanner Davidson)
 
 ## Attribution
 
