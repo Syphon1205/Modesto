@@ -3,14 +3,16 @@
 
   <h1>Modesto</h1>
 
-  <p><strong>Your agents. Your machine. One workspace.</strong></p>
+  <p><strong>Your agents. In their element.</strong></p>
   <p>
     The open-source control plane for coding agents — now on the 1.0 alpha line.<br />
-    Run Codex, Claude Code, Cursor, Gemini, Grok, Meta, OpenCode, and more from a single local-first desktop.
+    Claude, Codex, Cursor, Gemini, Grok, Meta, OpenCode, and the rest. One local-first desktop.
   </p>
 
   <p>
     <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download Modesto</strong></a>
+    &nbsp;·&nbsp;
+    <a href="#on-the-web">Figma &amp; Framer</a>
     &nbsp;·&nbsp;
     <a href="#why-modesto">See what it does</a>
     &nbsp;·&nbsp;
@@ -26,11 +28,19 @@
 </div>
 
 <p align="center">
-  <img src="assets/modesto-app.png" alt="Modesto desktop workspace with projects, coding agent controls, and a task composer" width="100%" />
+  <video src="assets/modesto-film.mp4" poster="assets/modesto-film.png" width="100%" controls muted playsinline preload="metadata">
+    <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4">
+      <img src="assets/modesto-film.png" alt="Modesto film — Your agents. In their element." width="100%" />
+    </a>
+  </video>
 </p>
 
 <p align="center">
-  <em>Think Cursor for every agent—with your conversations, files, terminal, browser, and diffs in one place.</em>
+  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4"><strong>Watch the 30-second film →</strong></a>
+</p>
+
+<p align="center">
+  <em>Different agents. Shared momentum. Built around the way you build.</em>
 </p>
 
 ## Why Modesto
@@ -48,6 +58,37 @@ Modesto gives them one home.
 | **Code + Work together** | Ship software and run local cowork tasks in one platform—sessions, connections, browser, and artifacts stay with the conversation. |
 | **Automate the boring parts** | Schedule recurring prompts and come back to their results without babysitting every run. |
 
+## On the web
+
+Figma and Framer live in Connections. Open a file, keep the session, and hand the thread to the next agent without leaving the workspace.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/figma-support.png">
+    <img src="assets/figma-support.png" alt="Figma support is now in Modesto" width="100%" />
+  </a>
+  <p><strong>Figma</strong> — designs, files, and MCP stay attached to the conversation.</p>
+</td>
+<td width="50%" valign="top">
+  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/framer-support.png">
+    <img src="assets/framer-support.png" alt="Framer support is now in Modesto" width="100%" />
+  </a>
+  <p><strong>Framer</strong> — sites and canvases sit next to the same thread, diffs, and browser.</p>
+</td>
+</tr>
+</table>
+
+Connections also cover the rest of the web surface — browser, artifacts, and signed-in web apps — so the agent is not stuck in a terminal.
+
+<p align="center">
+  <img src="assets/modesto-app.png" alt="Modesto desktop workspace with projects, coding agent controls, and a task composer" width="100%" />
+</p>
+
+<p align="center">
+  <em>Think Cursor for every agent—with your conversations, files, terminal, browser, and diffs in one place.</em>
+</p>
+
 ## One desktop for the whole task
 
 | Plan | Build | Review |
@@ -57,13 +98,13 @@ Modesto gives them one home.
 Modesto brings together the surfaces real agent work needs:
 
 - Persistent conversations — start a Code chat without opening a project
+- Figma, Framer, and other web apps through Connections
 - Integrated files, terminal, browser, and diffs
 - Native code review and Git actions
 - Parallel agent tasks
 - Desktop environments and a header usage clock
 - Plan, Ask, and Debug interaction modes
 - Scheduled automations
-- Connections for tools and web apps
 - Provider installation and health checks
 - Local and hosted OpenAI-compatible model routers
 - Desktop and full-screen terminal interfaces
@@ -95,6 +136,7 @@ macOS builds are Developer ID signed and notarized by Apple. Installed copies up
 - **In-app update from 0.3 and 0.4** — this release is GitHub Latest with `latest` and `modesto` updater manifests and the production desktop identity, so existing GitHub installs pick it up without a manual re-download.
 - **Chats without a project** — start and send a Code chat without opening a folder; Work still needs a project.
 - **Desktop environments** — Cursor-style right-panel list, header usage clock, and Grok as a first-class provider.
+- **Web connections** — Figma and Framer sit in the same workspace as the thread, browser, and diffs.
 
 Read the [complete v1.0.0-alpha.1 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1).
 
