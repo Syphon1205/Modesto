@@ -28,11 +28,9 @@
 </div>
 
 <p align="center">
-  <video src="assets/modesto-film.mp4" poster="assets/modesto-film.png" width="100%" controls muted playsinline preload="metadata">
-    <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4">
-      <img src="assets/modesto-film.png" alt="Modesto film — Your agents. In their element." width="100%" />
-    </a>
-  </video>
+  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4">
+    <img src="assets/modesto-film.png" alt="Modesto film — Your agents. In their element. Click to play the 30-second film." width="100%" />
+  </a>
 </p>
 
 <p align="center">
