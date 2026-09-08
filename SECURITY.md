@@ -2,12 +2,13 @@
 
 ## Supported versions
 
-Security fixes are prioritized for the latest stable desktop release published on
+Security fixes are prioritized for the latest public desktop release published on
 the [Modesto releases page](https://github.com/Syphon1205/Modesto/releases).
+The current public line is **v1.0.0-alpha.1**.
 
 | Version | Supported |
 | ------- | --------- |
-| Latest stable release | Yes |
+| Latest public release | Yes |
 | Older releases | Best effort |
 
 ## Reporting a vulnerability

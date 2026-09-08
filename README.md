@@ -5,8 +5,8 @@
 
   <p><strong>Your agents. Your machine. One workspace.</strong></p>
   <p>
-    The open-source control plane for coding agents.<br />
-    Run Codex, Claude Code, Cursor, Gemini, OpenCode, and more from a single local-first desktop.
+    The open-source control plane for coding agents — now on the 1.0 alpha line.<br />
+    Run Codex, Claude Code, Cursor, Gemini, Grok, Meta, OpenCode, and more from a single local-first desktop.
   </p>
 
   <p>
@@ -18,7 +18,7 @@
   </p>
 
   <p>
-    <img alt="Latest release: v0.4.0" src="https://img.shields.io/badge/release-v0.4.0-7c8cff?style=flat-square" />
+    <img alt="Latest release: v1.0.0-alpha.1" src="https://img.shields.io/badge/release-v1.0.0--alpha.1-7c8cff?style=flat-square" />
     <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2dd4bf?style=flat-square" />
     <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-111111?style=flat-square" />
     <a href="https://www.npmjs.com/package/@modestocode/cli"><img alt="npm: @modestocode/cli" src="https://img.shields.io/npm/v/%40modestocode%2Fcli?style=flat-square&label=cli&color=f5a524" /></a>
@@ -52,14 +52,15 @@ Modesto gives them one home.
 
 | Plan | Build | Review |
 | --- | --- | --- |
-| Choose Agent, Plan, Ask, or Debug for the next turn. | Work with Codex, Claude Code, Cursor, Gemini, OpenCode, and more. | Keep diffs, browser previews, screenshots, approvals, and output beside the conversation. |
+| Choose Agent, Plan, Ask, or Debug for the next turn. | Work with Codex, Claude Code, Cursor, Gemini, Grok, Meta, OpenCode, and more. | Keep diffs, browser previews, screenshots, approvals, and output beside the conversation. |
 
 Modesto brings together the surfaces real agent work needs:
 
-- Persistent conversations and project context
+- Persistent conversations — start a Code chat without opening a project
 - Integrated files, terminal, browser, and diffs
 - Native code review and Git actions
 - Parallel agent tasks
+- Desktop environments and a header usage clock
 - Plan, Ask, and Debug interaction modes
 - Scheduled automations
 - Connections for tools and web apps
@@ -71,33 +72,31 @@ Modesto brings together the surfaces real agent work needs:
 
 Use the provider CLIs and subscriptions already on your machine, install supported agents from Provider Tools, or connect an OpenAI-compatible endpoint.
 
-**Codex** · **Claude Code** · **Cursor Agent** · **Gemini CLI** · **OpenCode** · **Grok** · **Factory Droid** · **Kilo Code** · **Poolside** · **Kimi** · **Qwen** · **Devin** · **Pi** · **local and hosted model routers**
+**Codex** · **Claude Code** · **Cursor Agent** · **Gemini CLI** · **Grok** · **Meta (Muse Code)** · **OpenCode** · **Factory Droid** · **Kilo Code** · **Poolside** · **Kimi** · **Qwen** · **Devin** · **Pi** · **local and hosted model routers**
 
 Your provider credentials stay local. Zero telemetry. Complete ownership.
 
 ## Download Modesto
 
-**v0.4.0 — New Foundation** is the current stable release.
+**v1.0.0-alpha.1 — public 1.0 alpha** is the current public line. Existing 0.3 and 0.4 desktop installs update to it in-app. This is still an alpha, not a finished 1.0 product.
 
 | Platform | Requirements | Installer |
 | --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download `.exe`](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download `.AppImage`](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x86_64.AppImage) |
+| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-arm64.dmg) |
+| **macOS · Intel** | macOS 12+ · Intel processor | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.dmg) |
+| **Windows · x64** | Windows 10 or 11 | [Download `.exe`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.exe) |
+| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download `.AppImage`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x86_64.AppImage) |
 
 macOS builds are Developer ID signed and notarized by Apple. Installed copies update through Modesto's built-in updater. The [latest release](https://github.com/Syphon1205/Modesto/releases/latest) always has the complete artifact list and release notes.
 
-## What's new in v0.4.0
+## What's new in v1.0.0-alpha.1
 
-- **Open source under MIT** — public on GitHub, local-first, no telemetry, and yours to fork.
-- **New foundation** — rebuilt client-server core with typed RPC and Effect-TS services for long-term stability.
-- **Code + Work in one platform** — agent sessions, tasks, connections, diffs, and artifacts live together instead of forcing context switches.
-- **Cross-provider handoff** — switch providers mid-conversation; the new agent gets a fresh session with prior context replayed.
-- **Tasks, automations, and plugins** — Kanban board, scheduled prompts, and Claude Code plugin installs rebuilt on the new core.
-- **More providers** — Kilo ships for real, with broader multi-provider support continuing to land on the new foundation.
+- **Public 1.0 alpha** — the hop from Early Modesto / New Foundation onto the 1.0 line. Still an alpha, not a claim that every surface is finished.
+- **In-app update from 0.3 and 0.4** — this release is GitHub Latest with `latest` and `modesto` updater manifests and the production desktop identity, so existing GitHub installs pick it up without a manual re-download.
+- **Chats without a project** — start and send a Code chat without opening a folder; Work still needs a project.
+- **Desktop environments** — Cursor-style right-panel list, header usage clock, and Grok as a first-class provider.
 
-Read the [complete v0.4.0 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v0.4.0).
+Read the [complete v1.0.0-alpha.1 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1).
 
 ## Command-line interface
 
@@ -121,7 +120,7 @@ The CLI shares its projects, threads, and provider connections with the desktop 
 1. Download the installer for your computer or install the CLI.
 2. Open Modesto and choose a provider.
 3. Sign in to your own provider account when prompted.
-4. Open a project and start a task.
+4. Start a chat. Opening a project is optional for Code and required for Work.
 
 ## About this repository
 
