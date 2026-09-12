@@ -2,11 +2,11 @@
 
 All notable changes to Modesto are documented here, newest first.
 
-## 1.0.0-alpha.1 - Release candidate (2026-09-12)
+## 1.0.0-alpha.1 RC (2026-09-12)
 
 ### Version line
 
-- Moved the public line from 0.4.0 onto 1.0.0-alpha.1 now that the app is more stable and feature-rich.
+- Public line is **1.0.0-alpha.1 RC** (semver `1.0.0-alpha.1`).
 - Prepared `latest` and `modesto` updater manifests for publication after signed native builds pass.
 - Public staged versions (alpha/beta/rc) keep the production desktop bundle identity; only nightly/dev builds install alongside.
 

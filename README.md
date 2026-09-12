@@ -5,11 +5,11 @@
 <h1 align="center">Modesto</h1>
 
 <p align="center">
-  <b>The open-source control plane for coding agents — local-first, multi-provider, now on the 1.0 alpha line.</b>
+  <b>The open-source control plane for coding agents — local-first, multi-provider, now on 1.0.0-alpha.1 RC.</b>
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0--alpha.1-6366f1.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0--alpha.1%20RC-6366f1.svg?style=flat-square" />
   <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-orange.svg?style=flat-square" />
   <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
   <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
@@ -28,7 +28,7 @@
 
 <br />
 
-Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors. This line is **1.0.0-alpha.1**: more stable and feature-rich than the 0.3/0.4 GitHub builds, still an alpha, not a finished 1.0 product.
+Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors. Current public line: **1.0.0-alpha.1 RC**. Useful and evolving; not a finished 1.0 product.
 
 <p align="center">
   <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
@@ -55,37 +55,26 @@ Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code
 
 ## Download
 
-**v1.0.0-alpha.1 — release candidate.** The source is available here. New signed
-installers are pending native validation and signing credentials; existing apps
-remain on the previous published release until the signed release is published.
+**v1.0.0-alpha.1 RC.** Source is on this repo. Signed installers are still
+pending native validation and signing credentials. Until those land, GitHub
+Releases still lists the last published desktop build.
 
-Get existing downloads from [GitHub Releases](https://github.com/Syphon1205/Modesto/releases/latest).
-The candidate build matrix targets Apple Silicon and Intel macOS DMGs, a Windows
-x64 installer, and a Linux x64 AppImage. Windows package metadata uses **Modesto Team**.
-See [release status and notes](docs/releases/v1.0.0-alpha.1.md).
+The RC matrix is Apple Silicon and Intel macOS DMGs, a Windows x64 installer
+(publisher metadata: **Modesto Team**), and a Linux x64 AppImage.
+See [release notes](docs/releases/v1.0.0-alpha.1.md) and
+[GitHub Releases](https://github.com/Syphon1205/Modesto/releases).
 
-
-macOS builds are Developer ID signed and notarized by Apple. Installed copies
-update themselves through Modesto's built-in updater — you only download once.
-The [latest release](https://github.com/Syphon1205/Modesto/releases/latest)
-always lists every artifact and changelog.
+After the signed RC ships, installed copies update through Modesto's built-in
+updater.
 
 ## What's new
 
-### v1.0.0-alpha.1 — release candidate
+### v1.0.0-alpha.1 RC
 
-- **Hop from 0.3 and 0.4** — this is GitHub Latest, so older GitHub desktop builds update themselves.
-- **More of the product** — chats without a project, desktop environments, header usage clock, Grok as a first-class provider.
-- **Still an alpha** — useful and evolving; not a claim that every surface is finished.
-- **Web connections** — Figma and Framer sit in the same workspace as the thread, browser, and diffs.
-
-### v0.4.0 — New Foundation
-
-- **Open source under MIT** — public on GitHub, local-first, zero telemetry, complete ownership.
-- **New core** — typed RPC and Effect-TS services throughout for a more durable client-server foundation.
-- **Code + Work** — agent sessions, tasks, connections, diffs, and artifacts in one platform.
-- **Cross-provider handoff** — switch providers mid-conversation with prior context replayed into a fresh session.
-- **Tasks, automations, and plugins** — Kanban board, scheduled prompts, and Claude Code plugin installs on the new core.
+- **Chats without a project** — start and send in Code with no folder open; Work still needs a project.
+- **Desktop environments** — local host plus optional WSL/SSH; header usage clock; Grok as a first-class provider.
+- **Connections** — Figma, Framer, and other daily apps in the same workspace as the thread, browser, and diffs.
+- **Still an RC alpha** — the 1.0 line, not a claim that every surface is finished.
 
 <details>
 <summary><b>Earlier releases</b></summary>
@@ -251,7 +240,7 @@ Modesto preserves the license and copyright notices of the open-source work on w
 
 ## License
 
-See [LICENSE](LICENSE) — AGPL-3.0. Copyright © 2026 Modesto was MIT through v0.3.x; it moved to AGPL-3.0 with the Bible Strong avatar engine. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+See [LICENSE](LICENSE) — AGPL-3.0. Copyright © 2026 Tanner Davidson. Modesto was MIT through v0.3.x; it moved to AGPL-3.0 with the Bible Strong avatar engine. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 <br />
 
