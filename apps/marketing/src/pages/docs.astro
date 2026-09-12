@@ -1,0 +1,224 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+import { DOCS_NAV } from "../lib/docs";
+
+const toc = [
+  { label: "What Modesto is", href: "#what-is-modesto" },
+  { label: "1.0 alpha", href: "#alpha" },
+  { label: "How work moves", href: "#lifecycle" },
+  { label: "Working model", href: "#working-model" },
+  { label: "All docs", href: "#all-docs" },
+];
+---
+
+<DocsLayout
+  title="Every agent. One workspace."
+  description="Modesto is a local-first desktop control plane for the coding agents you already pay for. 1.0.0-alpha.1 sits on the T3 Code client-server foundation."
+  currentPath="/docs"
+  eyebrow="Overview"
+  {toc}
+>
+  <section id="what-is-modesto">
+    <h2>What Modesto is</h2>
+    <p>
+      Modesto sits above Claude Code, Codex, Cursor, Gemini, Grok, Meta Muse
+      Code, GitHub Copilot, OpenCode, and the other CLIs on your machine. It
+      gives those tools a shared workspace for projects, threads, checkpoints,
+      diffs, pull requests, automations, and team decisions — without reselling
+      tokens or intermediating your subscriptions.
+    </p>
+    <div class="docs-callout">
+      <strong>Modesto does not proxy or replace your agents.</strong>
+      <p>
+        Authentication, models, permissions, and billing still belong to the
+        provider you installed. Install the CLI, sign in the way that provider
+        expects, then pick it in Modesto.
+      </p>
+    </div>
+    <div class="docs-card-grid">
+      <article class="docs-card">
+        <span>Five minutes</span>
+        <h3>Install the app</h3>
+        <p>Download the desktop build. You can send a chat before you open a folder.</p>
+        <a href="/docs/install">Install →</a>
+      </article>
+      <article class="docs-card">
+        <span>First run</span>
+        <h3>Ship a change</h3>
+        <p>Send a chat, then open a repository, review the diff, open a pull request.</p>
+        <a href="/docs/get-started">Quickstart →</a>
+      </article>
+      <article class="docs-card">
+        <span>Existing tools</span>
+        <h3>Connect providers</h3>
+        <p>Discovery, login commands, Meta Muse Code, Copilot, instances, mid-thread switch.</p>
+        <a href="/docs/providers">Providers →</a>
+      </article>
+      <article class="docs-card">
+        <span>Continuity</span>
+        <h3>Hand work between agents</h3>
+        <p>Checkpoints carry Git state, incomplete work, and the next step.</p>
+        <a href="/docs/checkpoints">Checkpoints →</a>
+      </article>
+    </div>
+  </section>
+
+  <section id="alpha">
+    <h2>What 1.0 alpha actually shipped</h2>
+    <p>
+      Public line is <strong>1.0.0-alpha.1</strong> (8 September 2026). The
+      0.4 rebuild put Modesto on the T3 Code client-server foundation — typed
+      RPC, Effect services, Git through the real <code>gh</code> CLI — then
+      this alpha added the surfaces you will hit on first launch.
+    </p>
+    <div class="docs-table">
+      <div>
+        <strong>Chats without a project</strong>
+        <span>
+          The composer works with no folder open. Work still needs a project.{" "}
+          <a href="/docs/threads">Threads</a>
+        </span>
+      </div>
+      <div>
+        <strong>Desktop environments</strong>
+        <span>
+          Local host, plus optional WSL and SSH backends. Threads bind to an
+          environment id. <a href="/docs/desktop">Desktop</a>
+        </span>
+      </div>
+      <div>
+        <strong>Usage clock</strong>
+        <span>
+          Header bars for the selected model’s 5-hour and weekly provider
+          limits. Modesto does not sell quota.
+        </span>
+      </div>
+      <div>
+        <strong>Meta Muse Code</strong>
+        <span>
+          First-class provider: binary <code>muse</code>, ACP{" "}
+          <code>muse --acp</code>, Muse Spark. Enabled by default.{" "}
+          <a href="/docs/providers">Providers</a>
+        </span>
+      </div>
+      <div>
+        <strong>Grok and Copilot</strong>
+        <span>
+          Grok is enabled by default. GitHub Copilot CLI is opt-in (
+          <code>copilot --acp</code>).
+        </span>
+      </div>
+      <div>
+        <strong>Pop-out chat</strong>
+        <span>
+          Desktop always-on-top window for the current thread.
+        </span>
+      </div>
+      <div>
+        <strong>Music and Connections</strong>
+        <span>
+          Right-panel Music (Apple Music on the Mac, Spotify and others in
+          the in-app browser). Figma, Framer, and installed Adobe apps from
+          Work Connections. <a href="/docs/work">Work</a>
+        </span>
+      </div>
+      <div>
+        <strong>Skill packs and webhooks</strong>
+        <span>
+          One GitHub <code>SKILL.md</code> pack for Codex and Claude. Signed
+          inbound webhooks on an existing automation.{" "}
+          <a href="/docs/skills">Skills</a> ·{" "}
+          <a href="/docs/automations">Automations</a>
+        </span>
+      </div>
+    </div>
+    <div class="docs-callout">
+      <strong>This is still Modesto, not T3 Tools.</strong>
+      <p>
+        The foundation came from T3 Code. There is no T3 Connect tunnel, no{" "}
+        <code>npx t3</code> installer, and no T3 App Store. Auth, models, and
+        billing stay with the CLIs you already pay for.
+      </p>
+    </div>
+  </section>
+
+  <section id="lifecycle">
+    <h2>How work moves through Modesto</h2>
+    <div class="docs-steps">
+      <article>
+        <div>
+          <h3>Start with a chat, then a repository when you need one</h3>
+          <p>
+            Unscoped chats need no folder. A Code thread is a Git working tree.
+            Work still requires a project.
+          </p>
+        </div>
+      </article>
+      <article>
+        <div>
+          <h3>Run the right agent for the turn</h3>
+          <p>Pick a provider, model, permission mode, environment, and checkout — local or an isolated worktree.</p>
+        </div>
+      </article>
+      <article>
+        <div>
+          <h3>Inspect the work</h3>
+          <p>Streamed tools, diffs, terminals, previews, and approvals live on the same thread.</p>
+        </div>
+      </article>
+      <article>
+        <div>
+          <h3>Leave a durable seam</h3>
+          <p>Checkpoint before you switch providers, people, or machines.</p>
+        </div>
+      </article>
+      <article>
+        <div>
+          <h3>Commit, review, and open a PR</h3>
+          <p>Git actions stay on the thread. When the change is good, one control opens the pull request.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="working-model">
+    <h2>The working model</h2>
+    <div class="docs-table">
+      <div><strong>Project</strong><span>A Git repository and its persistent workspace context. Required for Work and for Code threads that should commit.</span></div>
+      <div><strong>Unscoped chat</strong><span>A Code conversation with no folder. Questions and planning only — no worktree, no PR.</span></div>
+      <div><strong>Thread</strong><span>One durable task: prompts, runs, tools, approvals, and results.</span></div>
+      <div><strong>Environment</strong><span>Where agents run: this machine, a WSL distro, or an SSH host. Threads bind to an environment id.</span></div>
+      <div><strong>Provider driver</strong><span>The implementation that speaks an agent protocol — <code>codex</code>, <code>claudeAgent</code>, <code>meta</code>, and the rest.</span></div>
+      <div><strong>Provider instance</strong><span>A named configuration of a driver. Threads bind to instances so you can keep personal and work credentials apart.</span></div>
+      <div><strong>Permission mode</strong><span>How much the agent may do without asking: supervised, auto-accept edits, auto, or full access.</span></div>
+      <div><strong>Checkpoint</strong><span>A Git-backed handoff of state, intent, incomplete work, and the next action.</span></div>
+      <div><strong>Run</strong><span>One provider execution inside a thread or automation.</span></div>
+      <div><strong>Context Graph</strong><span>Relationships between threads, PRs, checkpoints, and decisions on a branch.</span></div>
+    </div>
+  </section>
+
+  <section id="all-docs">
+    <h2>All docs</h2>
+    <p>
+      Start with install if you have not launched the app yet. Everything else
+      is grouped by the surface it explains.
+    </p>
+    {
+      DOCS_NAV.map((group) => (
+        <div>
+          <h3>{group.label}</h3>
+          <div class="docs-card-grid docs-card-grid-wide">
+            {group.links.map((link) => (
+              <article class="docs-card">
+                <span>{group.label}</span>
+                <h3>{link.label}</h3>
+                <p>{link.summary}</p>
+                <a href={link.href}>Read {link.label} →</a>
+              </article>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </section>
+</DocsLayout>

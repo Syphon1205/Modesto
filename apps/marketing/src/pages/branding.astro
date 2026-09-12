@@ -1,0 +1,254 @@
+---
+import Layout from "../layouts/ResourceLayout.astro";
+---
+
+<Layout title="Branding — Modesto" description="The Modesto identity: the Handoff Mark, type, color, and principles for showing work clearly.">
+  <section class="brand-hero">
+    <p class="mono">Modesto / Design guidelines</p>
+    <h1>Built for<br />the handoff.</h1>
+    <div class="brand-mark-stage" id="brand-mark-stage" aria-hidden="true">
+      <span class="mark brand-mark-fallback" aria-hidden="true"></span>
+    </div>
+    <div class="hero-note"><span class="mono">01 / 2026</span><p>A visual system for work that moves between people and coding agents.</p></div>
+  </section>
+
+  <nav class="brand-index" aria-label="Brand page sections">
+    <a href="#mark">The mark</a><a href="#wordmark">Wordmark</a><a href="#type">Typography</a><a href="#color">Color</a><a href="#voice">Voice</a>
+  </nav>
+
+  <section class="brand-section mark-section" id="mark">
+    <div class="section-kicker"><span class="mono">01</span><span>The Handoff Mark</span></div>
+    <div class="mark-intro">
+      <div class="mark-canvas"><span class="mark handoff-mark" role="img" aria-label="The Modesto Handoff Mark"></span></div>
+      <div class="section-copy"><h2>Many paths.<br />One direction.</h2><p>The Handoff Mark represents independent workstreams becoming shared work. It appears when a person, an agent, a checkpoint, or a decision needs to continue without starting over.</p><a href="/modesto-logo.svg" download>Download the mark <span>↓</span></a></div>
+    </div>
+    <div class="mark-rules">
+      <div><span class="mono">Use</span><p>Use the mark alone when Modesto is already named nearby, or when space is constrained.</p></div>
+      <div><span class="mono">Clear space</span><p>Keep one mark-width of breathing room around all sides. The mark should never compete with adjacent copy.</p></div>
+      <div><span class="mono">Do not</span><p>Never redraw, stretch, crop, rotate, add effects, or put the mark over busy imagery.</p></div>
+    </div>
+  </section>
+
+  <section class="brand-section wordmark-section" id="wordmark">
+    <div class="section-kicker"><span class="mono">02</span><span>Wordmark</span></div>
+    <div class="wordmark-stage"><span class="mark handoff-mark" aria-hidden="true"></span><strong>Modesto</strong></div>
+    <div class="wordmark-caption"><p>Use the full lockup at first introduction, in press, and in primary brand moments. The mark and name should feel balanced—not fused into a new logo.</p><span class="mono">Mark + name / primary lockup</span></div>
+  </section>
+
+  <section class="brand-section type-section" id="type">
+    <div class="section-kicker"><span class="mono">03</span><span>Typography</span></div>
+    <div class="type-hero"><p>Direct enough<br />to move work<br /><i>forward.</i></p></div>
+    <div class="type-grid">
+      <div><span class="mono">Display / Manrope</span><strong>Every agent.</strong><p>Manrope does the expressive work: large, compact, and human. Let size and whitespace create hierarchy.</p></div>
+      <div><span class="mono">Signal / System Mono</span><strong class="mono">CHECKPOINT_184</strong><p>System Mono is for evidence: filenames, states, agent names, and the small details that make work legible.</p></div>
+    </div>
+  </section>
+
+  <section class="brand-section color-section" id="color">
+    <div class="section-kicker"><span class="mono">04</span><span>Color</span></div>
+    <div class="color-intro"><h2>Quiet field.<br />One signal.</h2><p>Modesto stays monochrome by default—flat ink, paper, and neutral grays. A single restrained green marks what is active, so movement and progress are easy to find without turning the page into confetti.</p></div>
+    <div class="swatches" id="color-swatches">
+      <div class="swatch-stage" data-swatch-stage aria-hidden="true"></div>
+      <div class="swatch"><span class="app-tile chip ink" data-swatch="ink"></span><strong>Ink</strong><span class="mono">#10120F</span></div>
+      <div class="swatch"><span class="app-tile chip paper" data-swatch="paper"></span><strong>Paper</strong><span class="mono">#EFE7D6</span></div>
+      <div class="swatch"><span class="app-tile chip soft" data-swatch="soft"></span><strong>Deep green</strong><span class="mono">#171A14</span></div>
+      <div class="swatch"><span class="app-tile chip live" data-swatch="live"></span><strong>Signal accent</strong><span class="mono">#D5F995</span></div>
+    </div>
+  </section>
+
+  <section class="brand-section system-section">
+    <div class="section-kicker"><span class="mono">05</span><span>System</span></div>
+    <div class="system-sample"><div class="sample-top"><span class="mono">MODESTO / WORK</span><span class="mono">01</span></div><h2>Make the next<br />step obvious.</h2><p>Thin rules hold the page together. Large type leads. Metadata provides evidence. Everything else gets out of the way.</p><div class="sample-bottom"><span class="status"></span><span class="mono">CONTEXT CARRIED FORWARD</span></div></div>
+    <div class="system-copy"><h3>Show the work.</h3><p>Use the real details: file names, diffs, checkpoints, decisions, and reviews. The identity should make complex work clearer, not disguise it.</p><h3>Leave room.</h3><p>One message per view. Empty space is part of the instruction—it lets the important thing arrive without noise.</p></div>
+  </section>
+
+  <section class="brand-section voice-section" id="voice">
+    <div class="section-kicker"><span class="mono">06</span><span>Voice</span></div>
+    <div class="voice-head"><h2>Clear. Calm.<br />Specific.</h2><p>Modesto talks like a capable teammate: it says what happened, what matters, and what to do next.</p></div>
+    <div class="voice-grid"><div><span class="mono good">Use</span><blockquote>Hand work to another agent with the diff, decisions, and next step intact.</blockquote></div><div><span class="mono quiet">Avoid</span><blockquote>Unlock transformative AI-powered collaboration across your development lifecycle.</blockquote></div></div>
+  </section>
+
+  <section class="brand-end"><span class="mark handoff-mark" aria-hidden="true"></span><h2>Every agent.<br />One shared context.</h2><a href="/download">Download Modesto <span>↓</span></a></section>
+</Layout>
+
+<script type="module" is:inline>
+  import { mountMark, mountColorSwatches } from "/brand/modesto-3d.js";
+  mountMark(document.getElementById("brand-mark-stage"));
+  mountColorSwatches(document.getElementById("color-swatches"));
+</script>
+
+<style>
+  .brand-hero,.brand-section,.brand-index,.brand-end{width:min(100% - 48px,1440px);margin:0 auto;border-inline:1px solid var(--line)}.brand-hero{min-height:690px;padding:clamp(120px,15vw,220px) clamp(28px,8vw,120px) 70px;display:flex;flex-direction:column;justify-content:space-between}.brand-hero>.mono,.mono{font-family:"System Mono",monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase}.brand-hero>p{color:var(--faint)}.brand-hero h1{max-width:1150px;margin:100px 0;font-size:clamp(5.3rem,13vw,12.5rem);font-weight:500;letter-spacing:-.09em;line-height:.77}.hero-note{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:end}.hero-note span{color:var(--faint)}.hero-note p{max-width:430px;color:var(--muted);font-size:16px;line-height:1.6}.brand-index{min-height:66px;display:flex;gap:clamp(20px,4vw,64px);align-items:center;padding:0 28px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:auto}.brand-index a{flex:none;color:var(--muted);font-size:12px}.brand-index a:hover{color:var(--ink)}.brand-section{border-bottom:1px solid var(--line)}.section-kicker{height:52px;padding:0 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);color:var(--faint);font-size:10px}.section-kicker .mono{font-size:8px}.mark-intro{display:grid;grid-template-columns:1.15fr .85fr;min-height:680px}.mark-canvas{display:grid;place-items:center;border-right:1px solid var(--line);background:var(--white)}.mark-canvas img{width:clamp(200px,31vw,460px)}.section-copy{padding:clamp(45px,7vw,100px);align-self:center}.section-copy h2,.color-intro h2,.voice-head h2{font-size:clamp(3.5rem,6vw,6.6rem);font-weight:500;letter-spacing:-.075em;line-height:.86}.section-copy p,.color-intro p,.voice-head p{max-width:450px;margin-top:32px;color:var(--muted);font-size:14px;line-height:1.7}.section-copy a,.brand-end a{display:inline-flex;gap:28px;margin-top:48px;padding-bottom:8px;border-bottom:1px solid currentColor;font-size:12px}.mark-rules{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}.mark-rules>div{min-height:220px;padding:30px;border-right:1px solid var(--line)}.mark-rules>div:last-child{border-right:0}.mark-rules span{color:var(--faint);font-size:8px}.mark-rules p{margin-top:72px;color:var(--muted);font-size:13px;line-height:1.65}.wordmark-stage{min-height:500px;display:flex;gap:40px;align-items:center;justify-content:center;background:var(--white)}.wordmark-stage img{width:clamp(92px,11vw,155px)}.wordmark-stage strong{font-size:clamp(4.5rem,10vw,10rem);font-weight:600;letter-spacing:-.08em}.wordmark-caption{min-height:160px;padding:30px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;border-top:1px solid var(--line)}.wordmark-caption p{max-width:560px;color:var(--muted);font-size:13px;line-height:1.65}.wordmark-caption span{justify-self:end;color:var(--faint);font-size:8px}.type-hero{padding:clamp(80px,12vw,180px) clamp(28px,8vw,120px)}.type-hero p{font-size:clamp(5rem,10vw,10.5rem);font-weight:500;letter-spacing:-.09em;line-height:.78}.type-hero i{color:var(--faint);font-style:normal}.type-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}.type-grid>div{min-height:300px;padding:30px;display:flex;flex-direction:column;border-right:1px solid var(--line)}.type-grid>div:last-child{border-right:0}.type-grid span{color:var(--faint);font-size:8px}.type-grid strong{margin-top:auto;font-size:clamp(2.2rem,4vw,4.5rem);font-weight:500;letter-spacing:-.06em}.type-grid strong.mono{font-size:clamp(1.1rem,2vw,2rem);letter-spacing:0}.type-grid p{max-width:390px;margin-top:22px;color:var(--muted);font-size:12px;line-height:1.65}.color-intro{min-height:420px;padding:clamp(55px,9vw,130px);display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:end}.color-intro p{justify-self:end}.swatches{display:grid;grid-template-columns:repeat(4,1fr)}.swatch{min-height:290px;padding:24px;display:flex;flex-direction:column;border-right:1px solid var(--line)}.swatch:last-child{border:0}.swatch strong{font-size:13px;font-weight:500}.swatch span{margin-top:auto;font-size:8px}.ink{background:#0d0e0c;color:#f3f0e8}.paper{background:#f3f0e8;color:#0d0e0c}.soft{background:#e8e5dd;color:#0d0e0c}.live{background:var(--accent);color:var(--on-accent)}.system-section{display:grid;grid-template-columns:1.15fr .85fr}.system-section .section-kicker{grid-column:1 / -1}.system-sample{min-height:630px;padding:30px;display:flex;flex-direction:column;border-right:1px solid var(--line);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:72px 72px}.sample-top,.sample-bottom{display:flex;justify-content:space-between;color:var(--faint);font-size:8px}.system-sample h2{max-width:700px;margin:auto 0 0;padding:10px;background:var(--paper);font-size:clamp(4rem,7vw,7rem);font-weight:500;letter-spacing:-.08em;line-height:.82}.system-sample p{max-width:480px;margin-top:30px;padding:5px;background:var(--paper);color:var(--muted);font-size:14px;line-height:1.6}.sample-bottom{margin-top:auto;padding-top:65px}.status{width:7px;height:7px;display:inline-block;border-radius:50%;background:var(--accent)}.system-copy{padding:clamp(42px,6vw,85px)}.system-copy h3{font-size:clamp(2.2rem,4vw,4rem);font-weight:500;letter-spacing:-.06em}.system-copy p{margin:20px 0 64px;color:var(--muted);font-size:13px;line-height:1.7}.voice-head{min-height:440px;padding:clamp(55px,9vw,130px);display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:end}.voice-head p{justify-self:end}.voice-grid{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}.voice-grid>div{min-height:260px;padding:32px;border-right:1px solid var(--line)}.voice-grid>div:last-child{border-right:0}.voice-grid span{font-size:8px}.good{color:var(--accent-ink)}.quiet{color:var(--faint)}blockquote{max-width:570px;margin:44px 0 0;font-size:clamp(1.45rem,2.5vw,2.5rem);line-height:1.3;letter-spacing:-.035em}.brand-end{min-height:600px;padding:clamp(60px,10vw,150px);display:flex;flex-direction:column;justify-content:center;align-items:flex-start;border-bottom:1px solid var(--line);background:#0d0e0c;color:#f3f0e8}.brand-end img{width:70px;filter:invert(1)}.brand-end h2{margin-top:60px;font-size:clamp(4.5rem,10vw,10rem);font-weight:500;letter-spacing:-.09em;line-height:.8}.brand-end a{margin-top:58px}.brand-end a span{margin-left:28px}@media(max-width:760px){.brand-hero,.brand-section,.brand-index,.brand-end{width:min(100% - 32px,1440px)}.brand-hero{min-height:590px;padding-inline:28px}.brand-hero h1{margin:70px 0;font-size:clamp(4.3rem,18vw,7rem)}.hero-note,.mark-intro,.color-intro,.voice-head,.system-section{grid-template-columns:1fr}.mark-canvas{min-height:440px;border-right:0;border-bottom:1px solid var(--line)}.mark-rules,.type-grid,.voice-grid{grid-template-columns:1fr}.mark-rules>div,.type-grid>div,.voice-grid>div{border-right:0;border-bottom:1px solid var(--line)}.wordmark-stage{min-height:330px;gap:18px}.wordmark-caption{grid-template-columns:1fr}.wordmark-caption span{justify-self:start}.color-intro p,.voice-head p{justify-self:start}.swatches{grid-template-columns:1fr 1fr}.swatch{min-height:190px;border-bottom:1px solid var(--line)}.system-sample{min-height:500px;border-right:0;border-bottom:1px solid var(--line)}.brand-end{min-height:500px;padding:48px 28px}.brand-end h2{font-size:clamp(4.3rem,17vw,7rem)}}
+  /*
+   * The Handoff Mark, everywhere on this page, as a mask.
+   *
+   * modesto-logo.svg is black stroke artwork — as an <img> it was invisible on
+   * the dark field (the whole mark section rendered as an empty panel). As a
+   * mask it paints in currentColor and is correct in both themes from the one
+   * file that is also the download.
+   */
+  .handoff-mark {
+    --mark: url("/modesto-logo.svg");
+    color: var(--foreground);
+  }
+  .mark-canvas .handoff-mark {
+    width: clamp(200px, 31vw, 460px);
+    height: clamp(200px, 31vw, 460px);
+  }
+  .wordmark-stage .handoff-mark {
+    width: clamp(92px, 11vw, 155px);
+    height: clamp(92px, 11vw, 155px);
+  }
+  .brand-end .handoff-mark {
+    width: 70px;
+    height: 70px;
+    color: #eceee6;
+  }
+  .brand-mark-fallback {
+    --mark: url("/modesto-logo.svg");
+    color: var(--foreground);
+  }
+
+  /*
+   * The hero sits on the same solid field as every other surface — the
+   * watercolor wash that used to live here belonged to an older system and was
+   * the one texture on the site that broke the "flat ground" rule.
+   */
+  .brand-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  /*
+   * Colour swatches are app-icon tiles, so the palette is shown in the same
+   * shape language as the product marks rather than as flat rectangles.
+   */
+  .swatches {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .swatch-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 420ms ease;
+  }
+  .swatch-stage canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .swatch-stage[data-ready="true"] { opacity: 1; }
+  .swatches:has(.swatch-stage[data-ready="true"]) .chip {
+    background: transparent !important;
+    border-color: transparent;
+    box-shadow: none;
+  }
+  .swatch {
+    position: relative;
+    z-index: 1;
+    min-height: 320px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-right: 1px solid var(--line);
+    pointer-events: none;
+  }
+  .swatch:last-child { border-right: 0; }
+  .swatch .chip {
+    width: clamp(92px, 10vw, 148px);
+    /* The base sheet sets `.swatch span { margin-top: auto }`, which also
+       matches this chip and centred it; pin it to the top of the cell. */
+    margin-top: 0;
+    margin-bottom: auto;
+  }
+  .swatch strong { font-size: 14px; font-weight: 550; }
+  .swatch .mono { color: var(--faint); font-size: 9px; }
+
+  .chip.ink { background: #10120f; }
+  .chip.paper { background: #efe7d6; }
+  .chip.soft { background: #171a14; }
+  .chip.live { background: var(--accent); border-color: transparent; }
+
+  .brand-end { background: #10120f; color: #eceee6; }
+
+  @media (max-width: 760px) {
+    .swatches { grid-template-columns: 1fr 1fr; }
+    .swatch { min-height: 210px; border-bottom: 1px solid var(--line); }
+  }
+</style>
+
+<style is:global>
+  /*
+   * The resource layout flattens this hero; reclaim the right-hand void for
+   * the sculptural mark without letting the headline collide with it.
+   */
+  body.resource-site .resource-main .brand-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 42%);
+    grid-template-areas:
+      "kicker kicker"
+      "title  mark"
+      "note   note";
+    align-items: center;
+    column-gap: clamp(16px, 3vw, 48px);
+    min-height: 520px;
+    overflow: hidden;
+  }
+  body.resource-site .resource-main .brand-hero > .mono { grid-area: kicker; }
+  body.resource-site .resource-main .brand-hero h1 { grid-area: title; max-width: 9ch; }
+  body.resource-site .resource-main .brand-hero .hero-note { grid-area: note; }
+  body.resource-site .resource-main .brand-hero .brand-mark-stage {
+    grid-area: mark;
+    position: relative;
+    width: min(100%, 340px);
+    aspect-ratio: 1;
+    min-height: 0;
+    max-height: 340px;
+    justify-self: end;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  body.resource-site .resource-main .brand-hero .brand-mark-stage canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  body.resource-site .resource-main .brand-hero .brand-mark-fallback {
+    position: absolute;
+    inset: 18%;
+    width: 64%;
+    height: 64%;
+    opacity: 0.16;
+    transition: opacity 500ms ease;
+  }
+  /* The fallback is a mask painted in currentColor now, so it is already
+     correct per theme — inverting it would flip it back to dark-on-dark. */
+  [data-theme="dark"] body.resource-site .resource-main .brand-hero .brand-mark-fallback {
+    opacity: 0.22;
+  }
+  body.resource-site .resource-main .brand-hero .brand-mark-stage[data-ready="true"] .brand-mark-fallback {
+    opacity: 0;
+  }
+  @media (max-width: 760px) {
+    body.resource-site .resource-main .brand-hero {
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "kicker"
+        "title"
+        "mark"
+        "note";
+      min-height: 0;
+    }
+    body.resource-site .resource-main .brand-hero .brand-mark-stage {
+      width: min(72vw, 320px);
+      min-height: 0;
+      justify-self: center;
+    }
+  }
+</style>

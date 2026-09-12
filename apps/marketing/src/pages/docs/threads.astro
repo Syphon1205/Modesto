@@ -1,0 +1,101 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Chats without a project", href: "#unscoped" },
+  { label: "Code threads", href: "#code" },
+  { label: "Work sessions", href: "#work" },
+  { label: "Tasks board", href: "#kanban" },
+  { label: "Right panel", href: "#surfaces" },
+];
+---
+
+<DocsLayout
+  title="Threads and tasks"
+  description="Start a chat with no folder open, keep repository work on a Code thread, and move tasks across Draft, In Progress, and Done."
+  currentPath="/docs/threads"
+  eyebrow="The workspace"
+  {toc}
+>
+  <section id="unscoped">
+    <h2>Chats without a project</h2>
+    <p>
+      On 1.0.0-alpha.1 you can start and send a chat without opening a Git
+      repository. The landing screen opens a composer immediately. If you have
+      never added a folder, that composer is unscoped: it talks to a provider
+      you already signed in, but it is not bound to a working tree, branch, or
+      worktree.
+    </p>
+    <div class="docs-callout">
+      <strong>Work still needs a project.</strong>
+      <p>
+        Unscoped chats are for questions, planning, and throwaway turns. The
+        cowork surface — Connections, artifacts, scheduled Work — still expects
+        a folder. Open a repository when the next step is a diff or a pull
+        request.
+      </p>
+    </div>
+    <p>
+      <code>mod+N</code> starts a new thread on the current project when one is
+      selected. <code>mod+Shift+N</code> starts a new local thread for that
+      project. See <a href="/docs/keybindings">Keyboard shortcuts</a>.
+    </p>
+  </section>
+
+  <section id="code">
+    <h2>Code threads</h2>
+    <p>
+      A Code thread is a durable task on a Git project. It keeps the provider
+      instance, permission mode, checkout (current tree or isolated worktree),
+      transcript, diffs, and git actions together. Switching providers mid-thread
+      starts a fresh session on the destination agent and replays context —
+      create a <a href="/docs/checkpoints">checkpoint</a> first so the handoff
+      is a seam, not a paste.
+    </p>
+  </section>
+
+  <section id="work">
+    <h2>Work sessions</h2>
+    <p>
+      Work is a separate cowork history. Sessions do not appear in Code’s chat
+      list. Use it when the outcome is a document, a Connection, or research
+      rather than a commit. Details: <a href="/docs/work">Work</a>.
+    </p>
+  </section>
+
+  <section id="kanban">
+    <h2>Tasks board</h2>
+    <p>
+      Tasks is a Kanban of threads, not a second tracker. Columns are{" "}
+      <strong>Draft</strong>, <strong>In Progress</strong>, and{" "}
+      <strong>Done</strong>, derived from the thread’s real state. Open a card
+      to jump to that thread. With no project selected, the board stacks every
+      project so you can scan work across the workspace.
+    </p>
+    <p>
+      Treat the board as a live status surface. Drag-to-dispatch (dropping a
+      Draft card onto In Progress to send its prompt) is still landing; browsing
+      and opening cards already work.
+    </p>
+  </section>
+
+  <section id="surfaces">
+    <h2>Right-panel surfaces</h2>
+    <p>
+      When a thread is open, the right panel is the environment: Changes,
+      Browser, Terminal, Files, pull requests, agents, context, artifacts,
+      Music, and Canvas. Letter shortcuts open a surface when you are not
+      typing in the composer.
+    </p>
+    <div class="docs-table">
+      <div><strong>B</strong><span>Browser — local app or URL.</span></div>
+      <div><strong>M</strong><span>Music — Apple Music, Spotify, and other listening apps on this machine.</span></div>
+      <div><strong>C</strong><span>Canvas — dashboards, slides, docs, spreadsheets.</span></div>
+      <div><strong>T</strong><span>Terminal (Code threads).</span></div>
+    </div>
+    <p>
+      Desktop-only extras — pop-out chat, WSL/SSH environments, the usage clock —
+      live on <a href="/docs/desktop">Desktop &amp; environments</a>.
+    </p>
+  </section>
+</DocsLayout>

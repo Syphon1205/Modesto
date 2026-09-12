@@ -1,0 +1,101 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "What is captured", href: "#captured" },
+  { label: "Create a checkpoint", href: "#create" },
+  { label: "How it's stored", href: "#storage" },
+  { label: "Switch providers", href: "#switch" },
+  { label: "Continue safely", href: "#continue" },
+  { label: "Checkpoint quality", href: "#quality" },
+];
+---
+
+<DocsLayout
+  title="Checkpoints and handoffs"
+  description="Move a task between agents or people without reducing the work to a raw transcript."
+  currentPath="/docs/checkpoints"
+  eyebrow="The workspace"
+  {toc}
+>
+  <section id="captured">
+    <h2>What a checkpoint captures</h2>
+    <div class="docs-table">
+      <div><strong>Git state</strong><span>Branch, working-tree diff, and changed files.</span></div>
+      <div><strong>Incomplete work</strong><span>Known gaps, uncertainty, and partially implemented paths.</span></div>
+      <div><strong>Checks</strong><span>Tests that passed, failed, or were not run.</span></div>
+      <div><strong>Intent</strong><span>Decisions, constraints, objective, and recommended next action.</span></div>
+    </div>
+  </section>
+
+  <section id="create">
+    <h2>Create a checkpoint</h2>
+    <p>
+      Create one at a clean seam: after a coherent change, before switching
+      providers, or whenever another person could reasonably continue the task.
+      Repeating an unchanged checkpoint is a no-op — Modesto compares the
+      working-tree state against the last capture and skips the write if
+      nothing actually moved, so you can checkpoint liberally without
+      accumulating noise.
+    </p>
+  </section>
+
+  <section id="storage">
+    <h2>How it's stored</h2>
+    <p>
+      A checkpoint isn't a database row or a cloud upload — it's a real Git
+      object. Modesto pins your current <code>HEAD</code> and the working
+      tree as orphan commits under a hidden ref namespace
+      (<code>refs/modesto/agent-checkpoints/…</code>), scoped to the source
+      and destination of the handoff. Orphan means they don't touch your
+      branches or history; they're just durable, diffable snapshots the next
+      session can read back.
+    </p>
+    <p>
+      That has a practical consequence: checkpoints survive the things that
+      would lose an in-memory summary — a crashed provider, a closed laptop, a
+      switch to a different machine with the same clone. As long as the
+      Git repository is there, the checkpoint is there.
+    </p>
+  </section>
+
+  <section id="switch">
+    <h2>Switch providers</h2>
+    <p>
+      Use the handoff control to select another available provider. Modesto
+      carries the project, branch, Git state, latest checkpoint, and next step
+      into the destination session.
+    </p>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Checkpoint #184</span><span>Ready</span></div>
+      <pre><code>Changed files: 4
+Tests: Not run
+Incomplete: Reconnect path still uses legacy auth
+Next: Update resumeProviderSession()</code></pre>
+    </div>
+  </section>
+
+  <section id="continue">
+    <h2>Continue safely</h2>
+    <p>
+      The receiving agent should verify the working tree and checkpoint before
+      editing. If the handoff changes direction, use the return path so the
+      originating session retains a clear seam and provenance.
+    </p>
+  </section>
+
+  <section id="quality">
+    <h2>Write a checkpoint another agent can trust</h2>
+    <p>
+      A good checkpoint is specific enough to act on and honest about
+      uncertainty. Prefer file names, symbols, commands, and observed results
+      over a broad progress summary.
+    </p>
+    <div class="docs-table">
+      <div><strong>Changed</strong><span>Name the coherent behavior now implemented and the files that carry it.</span></div>
+      <div><strong>Not changed</strong><span>Call out adjacent paths intentionally left alone so the next agent does not infer missing work.</span></div>
+      <div><strong>Validation</strong><span>Record exact checks and outcomes. “Not run” is meaningful state, not an omission.</span></div>
+      <div><strong>Next step</strong><span>Give one concrete continuation point, including the relevant file or function when possible.</span></div>
+    </div>
+  </section>
+</DocsLayout>

@@ -1,0 +1,338 @@
+{
+  "name": "@modesto/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./chatThreads": {
+      "types": "./src/chatThreads.ts",
+      "import": "./src/chatThreads.ts"
+    },
+    "./threadEnvironment": {
+      "types": "./src/threadEnvironment.ts",
+      "import": "./src/threadEnvironment.ts"
+    },
+    "./themePalettes": {
+      "types": "./src/themePalettes.ts",
+      "import": "./src/themePalettes.ts"
+    },
+    "./themePreview": {
+      "types": "./src/themePreview.ts",
+      "import": "./src/themePreview.ts"
+    },
+    "./projectFavicon": {
+      "types": "./src/projectFavicon.ts",
+      "import": "./src/projectFavicon.ts"
+    },
+    "./model": {
+      "types": "./src/model.ts",
+      "import": "./src/model.ts"
+    },
+    "./desktopIdentity": {
+      "types": "./src/desktopIdentity.ts",
+      "import": "./src/desktopIdentity.ts"
+    },
+    "./advertisedEndpoint": {
+      "types": "./src/advertisedEndpoint.ts",
+      "import": "./src/advertisedEndpoint.ts"
+    },
+    "./agentAwareness": {
+      "types": "./src/agentAwareness.ts",
+      "import": "./src/agentAwareness.ts"
+    },
+    "./git": {
+      "types": "./src/git.ts",
+      "import": "./src/git.ts"
+    },
+    "./sourceControl": {
+      "types": "./src/sourceControl.ts",
+      "import": "./src/sourceControl.ts"
+    },
+    "./logging": {
+      "types": "./src/logging.ts",
+      "import": "./src/logging.ts"
+    },
+    "./observability": {
+      "types": "./src/observability.ts",
+      "import": "./src/observability.ts"
+    },
+    "./httpObservability": {
+      "types": "./src/httpObservability.ts",
+      "import": "./src/httpObservability.ts"
+    },
+    "./shell": {
+      "types": "./src/shell.ts",
+      "import": "./src/shell.ts"
+    },
+    "./semver": {
+      "types": "./src/semver.ts",
+      "import": "./src/semver.ts"
+    },
+    "./Net": {
+      "types": "./src/Net.ts",
+      "import": "./src/Net.ts"
+    },
+    "./DrainableWorker": {
+      "types": "./src/DrainableWorker.ts",
+      "import": "./src/DrainableWorker.ts"
+    },
+    "./KeyedCoalescingWorker": {
+      "types": "./src/KeyedCoalescingWorker.ts",
+      "import": "./src/KeyedCoalescingWorker.ts"
+    },
+    "./schemaJson": {
+      "types": "./src/schemaJson.ts",
+      "import": "./src/schemaJson.ts"
+    },
+    "./schemaYaml": {
+      "types": "./src/schemaYaml.ts",
+      "import": "./src/schemaYaml.ts"
+    },
+    "./toolActivity": {
+      "types": "./src/toolActivity.ts",
+      "import": "./src/toolActivity.ts"
+    },
+    "./Struct": {
+      "types": "./src/Struct.ts",
+      "import": "./src/Struct.ts"
+    },
+    "./serverSettings": {
+      "types": "./src/serverSettings.ts",
+      "import": "./src/serverSettings.ts"
+    },
+    "./backgroundActivitySettings": {
+      "types": "./src/backgroundActivitySettings.ts",
+      "import": "./src/backgroundActivitySettings.ts"
+    },
+    "./String": {
+      "types": "./src/String.ts",
+      "import": "./src/String.ts"
+    },
+    "./projectScripts": {
+      "types": "./src/projectScripts.ts",
+      "import": "./src/projectScripts.ts"
+    },
+    "./threadEnvMode": {
+      "types": "./src/threadEnvMode.ts",
+      "import": "./src/threadEnvMode.ts"
+    },
+    "./t3ProjectFile": {
+      "types": "./src/t3ProjectFile.ts",
+      "import": "./src/t3ProjectFile.ts"
+    },
+    "./orchestrationTiming": {
+      "types": "./src/orchestrationTiming.ts",
+      "import": "./src/orchestrationTiming.ts"
+    },
+    "./remote": {
+      "types": "./src/remote.ts",
+      "import": "./src/remote.ts"
+    },
+    "./relaySigning": {
+      "types": "./src/relaySigning.ts",
+      "import": "./src/relaySigning.ts"
+    },
+    "./dpop": {
+      "types": "./src/dpop.ts",
+      "import": "./src/dpop.ts"
+    },
+    "./dpopCommon": {
+      "types": "./src/dpopCommon.ts",
+      "import": "./src/dpopCommon.ts"
+    },
+    "./relayAuth": {
+      "types": "./src/relayAuth.ts",
+      "import": "./src/relayAuth.ts"
+    },
+    "./relayUrl": {
+      "types": "./src/relayUrl.ts",
+      "import": "./src/relayUrl.ts"
+    },
+    "./relayJwt": {
+      "types": "./src/relayJwt.ts",
+      "import": "./src/relayJwt.ts"
+    },
+    "./oauthScope": {
+      "types": "./src/oauthScope.ts",
+      "import": "./src/oauthScope.ts"
+    },
+    "./searchRanking": {
+      "types": "./src/searchRanking.ts",
+      "import": "./src/searchRanking.ts"
+    },
+    "./qrCode": {
+      "types": "./src/qrCode.ts",
+      "import": "./src/qrCode.ts"
+    },
+    "./cliArgs": {
+      "types": "./src/cliArgs.ts",
+      "import": "./src/cliArgs.ts"
+    },
+    "./connectAuth": {
+      "types": "./src/connectAuth.ts",
+      "import": "./src/connectAuth.ts"
+    },
+    "./path": {
+      "types": "./src/path.ts",
+      "import": "./src/path.ts"
+    },
+    "./keybindings": {
+      "types": "./src/keybindings.ts",
+      "import": "./src/keybindings.ts"
+    },
+    "./composerTrigger": {
+      "types": "./src/composerTrigger.ts",
+      "import": "./src/composerTrigger.ts"
+    },
+    "./composerInlineTokens": {
+      "types": "./src/composerInlineTokens.ts",
+      "import": "./src/composerInlineTokens.ts"
+    },
+    "./terminalLabels": {
+      "types": "./src/terminalLabels.ts",
+      "import": "./src/terminalLabels.ts"
+    },
+    "./relayClient": {
+      "types": "./src/relayClient.ts",
+      "import": "./src/relayClient.ts"
+    },
+    "./relayTracing": {
+      "types": "./src/relayTracing.ts",
+      "import": "./src/relayTracing.ts"
+    },
+    "./preview": {
+      "types": "./src/preview.ts",
+      "import": "./src/preview.ts"
+    },
+    "./previewViewport": {
+      "types": "./src/previewViewport.ts",
+      "import": "./src/previewViewport.ts"
+    },
+    "./deviceFrame": {
+      "types": "./src/deviceFrame.ts",
+      "import": "./src/deviceFrame.ts"
+    },
+    "./deviceHelperCache": {
+      "types": "./src/deviceHelperCache.ts",
+      "import": "./src/deviceHelperCache.ts"
+    },
+    "./filePreview": {
+      "types": "./src/filePreview.ts",
+      "import": "./src/filePreview.ts"
+    },
+    "./chatList": {
+      "types": "./src/chatList.ts",
+      "import": "./src/chatList.ts"
+    },
+    "./hostProcess": {
+      "types": "./src/hostProcess.ts",
+      "import": "./src/hostProcess.ts"
+    },
+    "./httpReadiness": {
+      "types": "./src/httpReadiness.ts",
+      "import": "./src/httpReadiness.ts"
+    },
+    "./devHome": {
+      "types": "./src/devHome.ts",
+      "import": "./src/devHome.ts"
+    },
+    "./devProxy": {
+      "types": "./src/devProxy.ts",
+      "import": "./src/devProxy.ts"
+    },
+    "./usageMerge": {
+      "types": "./src/usageMerge.ts",
+      "import": "./src/usageMerge.ts"
+    },
+    "./usageFormat": {
+      "types": "./src/usageFormat.ts",
+      "import": "./src/usageFormat.ts"
+    },
+    "./rateLimits": {
+      "types": "./src/rateLimits.ts",
+      "import": "./src/rateLimits.ts"
+    },
+    "./customModelEndpoint": {
+      "types": "./src/customModelEndpoint.ts",
+      "import": "./src/customModelEndpoint.ts"
+    },
+    "./nativeApps": {
+      "types": "./src/nativeApps.ts",
+      "import": "./src/nativeApps.ts"
+    },
+    "./nativeAppIntent": {
+      "types": "./src/nativeAppIntent.ts",
+      "import": "./src/nativeAppIntent.ts"
+    },
+    "./contextCompact": {
+      "types": "./src/contextCompact.ts",
+      "import": "./src/contextCompact.ts"
+    },
+    "./coreContext": {
+      "types": "./src/coreContext.ts",
+      "import": "./src/coreContext.ts"
+    },
+    "./codingTaskIntent": {
+      "types": "./src/codingTaskIntent.ts",
+      "import": "./src/codingTaskIntent.ts"
+    },
+    "./listeningLibrary": {
+      "types": "./src/listeningLibraryDetect.ts",
+      "import": "./src/listeningLibraryDetect.ts"
+    },
+    "./listeningLibraryAppleMusic": {
+      "types": "./src/listeningLibraryAppleMusic.ts",
+      "import": "./src/listeningLibraryAppleMusic.ts"
+    },
+    "./listeningLibraryArtwork": {
+      "types": "./src/listeningLibraryArtwork.ts",
+      "import": "./src/listeningLibraryArtwork.ts"
+    },
+    "./listeningLibraryArtworkStore": {
+      "types": "./src/listeningLibraryArtworkStore.ts",
+      "import": "./src/listeningLibraryArtworkStore.ts"
+    },
+    "./codexMcpConfig": {
+      "types": "./src/codexMcpConfig.ts",
+      "import": "./src/codexMcpConfig.ts"
+    },
+    "./claudeMcpConfig": {
+      "types": "./src/claudeMcpConfig.ts",
+      "import": "./src/claudeMcpConfig.ts"
+    },
+    "./playwrightInjectedRuntime": {
+      "types": "./src/playwrightInjectedRuntime.ts",
+      "import": "./src/playwrightInjectedRuntime.ts"
+    },
+    "./previewProxyUrl": {
+      "types": "./src/previewProxyUrl.ts",
+      "import": "./src/previewProxyUrl.ts"
+    },
+    "./previewProxyHtml": {
+      "types": "./src/previewProxyHtml.ts",
+      "import": "./src/previewProxyHtml.ts"
+    },
+    "./previewProxyAgent": {
+      "types": "./src/previewProxyAgent.ts",
+      "import": "./src/previewProxyAgent.ts"
+    }
+  },
+  "scripts": {
+    "typecheck": "tsgo --noEmit",
+    "test": "vp test run"
+  },
+  "dependencies": {
+    "@modesto/contracts": "workspace:*",
+    "@noble/curves": "catalog:",
+    "@noble/hashes": "catalog:",
+    "effect": "catalog:",
+    "jose": "catalog:",
+    "playwright-core": "1.60.0",
+    "yaml": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "catalog:",
+    "@effect/vitest": "catalog:",
+    "@types/node": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}

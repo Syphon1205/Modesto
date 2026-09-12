@@ -1,0 +1,96 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Available now", href: "#available-now" },
+  { label: "What it connects", href: "#connections" },
+  { label: "How it is built", href: "#construction" },
+  { label: "Using the graph", href: "#using" },
+  { label: "Boundaries", href: "#boundaries" },
+];
+---
+
+<DocsLayout
+  title="Context Graph"
+  description="Understand how Modesto connects code, sessions, checkpoints, and decisions so project context survives individual agent runs."
+  currentPath="/docs/context-graph"
+  eyebrow="The workspace"
+  {toc}
+>
+  <section id="available-now">
+    <h2>Available now: on the Pull Requests tab</h2>
+    <p>
+      The first real surface of the Context Graph ships today under Pull
+      Requests. Open any pull request and its <strong>Context</strong> tab
+      walks the relationships Modesto already records for that branch —
+      threads that touched it, threads forked or side-chatted from those,
+      and any cross-agent handoffs between them — and lists them with their
+      notes and latest file changes.
+    </p>
+    <div class="docs-callout">
+      <strong>Continue with this context, in one click.</strong>
+      <p>
+        The panel's "Continue with this context" action starts a new thread
+        seeded with a summary of everything linked — prior notes, handoff
+        summaries, unfinished steps, and changed files — so the next agent
+        picks up where the last one left off instead of re-deriving it.
+      </p>
+    </div>
+    <p>
+      This is branch- and thread-level linkage, built from data Modesto
+      already tracks (no separate indexing step). The broader model below —
+      file- and symbol-level relationships, dependency tracking — is the
+      direction this is heading, not something every part of Modesto does
+      yet.
+    </p>
+  </section>
+
+  <section id="connections">
+    <h2>What the Context Graph connects</h2>
+    <p>
+      A transcript tells you what was said. The Context Graph records how the
+      work relates: which session changed a file, which checkpoint captured
+      that state, which decision shaped the implementation, and what depends on
+      the affected code.
+    </p>
+    <div class="docs-table">
+      <div><strong>Files and functions</strong><span>Code locations touched or referenced during a task.</span></div>
+      <div><strong>Dependencies</strong><span>Imports, callers, packages, and project relationships that give a change its technical neighborhood.</span></div>
+      <div><strong>Sessions and runs</strong><span>The provider activity that inspected, changed, tested, or discussed the code.</span></div>
+      <div><strong>Checkpoints</strong><span>Durable seams that bind Git state to incomplete work and a recommended next action.</span></div>
+      <div><strong>Decisions</strong><span>Constraints and conclusions that explain why the current implementation exists.</span></div>
+    </div>
+  </section>
+
+  <section id="construction">
+    <h2>How context is built</h2>
+    <div class="docs-steps">
+      <article><div><h3>Observe the task</h3><p>Modesto records provider events, tool activity, file references, Git changes, and review findings in the thread timeline.</p></div></article>
+      <article><div><h3>Resolve project entities</h3><p>References are associated with repository paths and code symbols where the available evidence is strong enough.</p></div></article>
+      <article><div><h3>Preserve durable seams</h3><p>Checkpoints connect the observed work to intent, validation state, unresolved questions, and the next action.</p></div></article>
+      <article><div><h3>Carry relationships forward</h3><p>Later sessions can retrieve the relevant project history without replaying every prior transcript into the provider.</p></div></article>
+    </div>
+  </section>
+
+  <section id="using">
+    <h2>Using the graph during a task</h2>
+    <p>
+      Open context from a project, task, checkpoint, or code location. Follow
+      relationships to answer practical questions: what changed this symbol,
+      which run introduced the decision, what remains incomplete, and which
+      checkpoint is safe to continue from.
+    </p>
+    <div class="docs-callout"><strong>Context is selected, not dumped.</strong><p>The graph helps Modesto retrieve the connected evidence for the current task. It is not an excuse to send an entire project history to every agent turn.</p></div>
+  </section>
+
+  <section id="boundaries">
+    <h2>Boundaries and confidence</h2>
+    <p>
+      Graph relationships come from observable project and session evidence.
+      Generated files, dynamic imports, uncommitted external changes, or work
+      performed outside Modesto can leave gaps. Treat inferred relationships as
+      navigation aids and verify the repository before making a high-impact
+      change.
+    </p>
+  </section>
+</DocsLayout>

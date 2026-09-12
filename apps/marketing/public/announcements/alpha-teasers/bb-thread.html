@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Switch models. Keep the thread.</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./billboard.css" />
+    <style>
+      /* Product surface, at billboard size: one panel, shown large and calm. */
+      .thread {
+        width: 73cqw;
+        margin: 0 auto;
+        padding: 2.2cqw;
+      }
+      .thread-head {
+        display: flex;
+        align-items: center;
+        gap: 0.8cqw;
+        padding-bottom: 1.4cqh;
+        border-bottom: 1px solid var(--line);
+        font-size: 1.45cqw;
+        letter-spacing: -0.03em;
+        color: #cfd6c6;
+      }
+      .thread-head .mark {
+        width: 1.5cqw;
+        height: 1.5cqw;
+        color: var(--muted);
+      }
+      .thread-head .bb-chip {
+        margin-left: auto;
+      }
+      .msg {
+        display: flex;
+        gap: 1cqw;
+        padding: 1.5cqh 0;
+        will-change: transform, opacity;
+      }
+      .msg + .msg {
+        border-top: 1px solid var(--line);
+      }
+      .msg .mark {
+        width: 2.3cqw;
+        height: 2.3cqw;
+        flex: none;
+        margin-top: 0.2cqh;
+        color: var(--fg);
+      }
+      .msg b {
+        display: block;
+        font-family: var(--mono);
+        font-size: 0.92cqw;
+        font-weight: 500;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim);
+        margin-bottom: 0.5cqh;
+      }
+      .msg p {
+        font-size: 1.55cqw;
+        line-height: 1.45;
+        letter-spacing: -0.02em;
+        color: #d7ddce;
+      }
+      .msg p .tok {
+        color: var(--lime);
+      }
+      /* The one thing that changes: the model. Stacked and cross-faded. */
+      .swap {
+        position: relative;
+        display: inline-grid;
+        vertical-align: middle;
+      }
+      .swap > * {
+        grid-area: 1 / 1;
+      }
+      .carry {
+        display: flex;
+        align-items: center;
+        gap: 0.6cqw;
+        margin-top: 1.6cqh;
+        padding-top: 1.4cqh;
+        border-top: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 0.92cqw;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--lime-dim);
+      }
+      body[data-ratio="9x16"] .thread {
+        width: 84cqw;
+        padding: 4cqw;
+      }
+      body[data-ratio="9x16"] .thread-head {
+        font-size: 2.6cqw;
+      }
+      body[data-ratio="9x16"] .thread-head .mark {
+        width: 3.2cqw;
+        height: 3.2cqw;
+      }
+      body[data-ratio="9x16"] .msg .mark {
+        width: 4.2cqw;
+        height: 4.2cqw;
+      }
+      body[data-ratio="9x16"] .msg b,
+      body[data-ratio="9x16"] .carry {
+        font-size: 2.1cqw;
+      }
+      body[data-ratio="9x16"] .msg p {
+        font-size: 2.9cqw;
+      }
+      body[data-ratio="1x1"] .thread {
+        width: 84cqw;
+      }
+      body[data-ratio="1x1"] .thread-head {
+        font-size: 1.7cqw;
+      }
+      body[data-ratio="1x1"] .msg p {
+        font-size: 1.8cqw;
+      }
+      body[data-ratio="1x1"] .msg b,
+      body[data-ratio="1x1"] .carry {
+        font-size: 1.25cqw;
+      }
+      body[data-ratio="1x1"] .msg .mark {
+        width: 2.6cqw;
+        height: 2.6cqw;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="Switch models. Keep the thread.">
+      <div class="bb-field" aria-hidden="true"></div>
+      <div class="bb-grain" aria-hidden="true"></div>
+
+      <section class="scene s0 is-first" aria-label="Switch models. Keep the thread.">
+        <div class="bb-stage">
+          <h1 class="bb bb-lg">
+            <span class="bb-line"><span>Switch models.</span></span>
+            <span class="bb-line"
+              ><span>Keep the <em>thread.</em></span></span
+            >
+          </h1>
+        </div>
+      </section>
+
+      <section class="scene s1" aria-label="One thread, three models">
+        <div class="bb-stage">
+          <div class="thread bb-panel">
+            <div class="thread-head">
+              <i class="mark" data-mark="modesto" aria-hidden="true"></i>
+              <span>modesto / composer-nav</span>
+              <span class="bb-chip is-quiet">MAIN</span>
+            </div>
+
+            <div class="msg" data-msg>
+              <i class="mark" data-mark="claude" aria-hidden="true"></i>
+              <div>
+                <b>Claude · Opus</b>
+                <p>Plan: split the composer nav into a hook and a presentational shell.</p>
+              </div>
+            </div>
+
+            <div class="msg" data-msg>
+              <i class="mark" data-mark="codex" aria-hidden="true"></i>
+              <div>
+                <b>Codex · GPT-5</b>
+                <p>Applied to <span class="tok">composer-nav.tsx</span> — 2 files, +84 −61.</p>
+              </div>
+            </div>
+
+            <div class="msg" data-msg>
+              <i class="mark" data-mark="grok" aria-hidden="true"></i>
+              <div>
+                <b>Grok</b>
+                <p>Reviewed the diff. One nit on the memo dependency array.</p>
+              </div>
+            </div>
+
+            <p class="carry" id="carry">
+              <i class="status-dot"></i>SAME THREAD · NOTHING RE-EXPLAINED
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene s2" aria-label="Nothing re-explained">
+        <div class="bb-stage">
+          <h1 class="bb bb-lg">
+            <span class="bb-line"><span>Nothing</span></span>
+            <span class="bb-line"
+              ><span><em>re-explained.</em></span></span
+            >
+          </h1>
+        </div>
+      </section>
+
+      <div class="bb-rule" id="rule" style="bottom: 12.5cqh" aria-hidden="true"></div>
+      <div class="bb-rail" id="rail">
+        <i class="mark" data-mark="modesto" aria-hidden="true"></i><span>modesto</span>
+        <span class="ver">1.0.0-ALPHA.1</span>
+      </div>
+      <div class="film-progress" aria-hidden="true"></div>
+    </main>
+
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script>
+      ModestoTeaser.boot({
+        duration: 15,
+        sceneAt: (t) => (t < 4.9 ? 0 : t < 11.4 ? 1 : 2),
+        build(tl) {
+          tl.set(".s0", { autoAlpha: 1 }, 0)
+            .fromTo(
+              ".s0 .bb-line > span",
+              { yPercent: 108 },
+              { yPercent: 0, duration: 1.1, stagger: 0.09, ease: "expo.out" },
+              0.35,
+            )
+            .fromTo("#rail", { opacity: 0 }, { opacity: 1, duration: 0.9 }, 0.9)
+            .fromTo("#rule", { scaleX: 0 }, { scaleX: 1, duration: 1.4, ease: "expo.out" }, 0.6)
+            .to(
+              ".s0 .bb-line > span",
+              { yPercent: -108, duration: 0.7, stagger: 0.05, ease: "expo.in" },
+              4.2,
+            )
+            .set(".s0", { autoAlpha: 0 }, 5.0)
+
+            // The panel arrives whole, then the messages land one model at a time.
+            .set(".s1", { autoAlpha: 1 }, 4.9)
+            .fromTo(
+              ".thread",
+              { opacity: 0, y: 26, scale: 0.985 },
+              { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "expo.out" },
+              4.95,
+            )
+            .fromTo(
+              "[data-msg]",
+              { opacity: 0, y: 16 },
+              { opacity: 1, y: 0, duration: 0.7, stagger: 0.55, ease: "power3.out" },
+              5.6,
+            )
+            .fromTo("#carry", { opacity: 0 }, { opacity: 1, duration: 0.7 }, 8.3)
+            .to(".s1", { autoAlpha: 0, duration: 0.45 }, 11.0)
+
+            .set(".s2", { autoAlpha: 1 }, 11.4)
+            .fromTo(
+              ".s2 .bb-line > span",
+              { yPercent: 108 },
+              { yPercent: 0, duration: 1.1, stagger: 0.09, ease: "expo.out" },
+              11.5,
+            )
+            .to(
+              "#rule",
+              { scaleX: 0, transformOrigin: "100% 50%", duration: 0.9, ease: "expo.inOut" },
+              13.7,
+            )
+            .to(["#rail", ".s2"], { opacity: 0, duration: 0.6 }, 14.3);
+        },
+      });
+    </script>
+  </body>
+</html>

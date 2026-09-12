@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Reading</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./signal.css" />
+    <style>
+      .word {
+        font-size: 4.4cqw;
+      }
+      body[data-ratio="9x16"] .word {
+        font-size: 7.6cqw;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="Reading composer-nav.tsx">
+      <div class="row">
+        <div class="grid" id="grid" aria-hidden="true"></div>
+        <h1 class="word">Reading composer-nav.tsx</h1>
+      </div>
+    </main>
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script src="./flicker.js"></script>
+    <script>
+      const paint = ModestoFlicker.mount(document.getElementById("grid"), "searching");
+      ModestoTeaser.boot({
+        duration: 12,
+        sceneAt: () => 0,
+        onFrame: paint,
+        build() {},
+      });
+    </script>
+  </body>
+</html>

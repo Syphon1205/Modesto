@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <clipPath id="disc-out">
+      <path clip-rule="evenodd" d="M0 0h120v120H0zM80 60a20 20 0 1 1-40 0 20 20 0 1 1 40 0z" />
+    </clipPath>
+    <mask id="disc-grooves">
+      <circle cx="60" cy="60" r="20" fill="#fff" />
+      <g stroke="#000" fill="none" transform="rotate(-20 60 60)">
+        <ellipse cx="60" cy="60" rx="54" ry="13.2" stroke-width="2.8" />
+        <ellipse cx="60" cy="60" rx="45" ry="11" stroke-width="2.8" />
+        <ellipse cx="60" cy="60" rx="36" ry="8.8" stroke-width="2.8" />
+      </g>
+    </mask>
+  </defs>
+  <circle cx="60" cy="60" r="20" fill="#000" mask="url(#disc-grooves)" />
+  <g stroke="#000" stroke-width="2.8" stroke-linecap="round" clip-path="url(#disc-out)">
+    <ellipse cx="60" cy="60" rx="54" ry="13.2" transform="rotate(-20 60 60)" />
+    <ellipse cx="60" cy="60" rx="45" ry="11" transform="rotate(-20 60 60)" />
+    <ellipse cx="60" cy="60" rx="36" ry="8.8" transform="rotate(-20 60 60)" />
+  </g>
+</svg>

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — The mark, in chrome.</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./billboard.css" />
+    <style>
+      /* Composed vertical-first: this is the Reels/Stories cut. */
+      .gl {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+      }
+      .copy {
+        position: absolute;
+        left: 8cqw;
+        right: 8cqw;
+        bottom: 20cqh;
+        z-index: 6;
+        text-align: center;
+      }
+      .copy .bb {
+        font-size: 13cqw;
+      }
+      .sub {
+        margin-top: 2.4cqh;
+        font-family: var(--mono);
+        font-size: 2.6cqw;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      .sub em {
+        font-style: normal;
+        color: var(--lime-dim);
+      }
+      .cta {
+        position: absolute;
+        left: 8cqw;
+        right: 8cqw;
+        bottom: 8cqh;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.2cqw;
+        font-size: 3.4cqw;
+        font-weight: 650;
+        letter-spacing: -0.06em;
+      }
+      .cta .mark {
+        width: 1.15em;
+        height: 1.15em;
+      }
+      .cta .dot {
+        width: 0.5cqw;
+        height: 0.5cqw;
+        border-radius: 50%;
+        background: var(--dim);
+        margin: 0 0.4cqw;
+      }
+      .cta .url {
+        font-family: var(--mono);
+        font-size: 0.62em;
+        letter-spacing: 0.14em;
+        font-weight: 500;
+        color: var(--lime);
+      }
+      /* Landscape / square keep the same composition, scaled to the crop. */
+      body[data-ratio="16x9"] .copy {
+        bottom: 16cqh;
+      }
+      body[data-ratio="16x9"] .copy .bb {
+        font-size: 6.4cqw;
+      }
+      body[data-ratio="16x9"] .sub {
+        font-size: 1.15cqw;
+      }
+      body[data-ratio="16x9"] .cta {
+        font-size: 1.8cqw;
+        bottom: 7cqh;
+      }
+      body[data-ratio="1x1"] .copy .bb {
+        font-size: 8.6cqw;
+      }
+      body[data-ratio="1x1"] .sub {
+        font-size: 1.7cqw;
+      }
+      body[data-ratio="1x1"] .cta {
+        font-size: 2.6cqw;
+      }
+      /* Keeps the chrome from fighting the type. */
+      .veil {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        background: linear-gradient(to top, #10120fee 0%, #10120f9c 26%, transparent 50%);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="Modesto. Every agent. One workspace.">
+      <canvas class="gl" id="gl" aria-hidden="true"></canvas>
+      <div class="veil" aria-hidden="true"></div>
+      <div class="bb-grain" aria-hidden="true"></div>
+
+      <div class="copy">
+        <h1 class="bb" id="l1" aria-label="Every agent. One workspace.">
+          <span class="bb-line"><span data-up>Every agent.</span></span>
+        </h1>
+        <h1 class="bb" id="l2" style="display: none">
+          <span class="bb-line"
+            ><span data-up><em>One workspace.</em></span></span
+          >
+        </h1>
+        <p class="sub" id="sub">TEN AGENTS · <em>ONE THREAD</em></p>
+      </div>
+
+      <div class="cta" id="cta">
+        <i class="mark" data-mark="modesto" aria-hidden="true"></i><span>modesto</span>
+        <i class="dot" aria-hidden="true"></i>
+        <span class="url">MODESTO.DEV</span>
+      </div>
+
+      <div class="film-progress" aria-hidden="true"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "../modesto-saas-assets/vendor/three.module.min.js"
+        }
+      }
+    </script>
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script type="module">
+      import { THREE, BRAND, createStage, buildHandoffMark, ease } from "./three-stage.js";
+
+      const DURATION = 12;
+      const stage = createStage(document.getElementById("gl"), { fov: 30, exposure: 1.12 });
+      const { scene, camera } = stage;
+
+      // --- Material: polished metal. The environment does the heavy lifting;
+      // --- the lime lights put the one signal colour into the highlights.
+      const chrome = new THREE.MeshPhysicalMaterial({
+        color: 0xe2e6da,
+        metalness: 1.0,
+        roughness: 0.14,
+        clearcoat: 1.0,
+        clearcoatRoughness: 0.08,
+        envMapIntensity: 1.7,
+      });
+
+      const key = new THREE.DirectionalLight(0xffffff, 2.4);
+      key.position.set(4, 6, 8);
+      scene.add(key);
+      const limeA = new THREE.PointLight(BRAND.lime, 340, 60, 2);
+      limeA.position.set(-7, 4, 5);
+      scene.add(limeA);
+      const limeB = new THREE.PointLight(BRAND.lime, 180, 60, 2);
+      limeB.position.set(6, -5, 4);
+      scene.add(limeB);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+
+      // --- The mark, as real geometry. Each of the four strokes is its own
+      // --- group child so they can arrive independently ("many paths, one
+      // --- direction" is the mark's meaning — so it assembles, not fades in).
+      const mark = buildHandoffMark(chrome, { scale: 0.024 });
+      const pivot = new THREE.Group();
+      pivot.add(mark);
+      scene.add(pivot);
+
+      // Group children come in as [tube, cap, cap] per stroke. Caps carry a
+      // real position (the stroke's endpoint), so the assembly offset must be
+      // added to that base rather than replacing it.
+      mark.children.forEach((m) => {
+        m.userData.base = m.position.clone();
+      });
+      const strokes = [];
+      for (let i = 0; i < mark.children.length; i += 3) {
+        strokes.push(mark.children.slice(i, i + 3));
+      }
+
+      let lastT = 0;
+      function renderAt(t) {
+        lastT = t;
+        // Assembly: strokes fly in along their own axis, staggered.
+        strokes.forEach((parts, i) => {
+          const p = ease.outExpo(ease.span(t, 0.15 + i * 0.16, 1.5 + i * 0.16));
+          const drift = (1 - p) * 1.1;
+          const ang = (i / strokes.length) * Math.PI * 2;
+          parts.forEach((m) => {
+            const b = m.userData.base;
+            m.position.set(b.x + Math.cos(ang) * drift * 0.6, b.y, b.z + Math.sin(ang) * drift);
+            m.visible = p > 0.001;
+          });
+        });
+
+        // A slow, confident rotation. Never a full spin — it reads as a product
+        // shot rather than a turntable gimmick.
+        const settle = ease.inOut(ease.span(t, 0.6, 6));
+        pivot.rotation.y = -0.5 + settle * 0.55 + Math.sin(t * 0.42) * 0.16;
+        pivot.rotation.x = 0.18 - settle * 0.22 + Math.sin(t * 0.31) * 0.07;
+        pivot.rotation.z = Math.sin(t * 0.24) * 0.05;
+
+        // Vertical crops need the mark higher and closer.
+        const aspect = camera.aspect || 1;
+        const vertical = aspect < 0.85;
+        const square = aspect >= 0.85 && aspect < 1.25;
+        pivot.scale.setScalar(vertical ? 1.42 : square ? 1.12 : 1);
+        pivot.position.y = vertical ? 1.55 : square ? 0.8 : 0.5;
+
+        const push = ease.inOut(ease.span(t, 0, 10));
+        camera.position.set(0, pivot.position.y * 0.55, 10.6 - push * 1.1);
+        camera.lookAt(0, pivot.position.y * 0.72, 0);
+
+        limeA.intensity = 340 + Math.sin(t * 0.9) * 60;
+
+        stage.render();
+      }
+      stage.onResize(() => renderAt(lastT));
+
+      ModestoTeaser.boot({
+        duration: DURATION,
+        sceneAt: (t) => (t < 5.6 ? 0 : 1),
+        onFrame: renderAt,
+        build(tl) {
+          tl.fromTo(
+            "#l1 [data-up]",
+            { yPercent: 112 },
+            { yPercent: 0, duration: 1.1, ease: "expo.out" },
+            1.5,
+          )
+            .fromTo("#sub", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.8 }, 2.1)
+            .to("#l1 [data-up]", { yPercent: -112, duration: 0.7, ease: "expo.in" }, 5.0)
+            .set("#l1", { display: "none" }, 5.7)
+            .set("#l2", { display: "block" }, 5.7)
+            .fromTo(
+              "#l2 [data-up]",
+              { yPercent: 112 },
+              { yPercent: 0, duration: 1.1, ease: "expo.out" },
+              5.75,
+            )
+            .to("#sub", { opacity: 0, duration: 0.4 }, 5.0)
+            .fromTo(
+              "#sub",
+              { opacity: 0 },
+              {
+                opacity: 1,
+                duration: 0.8,
+                onStart: () => {
+                  document.getElementById("sub").innerHTML = "1.0.0-ALPHA.1 · <em>OUT NOW</em>";
+                },
+              },
+              6.4,
+            )
+            .fromTo("#cta", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.9 }, 8.4)
+            .to(["#l2", "#sub", "#cta"], { opacity: 0, duration: 0.5 }, DURATION - 0.7);
+        },
+      });
+    </script>
+  </body>
+</html>

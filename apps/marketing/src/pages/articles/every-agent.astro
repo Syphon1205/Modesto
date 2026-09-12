@@ -1,0 +1,589 @@
+---
+import BrandArtwork from "../../components/BrandArtwork.astro";
+import Layout from "../../layouts/ResourceLayout.astro";
+---
+
+<Layout
+  title="Every agent. One workspace. — Modesto"
+  description="How Modesto's multi-provider design lets you run Codex, Claude Code, OpenCode, Gemini, and any stdio-compatible agent from one workspace — without losing context when you switch."
+>
+  <article class="article-shell">
+
+    <header class="article-header">
+      <div class="article-eyebrow">
+        <a href="/articles" class="back mono">← Blog</a>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <button type="button" id="download-pdf-btn" onclick="window.print()" class="mono" style="background: none; border: none; color: var(--faint); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: color 150ms ease;">Download PDF ↓</button>
+          <span class="mono article-date">August 12, 2026</span>
+        </div>
+      </div>
+      <div class="article-cover"><BrandArtwork /></div>
+      <div class="article-header-copy">
+        <span class="mono article-cat">Product</span>
+        <h1>Every agent.<br />One workspace.</h1>
+        <p class="article-lede">
+          Most developers pick one AI assistant and commit to it. Not because it's the best tool for every job — because switching costs too much. Modesto makes switching free.
+        </p>
+        <div class="article-meta">
+          <span class="mono">Modesto Team</span>
+          <span class="meta-sep mono">·</span>
+          <span class="mono">7 min read</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-rule"></div>
+
+    <div class="article-body">
+
+      <p>
+        Pick any senior engineer and ask them which AI coding assistant they use. They'll name one. Maybe they tried a few others, maybe they have opinions about the alternatives, but their daily workflow runs through a single model. This is not because they've done a careful cost-benefit analysis and concluded that one model is superior for every task. It's because switching is expensive in ways that compound quietly.
+      </p>
+
+      <p>
+        When you switch models, you lose the session. You lose the ambient context the current model has built up — the decisions you've made together, the rejected approaches, the working assumptions about the codebase. You re-establish all of that through repetition, which costs time and cognitive load, and the new model starts cold on your problem. Most developers look at that friction and decide it isn't worth it. They stay.
+      </p>
+
+      <p>
+        This is a tooling failure, not a developer preference. The workspace should make model selection a routing decision, not a commitment.
+      </p>
+
+      <h2>The problem with single-model lock-in</h2>
+
+      <p>
+        The cost of switching models is not inherent to the models themselves. It's an artifact of how agent tooling is designed. When a session's context is trapped inside a particular tool's chat history — coupled to a specific CLI's format, stored in a provider-specific log, readable only through that tool — switching providers means abandoning all of it. The context doesn't travel. You do.
+      </p>
+
+      <p>
+        The result is a kind of soft lock-in that doesn't show up in any benchmark. Developers don't switch because the overhead of re-establishing context is real and immediate, while the benefit of using a different model for a particular task is marginal and uncertain. Faced with that tradeoff, they stay with what they have.
+      </p>
+
+      <p>
+        The fix is not to build a better single model. It's to build a workspace where context is model-agnostic — where switching providers is a matter of selecting a session parameter, not reconstructing the work from scratch.
+      </p>
+
+      <h2>What Modesto actually does</h2>
+
+      <p>
+        Modesto wraps each provider CLI in a standardized session layer. Codex runs via <code>codex app-server</code> — a long-lived JSON-RPC process that Modesto spawns and manages locally, communicating over stdio. Claude Code, OpenCode, and Gemini CLI each have their own adapters built on the same pattern. The workspace sees providers. It does not see models.
+      </p>
+
+      <p>
+        This means sessions are not constructed around a provider's specific data format. They're constructed around the task. The agent you're working with is a parameter of the session, not its organizing principle. When the session checkpoints, it produces a structured record of the work — decisions made, context established, next steps identified — that any provider can resume from.
+      </p>
+
+      <p>
+        There are no vendor SDK dependencies in this path. No cloud routing layer. Each provider session is a local process, supervised by Modesto's session manager. If Codex crashes and restarts, Modesto resumes the session from its last checkpoint. The same is true for every supported provider.
+      </p>
+
+      <blockquote>
+        The workspace sees providers, not models. That distinction is what makes switching free.
+      </blockquote>
+
+      <h2>Different models for different work</h2>
+
+      <p>
+        The case for multi-provider isn't abstract. Different models are concretely better at different things, and the gaps are large enough to matter in daily work.
+      </p>
+
+      <p>
+        Codex is built for long unsupervised tasks. Give it a well-specified problem and a working directory and it will execute end-to-end — reading files, running tests, iterating on failures — with minimal hand-holding. It's the right choice when you want to delegate a complete slice of work and come back to a diff. Claude models carry a different strength: taste. The output of a Claude session on a UI component, an API surface, or a piece of documentation is consistently more considered. The copy is better. The naming is better. The error handling is more thoughtful. For anything user-facing, that difference is worth the cost. OpenCode is fast and cheap on mechanical work — renaming, refactoring, test generation — where raw intelligence matters less than throughput and the cost of a wrong answer is low.
+      </p>
+
+      <p>
+        These are not marketing claims. They're the kind of honest assessments you make after running real work through multiple models across months. The right workflow routes tasks to the right model based on what the task actually needs, not which model you happened to open first.
+      </p>
+
+      <h2>How context travels between providers</h2>
+
+      <p>
+        The mechanism that makes model-switching practical is the checkpoint. In Modesto, a checkpoint is not a git commit with a message. It's a structured document: what the agent understood at this point in the session, what decisions were made and why, what was rejected and why, what the next logical step is. It's the brief that a thoughtful human would write before handing work to a colleague.
+      </p>
+
+      <p>
+        When you switch providers in Modesto, you hand the new session a checkpoint. The incoming agent reads the same structured context a human reviewer would read. It doesn't need the raw conversation history — it needs the decisions and the current state of the work. That's what the checkpoint carries. The new agent picks up without a cold start.
+      </p>
+
+      <p>
+        This also means you can use provider strengths deliberately and in sequence. Start a session with Codex on a large refactor — give it the task, let it run, checkpoint the result. Then open a Claude session with that checkpoint to review the API surface and clean up the naming. Then hand the final diff to OpenCode to generate the test suite. Each model does what it's best at. The context threads through all of them.
+      </p>
+
+      <h2>The stdio/JSON-RPC architecture</h2>
+
+      <p>
+        The decision to build on stdio and JSON-RPC rather than vendor SDKs was architectural, not expedient. Vendor SDKs add dependencies that evolve on the vendor's schedule, not yours. They couple your session management logic to a provider's specific API surface. When that provider changes something — a new streaming format, a breaking change in their context window handling — you absorb the change across your entire session layer.
+      </p>
+
+      <p>
+        stdio-based adapters avoid this. Each provider has a small, focused adapter that handles the specifics of that CLI's protocol. Modesto's session manager talks to the adapter; the adapter talks to the provider. The interface between them is narrow and stable. Adding a new provider means writing a new adapter — typically a few hundred lines of code — not rearchitecting the session layer.
+      </p>
+
+      <p>
+        The local-process model also means each session is isolated. One provider crashing does not affect another. The session manager can restart a failed process, reconnect to it, and resume from the last checkpoint without any state leaking across sessions. This matters more than it sounds when you're running several agents in parallel on different tasks.
+      </p>
+
+      <h2>What's supported and what's coming</h2>
+
+      <p>
+        Today, Modesto ships with first-class support for four providers: Codex (the primary integration, via <code>codex app-server</code> JSON-RPC), Claude Code (Anthropic's CLI), OpenCode, and Gemini CLI. Each has a full session adapter with reconnect handling, checkpoint integration, and provider-specific stream parsing.
+      </p>
+
+      <p>
+        The criteria for adding a new provider are simple: it must run as a local process, communicate over stdio in a parseable format, and support enough of the session lifecycle — initialization, turn completion, error states — to integrate cleanly with Modesto's checkpoint system. MCP-compatible agents, other OpenAI-compatible CLI tools, and open-source models with stdio frontends are all candidates. If a tool meets the bar, the adapter is straightforward to write.
+      </p>
+
+      <p>
+        The longer-term goal is a provider registry where adapters can be contributed and distributed independently of the main Modesto release. New providers ship as adapters, not as core changes. The workspace stays stable. The model options expand.
+      </p>
+
+      <h2>Why this matters now</h2>
+
+      <p>
+        The model landscape is moving faster than any single tool can track. The model that's best for a given task today may not be the best one in six months. Locking your development workflow to a single provider means absorbing those capability shifts by manual re-evaluation and re-migration, if you notice them at all.
+      </p>
+
+      <p>
+        A workspace designed around provider-agnostic sessions changes this. When a better model ships, you route appropriate tasks to it. Your checkpoint format doesn't change. Your context doesn't evaporate. You just change the session parameter.
+      </p>
+
+      <p>
+        That's the actual argument for multi-provider design: not that any one model is insufficient, but that the space of models is moving too fast for single-provider commitment to be a reasonable long-term strategy. The workspace should stay stable while the models change around it.
+      </p>
+
+    </div>
+
+    <div class="article-rule"></div>
+
+    <footer class="article-footer">
+      <div class="article-footer-left">
+        <span class="mono">Modesto · August 2026</span>
+        <p>Modesto is available now for macOS, Windows, and Linux. Local-first, model-agnostic, built for how software teams actually work with AI agents.</p>
+      </div>
+      <div class="article-footer-right">
+        <a href="/articles" class="mono back-link">← All articles</a>
+      </div>
+    </footer>
+
+  </article>
+
+  <!-- Print-only branded footer -->
+  <div class="article-print-footer" aria-hidden="true">
+    <img src="/modesto-logo.svg" alt="" />
+    <span>Modesto</span>
+    <span class="article-print-footer-url">modesto.dev/articles</span>
+  </div>
+</Layout>
+
+<style>
+  .article-print-footer {
+    display: none;
+  }
+
+  .article-shell {
+    width: min(100% - 48px, 1440px);
+    margin: 0 auto;
+    border-inline: 1px solid var(--line);
+  }
+
+  /* ── Header ── */
+  .article-header {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(28px, 8vw, 120px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .article-date {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-cover {
+    width: 100%;
+    aspect-ratio: 16 / 6;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .article-header-copy {
+    padding: clamp(40px, 7vw, 80px) clamp(28px, 8vw, 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: radial-gradient(ellipse 60% 45% at 50% -10%, color-mix(in srgb, var(--violet) 10%, transparent), transparent 68%);
+  }
+
+  .article-cat {
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-header h1 {
+    font-size: clamp(3rem, 7vw, 7rem);
+    font-weight: 500;
+    letter-spacing: -0.07em;
+    line-height: 0.88;
+    color: var(--ink);
+    max-width: 900px;
+  }
+
+  .article-lede {
+    max-width: 600px;
+    font-size: clamp(15px, 1.6vw, 18px);
+    line-height: 1.65;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .meta-sep {
+    opacity: 0.5;
+  }
+
+  /* ── Rule ── */
+  .article-rule {
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ── Body ── */
+  .article-body {
+    display: grid;
+    grid-template-columns: 1fr min(680px, 100%) 1fr;
+    padding: clamp(60px, 8vw, 100px) 0;
+    row-gap: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-body > * {
+    grid-column: 2;
+  }
+
+  .article-body p {
+    font-size: 17px;
+    line-height: 1.78;
+    color: var(--ink);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h2 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-top: 64px;
+    margin-bottom: 28px;
+  }
+
+  .article-body ul {
+    margin: 0 0 28px 0;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .article-body li {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .article-body blockquote {
+    margin: 48px 0;
+    padding: 32px 36px;
+    border-left: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--paper-deep) 60%, transparent);
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+    color: var(--ink);
+    font-style: normal;
+  }
+
+  .article-body code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.88em;
+    background: color-mix(in srgb, var(--paper-deep) 80%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 5px;
+    letter-spacing: 0;
+  }
+
+  /* ── Footer ── */
+  .article-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+    padding: clamp(48px, 6vw, 80px) clamp(28px, 8vw, 120px);
+    border-top: 1px solid var(--line);
+  }
+
+  .article-footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .article-footer-left > .mono {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-footer-left p {
+    max-width: 480px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .article-cta {
+    display: inline-flex;
+    gap: 24px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid currentColor;
+    font-size: 13px;
+    color: var(--ink);
+    text-decoration: none;
+    width: fit-content;
+    transition: color 150ms ease;
+  }
+
+  .article-cta:hover {
+    color: var(--accent);
+  }
+
+  .back-link {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back-link:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .article-shell {
+      width: min(100% - 32px, 1440px);
+    }
+
+    .article-body {
+      grid-template-columns: 1fr;
+      padding-inline: clamp(20px, 5vw, 40px);
+    }
+
+    .article-body > * {
+      grid-column: 1;
+    }
+
+    .article-footer {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* ── Print / "Download PDF" ──
+     No PDF library — reuses the browser's own print-to-PDF against the page
+     content already rendered. Keeps the real theme colors/gradients instead
+     of flattening to plain black-on-white, hides site chrome (nav, the ←
+     Blog/Download PDF/date bar, this article's own closing footer, and the
+     global site footer) so only the cover image through the end of the
+     article prints, and shows a small branded footer in their place. */
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    .site-header,
+    .global-footer,
+    .footer-mark,
+    .capability-ticker,
+    .article-eyebrow,
+    .article-footer {
+      display: none !important;
+    }
+
+    body {
+      background: #ffffff;
+      color: #14151a;
+    }
+
+    .article-shell {
+      width: 100%;
+      border-inline: 0;
+    }
+
+    /* Safari's print engine is well documented to mis-render CSS Grid (and
+       occasionally flex) during the print pass — tracks can collapse or
+       children can lose their placement, which is what "ignores all our
+       styling" looks like from the outside even though the colors/fonts
+       below are applied correctly. Every layout still visible in print gets
+       forced to plain block flow here so there's no grid/flex left for
+       Safari to get wrong; Chrome/Firefox render identically either way. */
+    body,
+    .article-body,
+    .article-body p,
+    .article-body li,
+    .article-header,
+    .article-header-copy {
+      font-family: "DM Sans", -apple-system, "Helvetica Neue", sans-serif;
+    }
+
+    .mono,
+    .article-meta,
+    .article-print-footer {
+      font-family: "DM Mono", ui-monospace, monospace;
+    }
+
+    .article-header {
+      display: block;
+      border-bottom: 0;
+    }
+
+    .article-header-copy {
+      display: block;
+    }
+
+    .article-cover,
+    .article-header-copy {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-header h1 {
+      color: #14151a;
+    }
+
+    .article-lede,
+    .article-meta {
+      color: #4a4d57;
+    }
+
+    .article-body {
+      display: block;
+      width: min(680px, 100%);
+      margin: 0 auto;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .article-body > * {
+      grid-column: unset;
+    }
+
+    .article-body p {
+      color: #2b2d33;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .article-body h2 {
+      color: #14151a;
+      break-after: avoid;
+      page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body li {
+      color: #2b2d33;
+    }
+
+    .article-body blockquote,
+    .article-body ul,
+    .article-body img {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body blockquote {
+      background: #f4f4f6;
+      color: #14151a;
+    }
+
+    .article-body code {
+      background: #f0f0f2;
+      border-color: #ddd;
+      color: #14151a;
+    }
+
+    /* Normal document flow, not position:fixed — a fixed-position footer
+       gets painted at the same screen coordinate on every printed page and
+       can overlap the last line or two of that page's content instead of
+       repeating cleanly, which is what was making text unreadable near page
+       breaks. This renders once, after the article ends. */
+    .article-print-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      margin-top: 32px;
+      padding: 0 4px;
+      border-top: 1px solid #ddd;
+      color: #6b6e78;
+      font: 500 10px "DM Sans", sans-serif;
+    }
+
+    .article-print-footer img {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
+    }
+
+    .article-print-footer span:first-of-type {
+      color: #14151a;
+      font-weight: 600;
+    }
+
+    .article-print-footer-url {
+      margin-left: auto;
+    }
+  }
+</style>

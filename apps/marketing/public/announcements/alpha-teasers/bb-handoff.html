@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Claude plans. Codex writes. You review.</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./billboard.css" />
+    <style>
+      /* Each beat is one sentence with the agent's mark set inline at type size.
+         The mark is part of the headline, not decoration beside it. */
+      .say {
+        display: flex;
+        align-items: center;
+        gap: 2cqw;
+      }
+      .say .mark {
+        width: 0.8em;
+        height: 0.8em;
+        flex: none;
+        color: var(--fg);
+      }
+      /* The relay: three lanes, one baton. */
+      .lanes {
+        width: 78cqw;
+        margin: 0 auto;
+        display: grid;
+        gap: 1.9cqh;
+      }
+      .lane {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 1cqw;
+        padding: 2.1cqh 1.8cqw;
+        border-radius: 0.8cqw;
+        border: 1px solid var(--line);
+        background: #171a14;
+        overflow: hidden;
+      }
+      .lane .mark {
+        width: 2.4cqw;
+        height: 2.4cqw;
+        flex: none;
+        color: var(--fg);
+      }
+      .lane b {
+        font-size: 1.6cqw;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        color: #dfe6d4;
+      }
+      .lane span {
+        margin-left: auto;
+        font-family: var(--mono);
+        font-size: 0.95cqw;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      /* Progress fill sweeps each lane as that agent works. */
+      .lane i.fill {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, #d5f9951f, #d5f99508);
+        transform: scaleX(0);
+        transform-origin: 0 50%;
+        pointer-events: none;
+      }
+      .lane.is-done {
+        border-color: #d5f99538;
+      }
+      .ctx {
+        text-align: center;
+        margin-top: 3.4cqh;
+      }
+      body[data-ratio="9x16"] .say {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5cqh;
+      }
+      body[data-ratio="9x16"] .lanes {
+        width: 84cqw;
+      }
+      body[data-ratio="9x16"] .lane b {
+        font-size: 3cqw;
+      }
+      body[data-ratio="9x16"] .lane .mark {
+        width: 4.4cqw;
+        height: 4.4cqw;
+      }
+      body[data-ratio="9x16"] .lane span {
+        font-size: 2cqw;
+      }
+      body[data-ratio="1x1"] .lanes {
+        width: 84cqw;
+      }
+      body[data-ratio="1x1"] .lane b {
+        font-size: 1.9cqw;
+      }
+      body[data-ratio="1x1"] .lane .mark {
+        width: 2.8cqw;
+        height: 2.8cqw;
+      }
+      body[data-ratio="1x1"] .lane span {
+        font-size: 1.3cqw;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="Claude plans. Codex writes. You review.">
+      <div class="bb-field" aria-hidden="true"></div>
+      <div class="bb-grain" aria-hidden="true"></div>
+
+      <section class="scene s0 is-first" aria-label="Claude plans">
+        <div class="bb-stage">
+          <h1 class="bb bb-lg say">
+            <i class="mark" data-mark="claude" aria-hidden="true"></i>
+            <span class="bb-line"><span>Claude plans.</span></span>
+          </h1>
+        </div>
+      </section>
+
+      <section class="scene s1" aria-label="Codex writes">
+        <div class="bb-stage">
+          <h1 class="bb bb-lg say">
+            <i class="mark" data-mark="codex" aria-hidden="true"></i>
+            <span class="bb-line"><span>Codex writes.</span></span>
+          </h1>
+        </div>
+      </section>
+
+      <section class="scene s2" aria-label="You review">
+        <div class="bb-stage">
+          <h1 class="bb bb-lg say">
+            <span class="bb-line"
+              ><span>You <em>review.</em></span></span
+            >
+          </h1>
+        </div>
+      </section>
+
+      <section class="scene s3" aria-label="One relay">
+        <div class="bb-stage">
+          <div class="lanes">
+            <div class="lane" data-lane>
+              <i class="fill" aria-hidden="true"></i>
+              <i class="mark" data-mark="claude" aria-hidden="true"></i>
+              <b>Plan the refactor</b><span>Handed off</span>
+            </div>
+            <div class="lane" data-lane>
+              <i class="fill" aria-hidden="true"></i>
+              <i class="mark" data-mark="codex" aria-hidden="true"></i>
+              <b>Write the patch</b><span>Handed off</span>
+            </div>
+            <div class="lane" data-lane>
+              <i class="fill" aria-hidden="true"></i>
+              <i class="mark" data-mark="cursor" aria-hidden="true"></i>
+              <b>Review the diff</b><span>Ready for you</span>
+            </div>
+          </div>
+          <p class="bb-meta ctx" id="ctx">ONE THREAD · CONTEXT CARRIED THE WHOLE WAY</p>
+        </div>
+      </section>
+
+      <div class="bb-rule" id="rule" style="bottom: 12.5cqh" aria-hidden="true"></div>
+      <div class="bb-rail" id="rail">
+        <i class="mark" data-mark="modesto" aria-hidden="true"></i><span>modesto</span>
+        <span class="ver">1.0.0-ALPHA.1</span>
+      </div>
+      <div class="film-progress" aria-hidden="true"></div>
+    </main>
+
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script>
+      // Three short statements, then the thing itself.
+      const beat = (tl, sel, at) =>
+        tl
+          .set(sel, { autoAlpha: 1 }, at)
+          .fromTo(
+            `${sel} .bb-line > span`,
+            { yPercent: 108 },
+            { yPercent: 0, duration: 1.0, ease: "expo.out" },
+            at + 0.1,
+          )
+          .fromTo(
+            `${sel} .mark`,
+            { opacity: 0, scale: 0.8 },
+            { opacity: 1, scale: 1, duration: 0.8, ease: "expo.out" },
+            at + 0.15,
+          )
+          .to(
+            `${sel} .bb-line > span`,
+            { yPercent: -108, duration: 0.6, ease: "expo.in" },
+            at + 2.9,
+          )
+          .to(`${sel} .mark`, { opacity: 0, duration: 0.4 }, at + 2.9)
+          .set(sel, { autoAlpha: 0 }, at + 3.5);
+
+      ModestoTeaser.boot({
+        duration: 16,
+        sceneAt: (t) => (t < 3.6 ? 0 : t < 7.2 ? 1 : t < 10.6 ? 2 : 3),
+        build(tl) {
+          tl.fromTo("#rail", { opacity: 0 }, { opacity: 1, duration: 0.9 }, 0.8).fromTo(
+            "#rule",
+            { scaleX: 0 },
+            { scaleX: 1, duration: 1.4, ease: "expo.out" },
+            0.5,
+          );
+
+          beat(tl, ".s0", 0.2);
+          beat(tl, ".s1", 3.7);
+          beat(tl, ".s2", 7.2);
+
+          tl.set(".s3", { autoAlpha: 1 }, 10.6)
+            .fromTo(
+              "[data-lane]",
+              { opacity: 0, x: -22 },
+              { opacity: 1, x: 0, duration: 0.7, stagger: 0.22, ease: "expo.out" },
+              10.7,
+            )
+            // the baton: each lane fills in turn, then marks itself done
+            .to(
+              ".lane:nth-child(1) .fill",
+              { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
+              11.3,
+            )
+            .to(".lane:nth-child(1)", { className: "lane is-done", duration: 0 }, 11.9)
+            .to(
+              ".lane:nth-child(2) .fill",
+              { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
+              12.0,
+            )
+            .to(".lane:nth-child(2)", { className: "lane is-done", duration: 0 }, 12.6)
+            .to(
+              ".lane:nth-child(3) .fill",
+              { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
+              12.7,
+            )
+            .to(".lane:nth-child(3)", { className: "lane is-done", duration: 0 }, 13.3)
+            .fromTo("#ctx", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 13.4)
+            .to(
+              "#rule",
+              { scaleX: 0, transformOrigin: "100% 50%", duration: 0.9, ease: "expo.inOut" },
+              15.0,
+            )
+            .to(["#rail", ".s3"], { opacity: 0, duration: 0.6 }, 15.3);
+        },
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,138 @@
+import {
+  type SourceControlDiscoveryResult,
+  type VcsDiscoveryItem,
+  type VcsDriverKind,
+} from "@modesto/contracts";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+
+import { ServerConfig } from "../config.ts";
+import * as VcsProcess from "../vcs/VcsProcess.ts";
+import { detailFromCause, firstNonEmptyLine } from "./SourceControlProviderDiscovery.ts";
+import * as SourceControlProviderRegistry from "./SourceControlProviderRegistry.ts";
+
+interface DiscoveryProbe {
+  readonly label: string;
+  readonly executable?: string;
+  readonly versionArgs?: ReadonlyArray<string>;
+  readonly implemented: boolean;
+  readonly installHint: string;
+}
+
+type VcsProbe = DiscoveryProbe & {
+  readonly kind: VcsDriverKind;
+  readonly executable: string;
+  readonly versionArgs: ReadonlyArray<string>;
+};
+
+interface DiscoveryProbeResult<Kind extends string> {
+  readonly kind: Kind;
+  readonly label: string;
+  readonly executable?: string;
+  readonly implemented: boolean;
+  readonly status: "available" | "missing";
+  readonly version: Option.Option<string>;
+  readonly installHint: string;
+  readonly detail: Option.Option<string>;
+}
+
+// Jujutsu is deliberately left out of discovery for now - Modesto doesn't
+// have a working jj driver yet, so surfacing it would just show a permanently
+// "not installed"/unimplemented row. Re-add a probe here once the driver
+// lands.
+const VCS_PROBES: ReadonlyArray<VcsProbe> = [
+  {
+    kind: "git",
+    label: "Git",
+    executable: "git",
+    versionArgs: ["--version"],
+    implemented: true,
+    installHint: "Install Git from https://git-scm.com/downloads or with your package manager.",
+  },
+];
+
+export class SourceControlDiscovery extends Context.Service<
+  SourceControlDiscovery,
+  {
+    readonly discover: Effect.Effect<SourceControlDiscoveryResult>;
+  }
+>()("modesto/sourceControl/SourceControlDiscovery") {}
+
+export const make = Effect.gen(function* () {
+  const config = yield* ServerConfig;
+  const process = yield* VcsProcess.VcsProcess;
+  const sourceControlProviders = yield* SourceControlProviderRegistry.SourceControlProviderRegistry;
+
+  const probe = <Kind extends VcsDriverKind>(
+    input: DiscoveryProbe & { readonly kind: Kind },
+  ): Effect.Effect<DiscoveryProbeResult<Kind>> => {
+    const executable = input.executable;
+    const versionArgs = input.versionArgs;
+
+    if (!executable || !versionArgs) {
+      return Effect.succeed({
+        kind: input.kind,
+        label: input.label,
+        implemented: input.implemented,
+        status: "missing" as const,
+        version: Option.none<string>(),
+        installHint: input.installHint,
+        detail: Option.some(input.installHint),
+      } satisfies DiscoveryProbeResult<Kind>);
+    }
+
+    return process
+      .run({
+        operation: "source-control.discovery.probe",
+        command: executable,
+        args: versionArgs,
+        cwd: config.cwd,
+        timeoutMs: 5_000,
+        maxOutputBytes: 8_000,
+        appendTruncationMarker: true,
+      })
+      .pipe(
+        Effect.map(
+          (result) =>
+            ({
+              kind: input.kind,
+              label: input.label,
+              executable,
+              implemented: input.implemented,
+              status: "available" as const,
+              version: Option.orElse(firstNonEmptyLine(result.stdout), () =>
+                firstNonEmptyLine(result.stderr),
+              ),
+              installHint: input.installHint,
+              detail: Option.none<string>(),
+            }) satisfies DiscoveryProbeResult<Kind>,
+        ),
+        Effect.catch((cause) =>
+          Effect.succeed({
+            kind: input.kind,
+            label: input.label,
+            executable,
+            implemented: input.implemented,
+            status: "missing" as const,
+            version: Option.none<string>(),
+            installHint: input.installHint,
+            detail: detailFromCause(cause),
+          } satisfies DiscoveryProbeResult<Kind>),
+        ),
+      );
+  };
+
+  return SourceControlDiscovery.of({
+    discover: Effect.all({
+      versionControlSystems: Effect.all(
+        VCS_PROBES.map((entry) => probe(entry)) as ReadonlyArray<Effect.Effect<VcsDiscoveryItem>>,
+        { concurrency: "unbounded" },
+      ),
+      sourceControlProviders: sourceControlProviders.discover,
+    }),
+  });
+});
+
+export const layer = Layer.effect(SourceControlDiscovery, make);

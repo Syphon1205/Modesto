@@ -1,179 +1,300 @@
-<div align="center">
-  <img src="assets/modesto-icon.png" width="112" alt="Modesto app icon" />
+<p align="center">
+  <img src="apps/marketing/public/icon.png" width="112" height="112" alt="Modesto icon" />
+</p>
 
-  <h1>Modesto</h1>
-
-  <p><strong>Your agents. In their element.</strong></p>
-  <p>
-    The open-source control plane for coding agents — now on the 1.0 alpha line.<br />
-    Claude, Codex, Cursor, Gemini, Grok, Meta, OpenCode, and the rest. One local-first desktop.
-  </p>
-
-  <p>
-    <a href="https://github.com/Syphon1205/Modesto/releases/latest"><strong>Download Modesto</strong></a>
-    &nbsp;·&nbsp;
-    <a href="#on-the-web">Figma &amp; Framer</a>
-    &nbsp;·&nbsp;
-    <a href="#why-modesto">See what it does</a>
-    &nbsp;·&nbsp;
-    <a href="#command-line-interface">Install the CLI</a>
-  </p>
-
-  <p>
-    <img alt="Latest release: v1.0.0-alpha.1" src="https://img.shields.io/badge/release-v1.0.0--alpha.1-7c8cff?style=flat-square" />
-    <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-2dd4bf?style=flat-square" />
-    <img alt="Platforms: macOS, Windows, and Linux" src="https://img.shields.io/badge/macOS%20%7C%20Windows%20%7C%20Linux-111111?style=flat-square" />
-    <a href="https://www.npmjs.com/package/@modestocode/cli"><img alt="npm: @modestocode/cli" src="https://img.shields.io/npm/v/%40modestocode%2Fcli?style=flat-square&label=cli&color=f5a524" /></a>
-  </p>
-</div>
+<h1 align="center">Modesto</h1>
 
 <p align="center">
-  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4">
-    <img src="assets/modesto-film.png" alt="Modesto film — Your agents. In their element. Click to play the 30-second film." width="100%" />
+  <b>The open-source control plane for coding agents — local-first, multi-provider, now on the 1.0 alpha line.</b>
+</p>
+
+<p align="center">
+  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0--alpha.1-6366f1.svg?style=flat-square" />
+  <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-orange.svg?style=flat-square" />
+  <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
+  <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
+  <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-64748b.svg?style=flat-square" />
+</p>
+
+<p align="center">
+  <a href="#download">Download</a> ·
+  <a href="#whats-new">What's new</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#workspaces">Workspaces</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="#contributing--attribution">Contributing</a>
+</p>
+
+<br />
+
+Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors. This line is **1.0.0-alpha.1**: more stable and feature-rich than the 0.3/0.4 GitHub builds, still an alpha, not a finished 1.0 product.
+
+<p align="center">
+  <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
+    <img src="apps/marketing/public/announcements/modesto-saas-frames/post-16x9.png" alt="Modesto film — Your agents. In their element. Click to play the 30-second film." width="100%" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/modesto-film.mp4"><strong>Watch the 30-second film →</strong></a>
+  <em>Your agents. In their element. — Figma and Framer live in Connections beside the same thread.</em>
 </p>
-
-<p align="center">
-  <em>Different agents. Shared momentum. Built around the way you build.</em>
-</p>
-
-## Why Modesto
-
-Coding agents are powerful. Using several of them is a mess: separate terminals, separate histories, repeated setup, and context that disappears every time you switch.
-
-Modesto gives them one home.
-
-| | |
-| --- | --- |
-| **Use the agents you already pay for** | Keep your existing CLIs, accounts, models, permissions, and billing. Modesto adds the workspace around them. |
-| **Switch agents, not projects** | Move a task between available providers without rebuilding your project context from scratch. |
-| **Run more than one thing at once** | Give parallel tasks their own projects, conversations, terminals, and timelines. |
-| **See the work, not a log dump** | Review streamed activity, tool calls, changed files, diffs, screenshots, browser previews, and Git actions inline. |
-| **Code + Work together** | Ship software and run local cowork tasks in one platform—sessions, connections, browser, and artifacts stay with the conversation. |
-| **Automate the boring parts** | Schedule recurring prompts and come back to their results without babysitting every run. |
-
-## On the web
-
-Figma and Framer live in Connections. Open a file, keep the session, and hand the thread to the next agent without leaving the workspace.
 
 <table>
 <tr>
-<td width="50%" valign="top">
-  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/figma-support.png">
-    <img src="assets/figma-support.png" alt="Figma support is now in Modesto" width="100%" />
-  </a>
-  <p><strong>Figma</strong> — designs, files, and MCP stay attached to the conversation.</p>
+<td width="50%">
+  <img src="apps/marketing/public/announcements/figma-support-frames/post-16x9.png" alt="Figma support is now in Modesto" width="100%" />
 </td>
-<td width="50%" valign="top">
-  <a href="https://github.com/Syphon1205/Modesto/raw/main/assets/framer-support.png">
-    <img src="assets/framer-support.png" alt="Framer support is now in Modesto" width="100%" />
-  </a>
-  <p><strong>Framer</strong> — sites and canvases sit next to the same thread, diffs, and browser.</p>
+<td width="50%">
+  <img src="apps/marketing/public/announcements/framer-support-frames/post-16x9.png" alt="Framer support is now in Modesto" width="100%" />
 </td>
 </tr>
 </table>
 
-Connections also cover the rest of the web surface — browser, artifacts, and signed-in web apps — so the agent is not stuck in a terminal.
+<br />
 
-<p align="center">
-  <img src="assets/modesto-app.png" alt="Modesto desktop workspace with projects, coding agent controls, and a task composer" width="100%" />
-</p>
+## Download
 
-<p align="center">
-  <em>Think Cursor for every agent—with your conversations, files, terminal, browser, and diffs in one place.</em>
-</p>
+**v1.0.0-alpha.1 — release candidate.** The source is available here. New signed
+installers are pending native validation and signing credentials; existing apps
+remain on the previous published release until the signed release is published.
 
-## One desktop for the whole task
+Get existing downloads from [GitHub Releases](https://github.com/Syphon1205/Modesto/releases/latest).
+The candidate build matrix targets Apple Silicon and Intel macOS DMGs, a Windows
+x64 installer, and a Linux x64 AppImage. Windows package metadata uses **Modesto Team**.
+See [release status and notes](docs/releases/v1.0.0-alpha.1.md).
 
-| Plan | Build | Review |
-| --- | --- | --- |
-| Choose Agent, Plan, Ask, or Debug for the next turn. | Work with Codex, Claude Code, Cursor, Gemini, Grok, Meta, OpenCode, and more. | Keep diffs, browser previews, screenshots, approvals, and output beside the conversation. |
 
-Modesto brings together the surfaces real agent work needs:
+macOS builds are Developer ID signed and notarized by Apple. Installed copies
+update themselves through Modesto's built-in updater — you only download once.
+The [latest release](https://github.com/Syphon1205/Modesto/releases/latest)
+always lists every artifact and changelog.
 
-- Persistent conversations — start a Code chat without opening a project
-- Figma, Framer, and other web apps through Connections
-- Integrated files, terminal, browser, and diffs
-- Native code review and Git actions
-- Parallel agent tasks
-- Desktop environments and a header usage clock
-- Plan, Ask, and Debug interaction modes
-- Scheduled automations
-- Provider installation and health checks
-- Local and hosted OpenAI-compatible model routers
-- Desktop and full-screen terminal interfaces
+## What's new
 
-## Bring every agent
+### v1.0.0-alpha.1 — release candidate
 
-Use the provider CLIs and subscriptions already on your machine, install supported agents from Provider Tools, or connect an OpenAI-compatible endpoint.
-
-**Codex** · **Claude Code** · **Cursor Agent** · **Gemini CLI** · **Grok** · **Meta (Muse Code)** · **OpenCode** · **Factory Droid** · **Kilo Code** · **Poolside** · **Kimi** · **Qwen** · **Devin** · **Pi** · **local and hosted model routers**
-
-Your provider credentials stay local. Zero telemetry. Complete ownership.
-
-## Download Modesto
-
-**v1.0.0-alpha.1 — public 1.0 alpha** is the current public line. Existing 0.3 and 0.4 desktop installs update to it in-app. This is still an alpha, not a finished 1.0 product.
-
-| Platform | Requirements | Installer |
-| --- | --- | --- |
-| **macOS · Apple Silicon** | macOS 12+ · M1 or newer | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-arm64.dmg) |
-| **macOS · Intel** | macOS 12+ · Intel processor | [Download `.dmg`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.dmg) |
-| **Windows · x64** | Windows 10 or 11 | [Download `.exe`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.exe) |
-| **Linux · x64** | Ubuntu 22.04+ or equivalent | [Download `.AppImage`](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x86_64.AppImage) |
-
-macOS builds are Developer ID signed and notarized by Apple. Installed copies update through Modesto's built-in updater. The [latest release](https://github.com/Syphon1205/Modesto/releases/latest) always has the complete artifact list and release notes.
-
-## What's new in v1.0.0-alpha.1
-
-- **Public 1.0 alpha** — the hop from Early Modesto / New Foundation onto the 1.0 line. Still an alpha, not a claim that every surface is finished.
-- **In-app update from 0.3 and 0.4** — this release is GitHub Latest with `latest` and `modesto` updater manifests and the production desktop identity, so existing GitHub installs pick it up without a manual re-download.
-- **Chats without a project** — start and send a Code chat without opening a folder; Work still needs a project.
-- **Desktop environments** — Cursor-style right-panel list, header usage clock, and Grok as a first-class provider.
+- **Hop from 0.3 and 0.4** — this is GitHub Latest, so older GitHub desktop builds update themselves.
+- **More of the product** — chats without a project, desktop environments, header usage clock, Grok as a first-class provider.
+- **Still an alpha** — useful and evolving; not a claim that every surface is finished.
 - **Web connections** — Figma and Framer sit in the same workspace as the thread, browser, and diffs.
 
-Read the [complete v1.0.0-alpha.1 release notes](https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1).
+### v0.4.0 — New Foundation
 
-## Command-line interface
+- **Open source under MIT** — public on GitHub, local-first, zero telemetry, complete ownership.
+- **New core** — typed RPC and Effect-TS services throughout for a more durable client-server foundation.
+- **Code + Work** — agent sessions, tasks, connections, diffs, and artifacts in one platform.
+- **Cross-provider handoff** — switch providers mid-conversation with prior context replayed into a fresh session.
+- **Tasks, automations, and plugins** — Kanban board, scheduled prompts, and Claude Code plugin installs on the new core.
 
-Prefer a terminal over a desktop window? `modesto` is the same workspace as a CLI—same providers, projects, and conversations, rendered as text.
+<details>
+<summary><b>Earlier releases</b></summary>
+<br />
+
+**v0.3.0 — Early Modesto**
+
+- **Honest versioning** — this is a new Modesto early release, not production 1.0.
+- **Code and Work** — coding workspace plus an early cowork surface (Connections, sessions, browser/artifacts); Work is still evolving.
+- **Work shell & chat reliability** — shared Code-style sidebar, Connections as its own tab, Temporary no longer wipes chats after send, hung sends surface recoverable errors.
+
+**v0.1.9 — Provider Install**
+
+- **In-app CLI install** for Poolside, Kimi, and Qwen — detect, verify,
+  authenticate, repair, update, and remove each provider from Provider Tools.
+- **Health-gated success** — a provider only counts as installed once Modesto
+  finds the executable and a version or health probe passes.
+- **CLI-validated composer picker** — ready providers first, then providers
+  needing login, then Add provider; installed CLIs are the single source of truth.
+
+**v0.1.8 — Shared Context**
+
+- **Portable context bundles** assemble files, sessions, checkpoints, Git
+  changes, sources, terminal activity, and unfinished tasks for handoff.
+- **Resumable checkpoints** you can compare, resume, restore, and hand to
+  another provider with the important context attached.
+- **Workspace timeline** collects starts, edits, searches, tests, checkpoints,
+  handoffs, and commits in one project view.
+- **Teams as shared work** — assignments, reviews, shared runs, and subagent
+  participants replace a chat-shaped room.
+
+**v0.1.7 — Palo Alto**
+
+- **Declared checkpoints** capture the working-tree diff, skipped checks,
+  incomplete work, and the next action without duplicating unchanged seams.
+- **Cross-provider handoffs** carry the project, branch, Git state, latest
+  checkpoint, and next step between Claude, Codex, Cursor, and OpenCode.
+- **Active window context** attaches a screenshot, app/window names, and
+  accessibility text when the OS exposes it.
+
+**v0.1.4 — San Leandro**
+
+- **Composer bubbles** for Changes, Commit, Working, tasks, Plan mode, and
+  Multi-agent — compact pills that only appear when needed.
+- **Durable agent checkpoints** on provider handoffs, with Inspect / Rollback.
+- **Claude agents end-to-end** plus Cloud Agents for enabled providers.
+
+</details>
+
+## Features
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+**Multi-provider by design**
+Provider availability is discovered at runtime — nothing is hardcoded, so new agents show up automatically.
+
+**Parallel, isolated sessions**
+Every thread gets its own Git worktree, terminal, and conversation timeline, so agents never step on each other.
+
+**Agent handoffs with context**
+Switch a thread from one provider to another mid-task — the new agent inherits the conversation, worktree, and branch instead of starting cold.
+
+**Rich conversation surfaces**
+Tool calls, file changes, diffs, browser previews, approvals, and Git actions render inline, not as a wall of logs.
+
+</td>
+<td width="50%" valign="top">
+
+**Work & the web**
+Early cowork for investigation and local tasks — Connections (Figma, Framer, signed-in web apps), sessions, browser/artifacts. Still evolving.
+
+**Kanban tasks**
+Drag threads across Draft / In Progress / Done, with live status instead of a static list.
+
+**Automations & Model Routers**
+Schedule a prompt on a cadence, or point Codex at any OpenAI-compatible endpoint — local or hosted — and it just shows up in the model picker.
+
+</td>
+</tr>
+</table>
+
+## Workspaces
+
+| Workspace | What it's for                                                                                                                                              |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Code**  | Build, debug, and ship — projects, persistent sessions, parallel work, isolated worktrees, terminals, diffs, browser previews, approvals, and Git actions. |
+| **Work**  | Early local cowork — drafts, research, Connections, sessions, browser/artifacts. Still evolving; not a finished 1.0 surface.                               |
+
+Code and Work share the same sidebar patterns and thread/composer chrome — only the job of each workspace changes.
+
+## Platform support
+
+The core product is a React web application served by a TypeScript/Bun server over WebSocket RPC. Electron supplies the native desktop shell for macOS, Windows, and Linux, and ships signed macOS `.dmg`s, a Windows installer, and a Linux `.AppImage`. macOS-specific SwiftUI/AppKit enhancements are planned for lifecycle, menus, settings, pickers, notifications, window restoration, deep links, and system integrations — the main workspace stays web-based.
+
+The Windows build supports WSL2 for Linux-backed projects, commands, provider
+CLIs, development, and tests. See the
+[WSL2 setup guide](CONTRIBUTING.md#windows-subsystem-for-linux-wsl2).
+
+## Quick start
+
+Requirements: **Bun 1.3.9+**, **Node.js 24.13.1+**, and a locally installed coding provider for live agent sessions.
 
 ```sh
-npm install -g @modestocode/cli
-modesto
+bun install
+bun run dev
 ```
 
-| Command | What it does |
-| --- | --- |
-| `modesto` | Launch the full-screen terminal UI |
-| `modesto chat` | Open the lighter, single-pane chat client |
-| `modesto serve` | Run the local HTTP/WebSocket server used by the desktop app |
+<table>
+<tr><th align="left">Command</th><th align="left">What it does</th></tr>
+<tr><td><code>bun run modesto:dev</code></td><td>Start the desktop product (Electron)</td></tr>
+<tr><td><code>bun run dev:server</code></td><td>Run the server only</td></tr>
+<tr><td><code>bun run dev:web</code></td><td>Run the web app only</td></tr>
+</table>
 
-The CLI shares its projects, threads, and provider connections with the desktop app. Start a task in one and pick it back up in the other.
+Modesto uses `~/.modesto` by default. Existing `~/.modesto` state and Electron application-support profiles are copied once when Modesto has no state of its own — legacy data is never deleted. `MODESTO_HOME` is the canonical environment variable, with `SYNARA_HOME` kept as a compatibility alias during migration.
 
-## Get started
+<details>
+<summary><b>Build and verification</b></summary>
+<br />
 
-1. Download the installer for your computer or install the CLI.
-2. Open Modesto and choose a provider.
-3. Sign in to your own provider account when prompted.
-4. Start a chat. Opening a project is optional for Code and required for Work.
+```sh
+bun run build
+bun run build:desktop
+bun run build:marketing
+bun run test
+```
 
-## About this repository
+Desktop artifacts use the `Modesto-<version>-<arch>` name. See [docs/release.md](docs/release.md) for signing, packaging, update metadata, and smoke checks.
 
-Modesto is open source under the [MIT License](LICENSE). This repository is the public home for desktop binaries, release notes, issue tracking, and the published source snapshot.
+</details>
 
-Started as a solo project. Now built with an open-source community — contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [security policy](SECURITY.md).
+<details>
+<summary><b>Project structure</b></summary>
+<br />
 
----
+| Path                 | Owns                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------- |
+| `apps/web`           | React/Vite application, workspaces, session UX, timeline, terminal, diffs, and previews                  |
+| `apps/server`        | Bun/Node WebSocket server, provider orchestration, persistence, providers, Git, terminals, and worktrees |
+| `apps/desktop`       | Electron lifecycle, native menus, windows, notifications, file dialogs, updater, and browser integration |
+| `apps/marketing`     | Public website and release download surface                                                              |
+| `packages/contracts` | Schema-only shared contracts                                                                             |
+| `packages/shared`    | Explicitly exported runtime utilities shared by server and web                                           |
 
-<div align="center">
-  <strong>Stop choosing one agent. Give all of them a better workspace.</strong><br />
-  <sub>
-    Built by Tanner Davidson and contributors. Modesto is an independent desktop application.<br />
-    Provider names and trademarks belong to their respective owners.
-  </sub>
-</div>
+The architecture is documented in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+</details>
+
+## How we used Codex and GPT-5.6
+
+Modesto was developed during OpenAI Build Week using Codex and GPT-5.6 as core parts of the development process.
+
+### Codex
+
+Codex was used throughout development to:
+
+- Explore and understand the existing Modesto codebase
+- Plan and implement new application features
+- Debug Swift and SwiftUI issues
+- Refactor parts of the application architecture
+- Connect interface components to working project state
+- Investigate runtime and provider integrations
+- Review code changes before they were accepted
+- Accelerate iteration during the limited Build Week timeline
+
+Codex worked directly alongside the project repository, allowing development tasks to remain grounded in the actual codebase rather than isolated code snippets.
+
+### GPT-5.6
+
+GPT-5.6 was used to:
+
+- Define and refine the overall Modesto product direction
+- Design workflows for coding agents, research, automations, and collaboration
+- Reason through the multi-provider architecture
+- Plan the desktop-to-mobile companion experience
+- Develop the code review and agent handoff concepts
+- Identify usability problems in early interface iterations
+- Create structured implementation plans and development prompts
+- Prepare project documentation and submission materials
+
+GPT-5.6 helped transform Modesto from a basic AI coding interface into a broader coordination layer for developers, coding agents, models, and runtimes.
+
+### Other development tools
+
+Claude was also used during development for selected implementation and codebase tasks. Modesto is intentionally provider independent, and the development process reflected that approach by using different agents where they were most effective.
+
+All tools were directed, reviewed, and integrated by the project's individual developer.
+
+## Roadmap
+
+1. Keep hardening Modesto Code — performance, reliability, and predictable recovery through restarts and partial streams.
+2. Grow Teams' live session board — richer status, easier multi-session review, smoother handoffs between providers.
+3. Grow Research — structured citations, source tracking, and better evidence rendering in the transcript.
+4. Add selective native macOS integrations around the web workspace.
+
+## Contributing & attribution
+
+See [CONTRIBUTING.md](CONTRIBUTING.md), [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md), and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Modesto preserves the license and copyright notices of the open-source work on which it depends and from which it evolved.
+
+## License
+
+See [LICENSE](LICENSE) — AGPL-3.0. Copyright © 2026 Tanner Davidson. Modesto was MIT through v0.3.x; it moved to AGPL-3.0 with the Bible Strong avatar engine. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+<br />
+
+<p align="center">
+  <sub>Built by Tanner Davidson and contributors.</sub>
+</p>

@@ -1,0 +1,99 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Defaults", href: "#defaults" },
+  { label: "Customize", href: "#customize" },
+  { label: "Commands", href: "#commands" },
+  { label: "When clauses", href: "#when" },
+];
+---
+
+<DocsLayout
+  title="Keyboard shortcuts"
+  description="Modesto ships editor-style shortcuts. Remap them in Settings or by editing the local keybindings file."
+  currentPath="/docs/keybindings"
+  eyebrow="Reference"
+  {toc}
+>
+  <section id="defaults">
+    <h2>Default shortcuts</h2>
+    <p>
+      <code>mod</code> is Command on macOS and Control on Windows and Linux.
+      Several shortcuts change meaning when the terminal is focused.
+    </p>
+    <div class="docs-table">
+      <div><strong><code>mod+K</code></strong><span>Command palette (when the terminal is not focused).</span></div>
+      <div><strong><code>mod+P</code></strong><span>File picker.</span></div>
+      <div><strong><code>mod+Shift+F</code></strong><span>Project search.</span></div>
+      <div><strong><code>mod+B</code></strong><span>Toggle the sidebar.</span></div>
+      <div><strong><code>mod+J</code></strong><span>Toggle the terminal drawer.</span></div>
+      <div><strong><code>mod+N</code></strong><span>New thread on the current project, or a new terminal when the terminal is focused.</span></div>
+      <div><strong><code>mod+Shift+N</code></strong><span>New local thread for that project (<code>chat.newLocal</code>).</span></div>
+      <div><strong><code>mod+T</code> / <code>mod+W</code></strong><span>New tab / close tab (outside the terminal).</span></div>
+      <div><strong><code>mod+D</code></strong><span>Toggle the diff, or split the terminal when it is focused.</span></div>
+      <div><strong><code>mod+Shift+[</code> / <code>]</code></strong><span>Previous / next thread.</span></div>
+      <div><strong><code>mod+1</code> … <code>mod+9</code></strong><span>Jump to a thread, or to a model when the model picker is open.</span></div>
+      <div><strong><code>mod+Shift+M</code></strong><span>Toggle the model picker.</span></div>
+      <div><strong><code>mod+O</code></strong><span>Open the project in your last-used editor.</span></div>
+    </div>
+    <p>
+      Preview, when focused, uses <code>mod+R</code> to refresh, <code>mod+L</code>{" "}
+      to focus the URL, and the usual zoom keys.
+    </p>
+  </section>
+
+  <section id="customize">
+    <h2>Customize shortcuts</h2>
+    <p>
+      Open <strong>Settings → Keyboard shortcuts</strong> to change a binding in
+      the app. Modesto also reads:
+    </p>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Keybindings file</span><span>~/.modesto</span></div>
+      <pre><code>~/.modesto/userdata/keybindings.json</code></pre>
+    </div>
+    <p>The file is a JSON array of rules:</p>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Example</span><span>JSON</span></div>
+      <pre><code>[
+  &#123; "key": "mod+g", "command": "terminal.toggle" &#125;,
+  &#123; "key": "mod+shift+g", "command": "terminal.new", "when": "terminalFocus" &#125;
+]</code></pre>
+    </div>
+    <p>
+      Invalid rules and invalid files are ignored. The server logs a warning
+      instead of refusing to start.
+    </p>
+  </section>
+
+  <section id="commands">
+    <h2>Useful commands</h2>
+    <div class="docs-table">
+      <div><strong><code>chat.new</code></strong><span>New thread, keeping the current branch and worktree.</span></div>
+      <div><strong><code>chat.newLocal</code></strong><span>New thread for the project in a fresh local environment.</span></div>
+      <div><strong><code>B</code> / <code>M</code> / <code>C</code> / <code>T</code></strong><span>Right-panel Browser, Music, Canvas, Terminal when you are not typing in the composer. See <a href="/docs/threads">Threads</a>.</span></div>
+      <div><strong><code>commandPalette.toggle</code></strong><span>Open or close the command palette.</span></div>
+      <div><strong><code>filePicker.toggle</code></strong><span>Jump to a file.</span></div>
+      <div><strong><code>diff.toggle</code></strong><span>Show or hide the diff.</span></div>
+      <div><strong><code>terminal.toggle</code></strong><span>Show or hide the terminal drawer.</span></div>
+      <div><strong><code>editor.openFavorite</code></strong><span>Open the current tree in an external editor.</span></div>
+      <div><strong><code>script.&#123;id&#125;.run</code></strong><span>Run a project script, for example <code>script.test.run</code>.</span></div>
+    </div>
+  </section>
+
+  <section id="when">
+    <h2>When clauses</h2>
+    <p>
+      Optional <code>when</code> expressions keep a shortcut from firing in the
+      wrong surface. Identifiers include <code>terminalFocus</code>,{" "}
+      <code>previewFocus</code>, and <code>modelPickerOpen</code>. Combine them
+      with <code>!</code>, <code>&amp;&amp;</code>, and <code>||</code>.
+    </p>
+    <p>
+      Key syntax accepts <code>mod</code>, <code>cmd</code> / <code>meta</code>,{" "}
+      <code>ctrl</code>, <code>shift</code>, and <code>alt</code> /{" "}
+      <code>option</code>.
+    </p>
+  </section>
+</DocsLayout>

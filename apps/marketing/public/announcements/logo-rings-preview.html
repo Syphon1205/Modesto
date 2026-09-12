@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modesto — Saturn rings</title>
+    <style>
+      @font-face {
+        font-family: Manrope;
+        src: url("./modesto-saas-assets/vendor/manrope.ttf") format("truetype");
+        font-weight: 200 800;
+        font-display: swap;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #10120f;
+        color: #eceee6;
+        font-family: Manrope, Arial, sans-serif;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+      }
+      button:focus-visible {
+        outline: 2px solid #d5f995;
+        outline-offset: 5px;
+      }
+      header {
+        max-width: 1440px;
+        margin: auto;
+        padding: 30px 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #ffffff12;
+      }
+      .brand {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -1.3px;
+      }
+      .brand img {
+        width: 27px;
+      }
+      .divider {
+        height: 19px;
+        width: 1px;
+        background: #ffffff26;
+        margin: 0 9px;
+      }
+      .header-label {
+        color: #959e8b;
+        font-size: 12px;
+      }
+      .edition {
+        margin-left: auto;
+        color: #7c8870;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+      }
+      main {
+        max-width: 1440px;
+        margin: auto;
+        padding: 34px 40px 80px;
+      }
+      .eyebrow {
+        font-size: 10px;
+        color: #bbd996;
+        letter-spacing: 1.6px;
+        margin: 0 0 9px;
+      }
+      h1 {
+        font-size: clamp(22px, 3vw, 38px);
+        line-height: 1.2;
+        font-weight: 500;
+        letter-spacing: -1.8px;
+        margin: 0 0 10px;
+      }
+      .lede {
+        max-width: 640px;
+        color: #8b9681;
+        line-height: 1.55;
+        margin: 0 0 32px;
+      }
+      .ink img {
+        filter: invert(1);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+      .card {
+        border: 1px solid #ffffff14;
+        background: #171a14;
+        border-radius: 10px;
+        padding: 18px 16px 16px;
+        color: #eceee6;
+        text-align: left;
+      }
+      .card.active {
+        border-color: #d5f99566;
+        background: #1c2117;
+      }
+      .card img {
+        width: 88px;
+        height: 88px;
+        display: block;
+        margin: 8px auto 18px;
+      }
+      .card strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 620;
+        letter-spacing: -0.3px;
+      }
+      .card span {
+        display: block;
+        margin-top: 5px;
+        color: #7c8870;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      .sketches {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 0 0 28px;
+      }
+      .sketch {
+        margin: 0;
+        border: 1px solid #ffffff14;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #efe7d6;
+      }
+      .sketch img {
+        width: 100%;
+        display: block;
+        aspect-ratio: 1;
+        object-fit: cover;
+      }
+      .sketch figcaption {
+        padding: 12px 14px 14px;
+        background: #171a14;
+        color: #8b9681;
+        font-size: 11px;
+      }
+      .sketch strong {
+        display: block;
+        color: #eceee6;
+        font-size: 12px;
+        margin-bottom: 3px;
+      }
+      .stage-wrap {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 10px;
+      }
+      .grounds {
+        display: grid;
+        grid-template-columns: 1.15fr 0.7fr 0.7fr;
+        gap: 10px;
+        min-height: 420px;
+      }
+      .ground {
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        border: 1px solid #ffffff10;
+      }
+      .ground.dark {
+        background: #0c0e0b;
+      }
+      .ground.paper {
+        background: #efe7d6;
+      }
+      .ground.lime {
+        background: #d5f995;
+      }
+      .ground img {
+        width: 46%;
+        max-width: 220px;
+      }
+      .side {
+        display: grid;
+        gap: 10px;
+      }
+      .lockup,
+      .icons,
+      .ladder {
+        border: 1px solid #ffffff14;
+        background: #171a14;
+        border-radius: 10px;
+        padding: 22px 22px 20px;
+      }
+      .label {
+        font-size: 10px;
+        letter-spacing: 1.4px;
+        color: #7c8870;
+        margin: 0 0 18px;
+      }
+      .wordmark,
+      .stacked {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 36px;
+        font-weight: 650;
+        letter-spacing: -1.8px;
+      }
+      .wordmark img,
+      .stacked img {
+        width: 42px;
+        height: 42px;
+      }
+      .stacked {
+        margin-top: 22px;
+        display: grid;
+        justify-items: start;
+        gap: 8px;
+        font-size: 28px;
+        letter-spacing: -1.4px;
+      }
+      .stacked img {
+        width: 36px;
+        height: 36px;
+      }
+      .icon-row {
+        display: flex;
+        gap: 14px;
+        align-items: end;
+      }
+      .app {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+      }
+      .app img {
+        width: 44px;
+        height: 44px;
+      }
+      .app.ink {
+        background: #eceee6;
+      }
+      .app.void {
+        background: #0c0e0b;
+        border: 1px solid #ffffff14;
+      }
+      .app.seed {
+        background: #d5f995;
+      }
+      .sizes {
+        display: flex;
+        align-items: end;
+        gap: 16px;
+      }
+      .caption {
+        margin-top: 28px;
+        color: #6d7864;
+        font-size: 11px;
+      }
+      @media (max-width: 980px) {
+        .grid,
+        .sketches,
+        .stage-wrap,
+        .grounds {
+          grid-template-columns: 1fr;
+        }
+        header,
+        main {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand"><img src="./modesto-mark-light.svg" alt="" />modesto</div>
+      <div class="divider"></div>
+      <div class="header-label">Mark study</div>
+      <div class="edition">SATURN RINGS</div>
+    </header>
+    <main>
+      <p class="eyebrow">BRAND / MARK</p>
+      <h1>Saturn rings, not olympic circles.</h1>
+      <p class="lede">
+        Three rings in perspective — a system around a body. The sketches are the mood. The marks
+        below are the vector versions you can actually ship.
+      </p>
+
+      <div class="sketches">
+        <figure class="sketch">
+          <img src="./logo-rings/concepts/saturn-planet-concept.png" alt="" />
+          <figcaption>
+            <strong>Planet</strong>The Saturn. A body, three rings, occlusion.
+          </figcaption>
+        </figure>
+        <figure class="sketch">
+          <img src="./logo-rings/concepts/saturn-halo-concept.png" alt="" />
+          <figcaption><strong>Halo</strong>Rings only. The system without the planet.</figcaption>
+        </figure>
+        <figure class="sketch">
+          <img src="./logo-rings/concepts/saturn-m-triad-concept.png" alt="" />
+          <figcaption><strong>Triad</strong>Three tilted rings that still form an M.</figcaption>
+        </figure>
+      </div>
+
+      <div class="grid ink" id="grid"></div>
+
+      <div class="stage-wrap">
+        <div class="grounds">
+          <div class="ground dark ink"><img id="stage-dark" alt="" /></div>
+          <div class="ground paper"><img id="stage-paper" alt="" /></div>
+          <div class="ground lime"><img id="stage-lime" alt="" /></div>
+        </div>
+        <div class="side">
+          <div class="lockup">
+            <p class="label">WORDMARK</p>
+            <div class="wordmark ink"><img id="lock-mark" alt="" />modesto</div>
+            <div class="stacked ink"><img id="stack-mark" alt="" />modesto</div>
+          </div>
+          <div class="icons">
+            <p class="label">APP ICON</p>
+            <div class="icon-row">
+              <div class="app ink"><img id="icon-ink" alt="" /></div>
+              <div class="app void ink"><img id="icon-void" alt="" /></div>
+              <div class="app seed"><img id="icon-seed" alt="" /></div>
+            </div>
+          </div>
+          <div class="ladder">
+            <p class="label">SCALE</p>
+            <div class="sizes ink" id="sizes"></div>
+          </div>
+        </div>
+      </div>
+      <p class="caption">Click a vector mark to see it on paper, lime, and in lockup.</p>
+    </main>
+    <script>
+      const marks = [
+        {
+          id: "current",
+          name: "Current",
+          note: "The existing four-stroke mark.",
+          file: "./modesto-mark.svg",
+        },
+        {
+          id: "planet",
+          name: "Planet",
+          note: "Body + three rings, occluded like Saturn.",
+          file: "./logo-rings/01-planet.svg",
+        },
+        {
+          id: "halo",
+          name: "Halo",
+          note: "Rings only. No planet.",
+          file: "./logo-rings/02-halo.svg",
+        },
+        {
+          id: "cassini",
+          name: "Cassini",
+          note: "Uneven bands. A gap in the system.",
+          file: "./logo-rings/03-cassini.svg",
+        },
+        {
+          id: "sliver",
+          name: "Sliver",
+          note: "Just the near edge of the rings.",
+          file: "./logo-rings/04-sliver.svg",
+        },
+        {
+          id: "triad",
+          name: "Triad",
+          note: "Three tilted rings that still form an M.",
+          file: "./logo-rings/05-triad.svg",
+        },
+        {
+          id: "disc",
+          name: "Disc",
+          note: "Solid planet, rings cut through.",
+          file: "./logo-rings/06-disc.svg",
+        },
+      ];
+
+      const grid = document.getElementById("grid");
+      const slots = [
+        "stage-dark",
+        "stage-paper",
+        "stage-lime",
+        "lock-mark",
+        "stack-mark",
+        "icon-ink",
+        "icon-void",
+        "icon-seed",
+      ];
+      const sizes = [16, 24, 32, 48, 64];
+
+      function paint(file) {
+        for (const id of slots) {
+          document.getElementById(id).src = file;
+        }
+        document.getElementById("sizes").innerHTML = sizes
+          .map((n) => `<img src="${file}" width="${n}" height="${n}" alt="" />`)
+          .join("");
+      }
+
+      function select(id) {
+        const mark = marks.find((item) => item.id === id) ?? marks[1];
+        for (const button of grid.querySelectorAll(".card")) {
+          button.classList.toggle("active", button.dataset.id === mark.id);
+        }
+        paint(mark.file);
+      }
+
+      for (const mark of marks) {
+        const button = document.createElement("button");
+        button.className = "card";
+        button.dataset.id = mark.id;
+        button.innerHTML = `<img src="${mark.file}" alt="" /><strong>${mark.name}</strong><span>${mark.note}</span>`;
+        button.addEventListener("click", () => select(mark.id));
+        grid.appendChild(button);
+      }
+
+      select("planet");
+    </script>
+  </body>
+</html>

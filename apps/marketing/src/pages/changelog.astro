@@ -1,0 +1,1000 @@
+---
+import Layout from "../layouts/ResourceLayout.astro";
+import ReleaseCubes from "../components/ReleaseCubes.astro";
+import {
+  fetchRecentReleases,
+  releaseHighlights,
+  releaseSummary,
+  RELEASES_URL,
+  type RecentRelease,
+} from "../lib/releases";
+
+let releases: RecentRelease[] = [];
+try {
+  releases = await fetchRecentReleases(20);
+} catch {
+  // The browser refresh below keeps the page useful when GitHub is unavailable at build time.
+}
+
+const formatDate = (value: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(
+        new Date(value),
+      )
+    : "Unpublished";
+
+const releaseId = (tag: string) => `release-${tag.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+const releaseItems = releases.map((release) => ({
+  tag: release.tag_name,
+  name: release.name ?? release.tag_name,
+  date: formatDate(release.published_at),
+  summary: releaseSummary(release.body),
+  highlights: releaseHighlights(release.body).slice(0, 4),
+  url: release.html_url,
+  prerelease: release.prerelease,
+  anchor: releaseId(release.tag_name),
+}));
+---
+
+<Layout
+  title="Changelog — Modesto"
+  description="A clean, chronological record of Modesto releases, fixes, and product changes."
+>
+  <section class="changelog-hero">
+    <span class="mono">Modesto / Product updates</span>
+    <h1>Changelog.</h1>
+    <div class="changelog-intro">
+      <p>
+        New features, behavior changes, and fixes—organized by release and
+        synced from the official Modesto repository.
+      </p>
+      <div class="changelog-actions">
+        <span id="release-sync" class="release-sync mono">
+          <i></i>
+          <b>Live release history</b>
+        </span>
+        <button type="button" class="pdf-btn pdf-btn-all" id="download-all-pdf">
+          Download full changelog (PDF) <span aria-hidden="true">↓</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  {
+    /* The grid is the history: one cube per shipped release, click to read it.
+       Hidden when the feed is unreachable, since an empty grid reads as broken
+       rather than as "nothing shipped". */
+    releaseItems.length > 0 && (
+      <section class="release-picker">
+        <div class="release-picker-kicker">
+          <span class="mono">Releases</span>
+          <span class="mono">Choose a release</span>
+        </div>
+        <ReleaseCubes releases={releaseItems} />
+      </section>
+    )
+  }
+
+  <section class="release-shell">
+    <aside class="release-index" aria-label="Release index">
+      <div class="release-index-sticky">
+        <span class="mono">Versions</span>
+        <nav id="release-index">
+          {
+            releases.map((release, index) => (
+              <a href={`#${releaseId(release.tag_name)}`} class:list={{ current: index === 0 }}>
+                <span>{release.tag_name}</span>
+                {index === 0 && <i>Latest</i>}
+              </a>
+            ))
+          }
+        </nav>
+        <a class="all-releases" href={RELEASES_URL} target="_blank" rel="noopener noreferrer">
+          All releases <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </aside>
+
+    <div class="release-feed" id="release-feed" aria-live="polite">
+      {
+        releases.map((release, index) => (
+          <article class="release-entry" id={releaseId(release.tag_name)}>
+            <div class="release-rail">
+              <span class="release-dot"></span>
+              <span class="mono">{index === 0 ? "Latest" : release.tag_name}</span>
+            </div>
+            <div class="release-content">
+              <div class="release-meta mono">
+                <span>{release.tag_name}</span>
+                <span>{formatDate(release.published_at)}</span>
+                {release.prerelease && <span>Preview</span>}
+              </div>
+              <h2>{release.name ?? release.tag_name}</h2>
+              <p>{releaseSummary(release.body)}</p>
+              {releaseHighlights(release.body).length > 0 && (
+                <ul>
+                  {releaseHighlights(release.body).slice(0, 4).map((highlight) => (
+                    <li>{highlight}</li>
+                  ))}
+                </ul>
+              )}
+              <div class="release-actions">
+                <a href={release.html_url} target="_blank" rel="noopener noreferrer">
+                  Read full notes <span aria-hidden="true">↗</span>
+                </a>
+                <button type="button" class="pdf-btn" data-print-release={releaseId(release.tag_name)}>
+                  Download PDF <span aria-hidden="true">↓</span>
+                </button>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+      {
+        releases.length === 0 && (
+          <div class="release-empty">
+            <span class="mono">Release service unavailable</span>
+            <h2>The complete history is still on GitHub.</h2>
+            <p>This page will refresh automatically when the release feed is reachable.</p>
+            <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer">
+              Open GitHub Releases ↗
+            </a>
+          </div>
+        )
+      }
+    </div>
+  </section>
+
+  <div class="release-footer">
+    <span>Looking for installers, artifacts, or checksums?</span>
+    <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer">
+      View all releases on GitHub ↗
+    </a>
+  </div>
+
+  <!-- Print-only branded footer. The browser's own print header/footer (URL,
+       date, page number) is a print-dialog setting ("More settings" →
+       "Headers and footers") that a page can't turn off — this is ours, shown
+       instead so the exported PDF still reads as Modesto's, not a browser printout. -->
+  <div class="print-footer" aria-hidden="true">
+    <img src="/modesto-logo.svg" alt="" />
+    <span>Modesto</span>
+    <span class="print-footer-url">modesto.dev/changelog</span>
+  </div>
+
+  <script>
+    import {
+      fetchRecentReleases,
+      releaseHighlights,
+      releaseSummary,
+    } from "../lib/releases";
+
+    const feed = document.getElementById("release-feed");
+    const index = document.getElementById("release-index");
+    const sync = document.getElementById("release-sync");
+
+    const dateLabel = (value: string | null) =>
+      value
+        ? new Intl.DateTimeFormat("en", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }).format(new Date(value))
+        : "Unpublished";
+
+    const idFor = (tag: string) => `release-${tag.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+
+    const renderReleases = (releases: Awaited<ReturnType<typeof fetchRecentReleases>>) => {
+      if (!feed || !index || releases.length === 0) return;
+      feed.replaceChildren();
+      index.replaceChildren();
+
+      releases.forEach((release, releaseIndex) => {
+        const anchor = document.createElement("a");
+        anchor.href = `#${idFor(release.tag_name)}`;
+        if (releaseIndex === 0) anchor.className = "current";
+        const anchorVersion = document.createElement("span");
+        anchorVersion.textContent = release.tag_name;
+        anchor.append(anchorVersion);
+        if (releaseIndex === 0) {
+          const latest = document.createElement("i");
+          latest.textContent = "Latest";
+          anchor.append(latest);
+        }
+        index.append(anchor);
+
+        const article = document.createElement("article");
+        article.className = "release-entry";
+        article.id = idFor(release.tag_name);
+
+        const rail = document.createElement("div");
+        rail.className = "release-rail";
+        const dot = document.createElement("span");
+        dot.className = "release-dot";
+        const railLabel = document.createElement("span");
+        railLabel.className = "mono";
+        railLabel.textContent = releaseIndex === 0 ? "Latest" : release.tag_name;
+        rail.append(dot, railLabel);
+
+        const content = document.createElement("div");
+        content.className = "release-content";
+        const meta = document.createElement("div");
+        meta.className = "release-meta mono";
+        for (const value of [
+          release.tag_name,
+          dateLabel(release.published_at),
+          release.prerelease ? "Preview" : null,
+        ]) {
+          if (!value) continue;
+          const item = document.createElement("span");
+          item.textContent = value;
+          meta.append(item);
+        }
+
+        const heading = document.createElement("h2");
+        heading.textContent = release.name ?? release.tag_name;
+        const summary = document.createElement("p");
+        summary.textContent = releaseSummary(release.body);
+        content.append(meta, heading, summary);
+
+        const highlights = releaseHighlights(release.body).slice(0, 4);
+        if (highlights.length > 0) {
+          const list = document.createElement("ul");
+          for (const highlight of highlights) {
+            const item = document.createElement("li");
+            item.textContent = highlight;
+            list.append(item);
+          }
+          content.append(list);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "release-actions";
+        const link = document.createElement("a");
+        link.href = release.html_url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Read full notes ↗";
+        const pdfButton = document.createElement("button");
+        pdfButton.type = "button";
+        pdfButton.className = "pdf-btn";
+        pdfButton.dataset.printRelease = idFor(release.tag_name);
+        pdfButton.textContent = "Download PDF ↓";
+        actions.append(link, pdfButton);
+        content.append(actions);
+        article.append(rail, content);
+        feed.append(article);
+      });
+    };
+
+    fetchRecentReleases(20)
+      .then((releases) => {
+        renderReleases(releases);
+        sync?.setAttribute("data-state", "live");
+      })
+      .catch(() => {
+        sync?.setAttribute("data-state", "cached");
+        const label = sync?.querySelector("b");
+        if (label) label.textContent = "Showing cached release history";
+      });
+
+    // "Download PDF" uses the browser's native print-to-PDF rather than a
+    // client-side PDF library: no extra dependency, the output stays
+    // selectable/searchable text, and it reuses the exact release content
+    // already on the page instead of re-fetching or re-rendering anything.
+    let hiddenEntries: HTMLElement[] = [];
+
+    const restoreAfterPrint = () => {
+      for (const entry of hiddenEntries) entry.style.removeProperty("display");
+      hiddenEntries = [];
+      document.body.classList.remove("printing-release");
+      window.removeEventListener("afterprint", restoreAfterPrint);
+    };
+
+    const printSingleRelease = (releaseElementId: string) => {
+      const target = document.getElementById(releaseElementId);
+      if (!target) return;
+      hiddenEntries = Array.from(document.querySelectorAll<HTMLElement>(".release-entry")).filter(
+        (entry) => entry.id !== releaseElementId,
+      );
+      for (const entry of hiddenEntries) entry.style.display = "none";
+      document.body.classList.add("printing-release");
+      window.addEventListener("afterprint", restoreAfterPrint);
+      window.print();
+    };
+
+    document.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement)?.closest<HTMLButtonElement>(
+        "[data-print-release]",
+      );
+      if (!button?.dataset.printRelease) return;
+      printSingleRelease(button.dataset.printRelease);
+    });
+
+    document.getElementById("download-all-pdf")?.addEventListener("click", () => {
+      document.body.classList.add("printing-release");
+      window.addEventListener("afterprint", restoreAfterPrint);
+      window.print();
+    });
+  </script>
+</Layout>
+
+<style is:global>
+  .changelog-hero,
+  .release-shell,
+  .release-footer {
+    width: min(100% - 48px, 1240px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .changelog-hero {
+    position: relative;
+    isolation: isolate;
+    padding: clamp(112px, 13vw, 180px) 0 clamp(72px, 8vw, 108px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.48fr);
+    gap: 80px;
+    align-items: end;
+    border-bottom: 1px solid var(--line-strong);
+    overflow: hidden;
+  }
+
+  .release-picker {
+    width: min(100% - 48px, 1240px);
+    margin: 0 auto;
+    padding: 0 0 clamp(40px, 5vw, 72px);
+    border-inline: 1px solid var(--line);
+  }
+
+  .release-picker-kicker {
+    height: 52px;
+    padding: 0 clamp(18px, 2.4vw, 30px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-block: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: clamp(28px, 3.4vw, 48px);
+  }
+
+  .release-picker .rc {
+    padding: 0 clamp(18px, 2.4vw, 30px);
+  }
+
+  .release-cadence {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* The squares are the release history, one cell per shipped version — the same
+     grid language as the rest of the site, doing actual work. */
+  .release-cadence .mono {
+    display: block;
+    margin-top: 14px;
+    color: var(--faint);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .changelog-actions {
+    margin-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .changelog-hero .changelog-cubes {
+    bottom: auto;
+    height: 46%;
+    opacity: 0.9;
+  }
+
+
+
+  .changelog-hero > .mono {
+    grid-column: 1 / -1;
+    margin-bottom: -34px;
+    color: var(--faint);
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .changelog-hero h1 {
+    font-size: clamp(5.2rem, 11vw, 10.5rem);
+    font-weight: 500;
+    letter-spacing: -0.078em;
+    line-height: 0.82;
+  }
+
+  .changelog-intro > p {
+    max-width: 440px;
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1.58;
+  }
+
+  .release-sync {
+    margin-top: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--faint);
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .release-sync i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #6d9c72;
+  }
+
+  .release-sync b {
+    font-weight: 400;
+  }
+
+  .pdf-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-raised);
+    color: var(--ink);
+    font: 500 11px "DM Sans", sans-serif;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+  }
+
+  .pdf-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+
+  .pdf-btn-all {
+    margin-top: 24px;
+    height: 38px;
+    padding: 0 16px;
+    font-size: 12px;
+  }
+
+  .release-actions {
+    margin-top: 34px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .release-actions .pdf-btn {
+    height: 32px;
+    padding: 0 12px;
+  }
+
+  .release-shell {
+    display: grid;
+    grid-template-columns: 210px minmax(0, 1fr);
+    gap: clamp(48px, 8vw, 110px);
+    padding-top: 22px;
+  }
+
+  .release-index {
+    padding: 72px 0 120px;
+  }
+
+  .release-index-sticky {
+    position: sticky;
+    top: 92px;
+  }
+
+  .release-index-sticky > .mono {
+    color: var(--faint);
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .release-index nav {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .release-index nav a {
+    min-height: 34px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-left: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .release-index nav a:hover {
+      border-left-color: var(--accent);
+      background: var(--accent);
+      color: var(--dark);
+    }
+
+    .release-index nav a:hover i {
+      color: color-mix(in srgb, var(--dark) 70%, transparent);
+    }
+  }
+
+  .release-index nav a.current {
+    border-left-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+
+  .release-index nav i {
+    color: var(--faint);
+    font: 7px "DM Mono", monospace;
+    font-style: normal;
+    text-transform: uppercase;
+  }
+
+  .all-releases {
+    margin-top: 22px;
+    display: inline-block;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .release-feed {
+    padding: 34px 0 110px;
+  }
+
+  .release-entry {
+    position: relative;
+    margin: 0 0 20px clamp(16px, 3vw, 40px);
+    padding: clamp(30px, 3.4vw, 46px) clamp(22px, 2.6vw, 38px);
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    scroll-margin-top: 90px;
+    border: 1px solid var(--line);
+    background: var(--paper-deep);
+    transition: border-color 200ms ease;
+  }
+
+  .release-entry:hover {
+    border-color: var(--line-strong);
+  }
+
+  /* The newest release is the one people came for — mark it. */
+  .release-entry:first-child {
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+
+  .release-rail {
+    position: relative;
+    padding-left: 22px;
+    color: var(--faint);
+    font-size: 7px;
+    text-transform: uppercase;
+  }
+
+  .release-dot {
+    position: absolute;
+    top: 3px;
+    left: -3px;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+  }
+
+  .release-entry:not(:first-child) .release-dot {
+    background: transparent;
+    border-color: var(--line-strong);
+  }
+
+  .release-content {
+    max-width: 700px;
+    padding: 0 clamp(0px, 4vw, 50px) 0 clamp(20px, 3vw, 42px);
+  }
+
+  .release-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    color: var(--faint);
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .release-content h2 {
+    margin-top: 14px;
+    font-size: clamp(1.5rem, 2.6vw, 2.2rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+  }
+
+  .release-content > p {
+    margin-top: 22px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.68;
+  }
+
+  .release-content ul {
+    margin: 28px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+  }
+
+  .release-content li {
+    position: relative;
+    padding: 11px 10px 11px 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .release-content li::before {
+    position: absolute;
+    top: 18px;
+    left: 8px;
+    width: 4px;
+    height: 4px;
+    background: var(--ink);
+    content: "";
+  }
+
+  .release-content > a {
+    min-height: 38px;
+    padding: 0 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid color-mix(in srgb, var(--violet) 46%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--violet) 10%, transparent);
+    color: var(--violet);
+    font-size: 11px;
+    font-weight: 500;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  }
+
+  .release-content > a:hover {
+    background: var(--violet);
+    color: var(--white);
+    transform: translateY(-1px);
+  }
+
+  .release-empty {
+    padding: 80px 48px;
+  }
+
+  .release-empty .mono {
+    color: var(--faint);
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+
+  .release-empty h2 {
+    max-width: 560px;
+    margin-top: 18px;
+    font-size: 42px;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+  }
+
+  .release-empty p {
+    margin-top: 18px;
+    color: var(--muted);
+  }
+
+  .release-empty a {
+    margin-top: 24px;
+    display: inline-block;
+    font-size: 11px;
+  }
+
+  .release-footer {
+    padding: 25px 0 100px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    border-top: 1px solid var(--line-strong);
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .release-footer a {
+    color: var(--violet);
+  }
+
+  @media (max-width: 800px) {
+    .changelog-hero {
+      grid-template-columns: 1fr;
+      gap: 34px;
+    }
+
+    .changelog-hero > .mono {
+      margin-bottom: -4px;
+    }
+
+    .release-shell {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .release-index {
+      padding: 30px 0 0;
+    }
+
+    .release-index-sticky {
+      position: static;
+    }
+
+    .release-index nav {
+      padding-bottom: 14px;
+      flex-direction: row;
+      overflow-x: auto;
+    }
+
+    .release-index nav a {
+      min-width: max-content;
+      border-bottom: 1px solid var(--line);
+      border-left: 0;
+      gap: 14px;
+    }
+
+    .release-index nav a:hover,
+    .release-index nav a.current {
+      border-bottom-color: var(--ink);
+      border-left-color: transparent;
+    }
+
+    .all-releases {
+      display: none;
+    }
+
+    .release-entry {
+      grid-template-columns: 72px minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 520px) {
+    .changelog-hero,
+    .release-shell,
+    .release-footer {
+      width: min(100% - 32px, 1240px);
+    }
+
+    .changelog-hero h1 {
+      font-size: 5rem;
+    }
+
+    .release-entry {
+      min-height: 0;
+      padding: 64px 0 72px;
+      grid-template-columns: 1fr;
+    }
+
+    .release-rail {
+      margin-bottom: 18px;
+      padding-left: 16px;
+    }
+
+    .release-content {
+      padding-left: 16px;
+    }
+
+    .release-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+  }
+
+  /* ── Print-only branded footer ──
+     Hidden on screen; shown fixed-to-bottom on every printed/exported page so
+     the PDF still reads as Modesto's, in place of the browser's own print
+     header/footer (URL/date/page-number — a print-dialog setting sites can't
+     turn off, see "More settings" → "Headers and footers" in the print sheet). */
+  .print-footer {
+    display: none;
+  }
+
+  /* ── Print / "Download PDF" ──
+     No PDF library — this reuses the browser's own print-to-PDF against the
+     content already on the page. The base reading surface is pinned to a
+     fixed light/high-contrast palette rather than following the site's
+     active theme — a dark background reads fine on a screen but printed (or
+     exported to PDF and read elsewhere) it loses contrast and wastes ink, so
+     legibility wins there. The accent color and logo stay so it still reads
+     as Modesto's, not a generic document. `printSingleRelease()` in the
+     script above hides every .release-entry except the one being downloaded
+     before calling window.print(); this stylesheet handles the rest (hiding
+     site chrome, forcing colors to actually print, page-break behavior so
+     text doesn't get orphaned or sliced across a page boundary, and showing
+     the branded footer in place of the browser's own). */
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    .site-header,
+    .global-footer,
+    .footer-mark,
+    .capability-ticker,
+    .release-index,
+    .release-sync,
+    .all-releases,
+    .pdf-btn,
+    .release-footer {
+      display: none !important;
+    }
+
+    /* Safari's print engine is well documented to mis-render CSS Grid (and
+       occasionally flex/web fonts) during the print pass, which is what
+       "ignores all our styling" looks like from the outside. .release-entry
+       is already forced to display:block below, sidestepping its grid
+       entirely; this redeclares fonts defensively in case Safari drops the
+       @font-face during print and silently falls back to a system default. */
+    body,
+    .release-content,
+    .release-content p,
+    .release-content li {
+      font-family: "DM Sans", -apple-system, "Helvetica Neue", sans-serif;
+    }
+
+    .mono,
+    .release-rail,
+    .release-meta,
+    .print-footer {
+      font-family: "DM Mono", ui-monospace, monospace;
+    }
+
+    body {
+      background: #ffffff;
+      color: #14151a;
+    }
+
+    .changelog-hero,
+    .release-shell,
+    .release-footer {
+      width: 100%;
+      border-inline: 0;
+    }
+
+    .release-shell {
+      display: block;
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .changelog-hero {
+      padding: 0 0 24px;
+    }
+
+    .changelog-hero h1 {
+      font-size: 2.4rem;
+      color: #14151a;
+    }
+
+    .changelog-intro > p {
+      color: #4a4d57;
+    }
+
+    .release-feed {
+      border-left: 0;
+      padding: 0;
+    }
+
+    .release-entry {
+      display: block;
+      padding: 24px 0;
+      break-inside: avoid;
+      page-break-inside: avoid;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .release-rail,
+    .release-meta {
+      color: #6b6e78;
+    }
+
+    .release-dot {
+      border-color: #14151a;
+      background: #ffffff;
+    }
+
+    .release-content {
+      padding: 0;
+      max-width: none;
+    }
+
+    .release-content h2 {
+      color: #14151a;
+      break-after: avoid;
+      page-break-after: avoid;
+    }
+
+    .release-content > p {
+      color: #2b2d33;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .release-content ul {
+      border-color: #ddd;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .release-content li {
+      color: #2b2d33;
+      border-color: #eee;
+    }
+
+    .release-content li::before {
+      background: #14151a;
+    }
+
+    .release-actions {
+      margin-top: 12px;
+    }
+
+    .release-actions > a {
+      border: 0;
+      background: none;
+      color: var(--accent);
+      padding: 0;
+      text-decoration: underline;
+    }
+
+    .release-actions > a:hover {
+      background: none;
+    }
+
+    /* Normal document flow, not position:fixed — a fixed-position footer
+       gets painted at the same screen coordinate on every printed page and
+       can overlap the last line or two of that page's content instead of
+       repeating cleanly, which is what was making text unreadable near page
+       breaks. This renders once, after the printed content ends. */
+    .print-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      margin-top: 32px;
+      padding: 0 4px;
+      border-top: 1px solid #ddd;
+      color: #6b6e78;
+      font: 500 10px "DM Sans", sans-serif;
+    }
+
+    .print-footer img {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
+    }
+
+    .print-footer span:first-of-type {
+      color: #14151a;
+      font-weight: 600;
+    }
+
+    .print-footer-url {
+      margin-left: auto;
+    }
+  }
+</style>

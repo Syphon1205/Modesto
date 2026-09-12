@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modesto — Your agents. In their element.</title>
+    <link rel="stylesheet" href="./modesto-saas.css" />
+    <script defer src="./modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script type="importmap">
+      { "imports": { "three": "./modesto-saas-assets/vendor/three.module.min.js" } }
+    </script>
+    <script defer src="./modesto-saas.js?v=glass-camera-1"></script>
+  </head>
+  <body>
+    <main class="stage" aria-label="Modesto: one workspace for your coding agents">
+      <div class="ambient" aria-hidden="true">
+        <div class="orb orb-one"></div>
+        <div class="orb orb-two"></div>
+        <div class="contours"></div>
+      </div>
+      <div class="grain" aria-hidden="true"></div>
+      <header class="brand">
+        <img src="./modesto-mark-light.svg" alt="" /><span>modesto</span>
+      </header>
+      <section class="scene intro" aria-label="Your agents. In their element.">
+        <div class="intro-copy">
+          <p class="kicker intro-in">A WORKSPACE FOR CODING AGENTS.</p>
+          <h1>
+            <span class="line"><span class="intro-line">Your agents.</span></span
+            ><span class="line"
+              ><span class="intro-line">In their <em>element.</em></span></span
+            >
+          </h1>
+          <p class="intro-sub intro-in">Claude. Codex. Cursor.<br />All in Modesto.</p>
+        </div>
+        <div class="agent-sculpture" aria-hidden="true">
+          <div class="sculpture-halo"></div>
+          <div class="orbit-ring ring-one"></div>
+          <div class="orbit-ring ring-two"></div>
+          <div class="agent-tile tile-codex">
+            <i class="mark" data-mark="codex" aria-hidden="true"></i><span>Codex</span
+            ><small>READY TO BUILD</small>
+          </div>
+          <div class="agent-tile tile-claude">
+            <i class="mark" data-mark="claude" aria-hidden="true"></i><span>Claude</span
+            ><small>READY TO THINK</small>
+          </div>
+          <div class="agent-tile tile-cursor">
+            <i class="mark" data-mark="cursor" aria-hidden="true"></i><span>Cursor</span
+            ><small>READY TO SHIP</small>
+          </div>
+          <div class="sculpture-caption">
+            <span class="status-dot"></span> DIFFERENT AGENTS. SHARED MOMENTUM.
+          </div>
+        </div>
+      </section>
+      <section class="scene harness" aria-label="Many agents. One harness.">
+        <div class="harness-heading">
+          <p class="kicker harness-in">BRING YOUR AGENTS TOGETHER</p>
+          <h2 class="harness-in">Many agents.<br /><em>One harness.</em></h2>
+        </div>
+        <div class="network" aria-label="Supported agents">
+          <div class="network-node node-dark">
+            <i class="mark" data-mark="codex" aria-hidden="true"></i><span>Codex</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="gemini" aria-hidden="true"></i><span>Gemini</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="kilo" aria-hidden="true"></i><span>Kilo</span>
+          </div>
+          <div class="network-node node-dark">
+            <i class="mark" data-mark="claude" aria-hidden="true"></i><span>Claude</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="devin" aria-hidden="true"></i><span>Devin</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="opencode" aria-hidden="true"></i><span>OpenCode</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="qwen" aria-hidden="true"></i><span>Qwen</span>
+          </div>
+          <div class="network-node node-dark">
+            <i class="mark" data-mark="cursor" aria-hidden="true"></i><span>Cursor</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="poolside" aria-hidden="true"></i><span>Poolside</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="grok" aria-hidden="true"></i><span>Grok</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="kimi" aria-hidden="true"></i><span>Kimi</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="droid" aria-hidden="true"></i><span>Factory Droid</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="acp" aria-hidden="true"></i><span>Custom ACP</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="copilot" aria-hidden="true"></i><span>GitHub Copilot</span>
+          </div>
+          <div class="network-node">
+            <i class="mark" data-mark="pi" aria-hidden="true"></i><span>Pi</span>
+          </div>
+        </div>
+        <p class="harness-bottom">Your projects. Your context. <span>Your choice.</span></p>
+      </section>
+      <section class="scene product" aria-label="Pick an agent. Get to work.">
+        <div class="product-heading">
+          <p class="kicker product-in">CLAUDE. CODEX. CURSOR. YOUR CALL.</p>
+          <h2 class="product-in">Pick an agent.<br /><em>Get to work.</em></h2>
+        </div>
+        <div class="generated-result">
+          <div class="work-object" aria-hidden="true">
+            <span class="work-fallback">〈<img src="./modesto-mark-light.svg" alt="" />〉</span>
+          </div>
+          <div class="work-copy">
+            <div class="generation-label">
+              <span class="work-pulse"></span
+              ><span id="generation-status">Reading your changes</span
+              ><span class="generation-dots">···</span>
+            </div>
+            <h3>
+              <span class="work-line">Changes made.</span
+              ><span class="work-line">Over to you.</span>
+            </h3>
+            <p class="work-detail">Your branch. Your agent. Your call.</p>
+            <span class="work-finish">✓ &nbsp; Ready to review</span>
+          </div>
+        </div>
+        <div class="chat-demo">
+          <div class="chat-prompt">
+            <span id="demo-placeholder">Message Modesto</span><span id="demo-prompt"></span
+            ><span class="demo-caret">|</span>
+          </div>
+          <div class="chat-toolbar">
+            <div class="chat-model" id="demo-model-target">
+              <i class="mark" data-mark="modesto" aria-hidden="true"></i
+              ><span id="demo-model-label">Auto</span
+              ><svg viewBox="0 0 20 20"><path d="m5 8 5 5 5-5" /></svg>
+            </div>
+            <div class="chat-code">
+              <svg viewBox="0 0 24 24"><path d="m7 7-5 5 5 5m10-10 5 5-5 5m-3-15-4 20" /></svg>Code
+            </div>
+            <div class="chat-tools">
+              <svg viewBox="0 0 24 24">
+                <path d="m8 13 7-7a3 3 0 0 1 4 4L9 20a5 5 0 0 1-7-7L12 3a4 4 0 0 1 6 6L8 19" /></svg
+              ><svg viewBox="0 0 24 24">
+                <rect x="9" y="2" width="6" height="13" rx="3" />
+                <path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3" />
+              </svg>
+              <div class="chat-send" id="demo-send-target">
+                <svg viewBox="0 0 24 24"><path d="M12 20V4m-6 6 6-6 6 6" /></svg>
+              </div>
+            </div>
+          </div>
+          <div class="chat-picker">
+            <p>Choose a model</p>
+            <div class="chat-option" data-option="auto">
+              <i class="mark" data-mark="modesto" aria-hidden="true"></i><span>Auto</span
+              ><small>Recommended</small>
+            </div>
+            <div class="chat-option" id="demo-choice-target" data-option="composer">
+              <i class="mark" data-mark="cursor" aria-hidden="true"></i><span>Composer 1.5</span
+              ><small>✓</small>
+            </div>
+            <div class="chat-option" data-option="claude">
+              <i class="mark" data-mark="claude" aria-hidden="true"></i><span>Claude Opus</span>
+            </div>
+            <div class="chat-option" data-option="gpt">
+              <i class="mark" data-mark="codex" aria-hidden="true"></i><span>GPT-5.6</span>
+            </div>
+          </div>
+        </div>
+        <svg class="demo-cursor-fallback" viewBox="-2 -2 30 36" aria-hidden="true">
+          <path d="M0 0 2 25 9 18 15 30 20 27 14 16 25 15Z" fill="#f5f5ee" stroke="#777c72" />
+        </svg>
+      </section>
+      <section class="scene outro" aria-label="Every agent. One workspace.">
+        <div class="outro-lines" aria-hidden="true"></div>
+        <p class="kicker outro-in">MODESTO / THE AGENT WORKSPACE</p>
+        <h2>
+          <span class="line"><span class="outro-line">Every agent.</span></span
+          ><span class="line"><span class="outro-line">One</span></span
+          ><span class="line"><span class="outro-line">workspace.</span></span>
+        </h2>
+        <div class="end-lockup outro-in">
+          <img src="./modesto-mark-light.svg" alt="" /><span>modesto</span
+          ><span class="end-arrow">↗</span>
+        </div>
+        <div class="outro-bottom outro-in">
+          <span>ONE WORKSPACE FOR EVERY AGENT.</span>
+          <div class="end-agents" aria-label="Every provider Modesto supports">
+            <i class="mark" data-mark="codex" aria-hidden="true"></i
+            ><i class="mark" data-mark="claude" aria-hidden="true"></i
+            ><i class="mark" data-mark="cursor" aria-hidden="true"></i
+            ><i class="mark" data-mark="gemini" aria-hidden="true"></i
+            ><i class="mark" data-mark="grok" aria-hidden="true"></i
+            ><i class="mark" data-mark="opencode" aria-hidden="true"></i
+            ><i class="mark" data-mark="copilot" aria-hidden="true"></i
+            ><i class="mark" data-mark="droid" aria-hidden="true"></i
+            ><i class="mark" data-mark="kilo" aria-hidden="true"></i
+            ><i class="mark" data-mark="kimi" aria-hidden="true"></i
+            ><i class="mark" data-mark="qwen" aria-hidden="true"></i
+            ><i class="mark" data-mark="poolside" aria-hidden="true"></i
+            ><i class="mark" data-mark="devin" aria-hidden="true"></i
+            ><i class="mark" data-mark="pi" aria-hidden="true"></i
+            ><i class="mark" data-mark="acp" aria-hidden="true"></i>
+          </div>
+        </div>
+      </section>
+      <div class="glitch-overlay" aria-hidden="true">
+        <span class="glitch-band" style="--band: 0"></span
+        ><span class="glitch-band" style="--band: 1"></span
+        ><span class="glitch-band" style="--band: 2"></span
+        ><span class="glitch-band" style="--band: 3"></span
+        ><span class="glitch-band" style="--band: 4"></span
+        ><span class="glitch-band" style="--band: 5"></span>
+      </div>
+      <div class="film-progress" aria-hidden="true"></div>
+    </main>
+  </body>
+</html>

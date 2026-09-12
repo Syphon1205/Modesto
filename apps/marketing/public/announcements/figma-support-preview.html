@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview — Figma support · 9:16 / 16:9 / 1:1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #080808;
+        color: #f0f0f1;
+        font-family:
+          "DM Sans",
+          -apple-system,
+          sans-serif;
+        padding: 36px 24px 80px;
+      }
+
+      header {
+        max-width: 1280px;
+        margin: 0 auto 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .mono {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #6e9c72;
+        margin-bottom: 6px;
+      }
+
+      header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+
+      .note {
+        max-width: 1280px;
+        margin: 0 auto 32px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      .grid {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      .card {
+        background: #121214;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .frame {
+        background: #fff;
+        overflow: hidden;
+      }
+
+      .frame.nine {
+        aspect-ratio: 9 / 16;
+      }
+
+      .frame.wide {
+        aspect-ratio: 16 / 9;
+      }
+
+      .frame.square {
+        aspect-ratio: 1 / 1;
+      }
+
+      .board {
+        width: 100%;
+        height: 100%;
+        background: #fff;
+        color: #111;
+        display: flex;
+        font-family: "DM Sans", sans-serif;
+      }
+
+      .board.col {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .board.row {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .copy {
+        text-align: center;
+      }
+
+      .copy h2 {
+        font-weight: 600;
+        letter-spacing: -0.055em;
+        line-height: 0.98;
+        color: #111;
+      }
+
+      .copy .eyebrow {
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: #111;
+      }
+
+      .wordmark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4em;
+        margin-bottom: 0.45em;
+      }
+
+      .wide .wordmark {
+        justify-content: flex-start;
+      }
+
+      .wordmark img {
+        display: block;
+        width: 1.15em;
+        height: 1.15em;
+        object-fit: contain;
+      }
+
+      .wordmark .pair {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.28em;
+      }
+
+      .wordmark .times {
+        opacity: 0.4;
+        padding: 0 0.1em;
+      }
+
+      .clip {
+        aspect-ratio: 894 / 1080;
+        flex: 0 0 auto;
+      }
+
+      .clip video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #fff;
+      }
+
+      /* 9:16 — type on top, video sits in the remaining white */
+      .nine .board {
+        padding: 9% 8% 6%;
+        justify-content: flex-start;
+        gap: 6%;
+      }
+
+      .nine .copy {
+        width: 100%;
+      }
+
+      .nine .copy .eyebrow {
+        font-size: 3.2cqw;
+      }
+
+      .nine .copy h2 {
+        font-size: 8.4cqw;
+      }
+
+      .nine .clip {
+        width: 86%;
+      }
+
+      /* 16:9 — type left, video right, both on white */
+      .wide .board {
+        padding: 0 5%;
+        justify-content: space-between;
+        gap: 4%;
+      }
+
+      .wide .copy {
+        flex: 1 1 42%;
+        text-align: left;
+      }
+
+      .wide .copy .eyebrow {
+        font-size: 1.6cqw;
+      }
+
+      .wide .copy h2 {
+        font-size: 4.4cqw;
+      }
+
+      .wide .clip {
+        width: min(38%, 420px);
+      }
+
+      /* 1:1 — same idea, tighter */
+      .square .board {
+        padding: 8%;
+        justify-content: center;
+        gap: 5%;
+      }
+
+      .square .copy {
+        width: 100%;
+      }
+
+      .square .copy .eyebrow {
+        font-size: 3cqw;
+      }
+
+      .square .copy h2 {
+        font-size: 7.2cqw;
+      }
+
+      .square .clip {
+        width: 58%;
+      }
+
+      .meta {
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .meta strong {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .meta span {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .meta-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .btn {
+        display: inline-flex;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: #1e1e22;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #f0f0f1;
+        text-decoration: none;
+        font-size: 11px;
+        font-family: "DM Mono", monospace;
+      }
+
+      .btn:hover {
+        background: #6e9c72;
+        color: #0d0e0c;
+        border-color: #6e9c72;
+      }
+
+      .downloads {
+        max-width: 1280px;
+        margin: 40px auto 0;
+      }
+
+      .downloads h2 {
+        font-size: 18px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .download-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 28px;
+      }
+
+      .frames {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+      }
+
+      .frame-card {
+        background: #121214;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .frame-card img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 894 / 1080;
+        object-fit: cover;
+        background: #fff;
+      }
+
+      .frame-card.wide img {
+        aspect-ratio: 16 / 9;
+      }
+
+      .frame-card footer {
+        padding: 8px 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .frame-card footer span {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .nine,
+      .square,
+      .wide {
+        container-type: inline-size;
+      }
+
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="mono">Internal preview · not shipped</p>
+        <h1>Figma support is now in Modesto</h1>
+      </div>
+      <p class="mono" style="color: rgba(255, 255, 255, 0.45)">DM Sans · white · native clip</p>
+    </header>
+
+    <p class="note">
+      Same Figma homepage idea: white field, the flipping-frames clip at its real 894×1080, type in
+      DM Sans. No crop, no end-card mash. 9:16, 16:9, and 1:1 so you can pick a post format.
+    </p>
+
+    <div class="grid">
+      <article class="card">
+        <div class="frame nine">
+          <div class="board col">
+            <div class="copy">
+              <div class="wordmark">
+                <span class="pair eyebrow"><img src="./figma-mark.svg" alt="" />Figma</span>
+                <span class="times eyebrow">×</span>
+                <span class="pair eyebrow"><img src="./modesto-mark.svg" alt="" />Modesto</span>
+              </div>
+              <h2>Figma support is<br />now in Modesto.</h2>
+            </div>
+            <div class="clip">
+              <video src="./figma-infinite-creativity.mp4" autoplay muted loop playsinline></video>
+            </div>
+          </div>
+        </div>
+        <div class="meta">
+          <div>
+            <strong>9:16 · Stories / Reels</strong>
+            <span>1080 × 1920</span>
+          </div>
+          <div class="meta-actions">
+            <a class="btn" href="./figma-support-9x16.mp4" download>Save MP4 ↓</a>
+            <a class="btn" href="./figma-support-frames/post-9x16.png" download>Save frame ↓</a>
+          </div>
+        </div>
+      </article>
+
+      <div class="stack">
+        <article class="card">
+          <div class="frame wide">
+            <div class="board row">
+              <div class="copy">
+                <div class="wordmark">
+                  <span class="pair eyebrow"><img src="./figma-mark.svg" alt="" />Figma</span>
+                  <span class="times eyebrow">×</span>
+                  <span class="pair eyebrow"><img src="./modesto-mark.svg" alt="" />Modesto</span>
+                </div>
+                <h2>Figma support is<br />now in Modesto.</h2>
+              </div>
+              <div class="clip">
+                <video
+                  src="./figma-infinite-creativity.mp4"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                ></video>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div>
+              <strong>16:9 · Landscape</strong>
+              <span>1920 × 1080</span>
+            </div>
+            <div class="meta-actions">
+              <a class="btn" href="./figma-support-16x9.mp4" download>Save MP4 ↓</a>
+              <a class="btn" href="./figma-support-frames/post-16x9.png" download>Save frame ↓</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="frame square">
+            <div class="board col">
+              <div class="copy">
+                <div class="wordmark">
+                  <span class="pair eyebrow"><img src="./figma-mark.svg" alt="" />Figma</span>
+                  <span class="times eyebrow">×</span>
+                  <span class="pair eyebrow"><img src="./modesto-mark.svg" alt="" />Modesto</span>
+                </div>
+                <h2>Figma support is<br />now in Modesto.</h2>
+              </div>
+              <div class="clip">
+                <video
+                  src="./figma-infinite-creativity.mp4"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                ></video>
+              </div>
+            </div>
+          </div>
+          <div class="meta">
+            <div>
+              <strong>1:1 · Feed</strong>
+              <span>1080 × 1080</span>
+            </div>
+            <div class="meta-actions">
+              <a class="btn" href="./figma-support-1x1.mp4" download>Save MP4 ↓</a>
+              <a class="btn" href="./figma-support-frames/post-1x1.png" download>Save frame ↓</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <section class="downloads">
+      <h2>Save everything</h2>
+      <div class="download-row">
+        <a class="btn" href="./figma-support-source.mp4" download>Source clip MP4 ↓</a>
+        <a class="btn" href="./figma-support-9x16.mp4" download>9:16 MP4 ↓</a>
+        <a class="btn" href="./figma-support-16x9.mp4" download>16:9 MP4 ↓</a>
+        <a class="btn" href="./figma-support-1x1.mp4" download>1:1 MP4 ↓</a>
+        <a class="btn" href="./figma-support-frames.zip" download>All frames ZIP ↓</a>
+      </div>
+
+      <h2>Clip frames</h2>
+      <div class="frames">
+        <a class="frame-card" href="./figma-support-frames/source-01.png" download>
+          <img src="./figma-support-frames/source-01.png" alt="Source frame 1" />
+          <footer><span>source-01</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-02.png" download>
+          <img src="./figma-support-frames/source-02.png" alt="Source frame 2" />
+          <footer><span>source-02</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-03.png" download>
+          <img src="./figma-support-frames/source-03.png" alt="Source frame 3" />
+          <footer><span>source-03</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-04.png" download>
+          <img src="./figma-support-frames/source-04.png" alt="Source frame 4" />
+          <footer><span>source-04</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-05.png" download>
+          <img src="./figma-support-frames/source-05.png" alt="Source frame 5" />
+          <footer><span>source-05</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-06.png" download>
+          <img src="./figma-support-frames/source-06.png" alt="Source frame 6" />
+          <footer><span>source-06</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-07.png" download>
+          <img src="./figma-support-frames/source-07.png" alt="Source frame 7" />
+          <footer><span>source-07</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/source-08.png" download>
+          <img src="./figma-support-frames/source-08.png" alt="Source frame 8" />
+          <footer><span>source-08</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/post-9x16.png" download>
+          <img src="./figma-support-frames/post-9x16.png" alt="9:16 poster frame" />
+          <footer><span>9:16 poster</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card wide" href="./figma-support-frames/post-16x9.png" download>
+          <img src="./figma-support-frames/post-16x9.png" alt="16:9 poster frame" />
+          <footer><span>16:9 poster</span><span>PNG</span></footer>
+        </a>
+        <a class="frame-card" href="./figma-support-frames/post-1x1.png" download>
+          <img src="./figma-support-frames/post-1x1.png" alt="1:1 poster frame" />
+          <footer><span>1:1 poster</span><span>PNG</span></footer>
+        </a>
+      </div>
+    </section>
+  </body>
+</html>

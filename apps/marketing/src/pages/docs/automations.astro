@@ -1,0 +1,131 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Execution modes", href: "#modes" },
+  { label: "Create an automation", href: "#create" },
+  { label: "Schedules", href: "#schedules" },
+  { label: "Run lifecycle", href: "#lifecycle" },
+  { label: "Review results", href: "#results" },
+  { label: "Signed webhooks", href: "#webhooks" },
+  { label: "OpenClaw", href: "#openclaw" },
+  { label: "LangGraph", href: "#langgraph" },
+];
+---
+
+<DocsLayout
+  title="Automations"
+  description="Schedule fresh agent tasks, wake durable threads on a heartbeat, and triage every result from one queue."
+  currentPath="/docs/automations"
+  eyebrow="Product"
+  {toc}
+>
+  <section id="modes">
+    <h2>Choose an execution mode</h2>
+    <div class="docs-table">
+      <div><strong>Standalone</strong><span>Creates a fresh thread and turn for every run. Use it for independent project tasks.</span></div>
+      <div><strong>Heartbeat</strong><span>Continues an existing target thread on each wake. Use it for durable monitoring or iterative work.</span></div>
+    </div>
+  </section>
+
+  <section id="create">
+    <h2>Create an automation</h2>
+    <p>
+      Start from Automations, choose the project, and define the instruction
+      the provider should receive. Then select the execution mode, provider,
+      model, permission level, checkout strategy, schedule, retry behavior, and
+      maximum runtime.
+    </p>
+    <div class="docs-table">
+      <div><strong>Instruction</strong><span>A complete outcome-oriented prompt that can run without an interactive clarification step.</span></div>
+      <div><strong>Target</strong><span>A project for standalone work or an existing durable thread for heartbeat execution.</span></div>
+      <div><strong>Runtime policy</strong><span>Provider, model, capabilities, permissions, worktree choice, and time limits.</span></div>
+      <div><strong>Completion policy</strong><span>Iteration cap, retry behavior, stop-on-error, and an optional natural-language stop condition.</span></div>
+    </div>
+  </section>
+
+  <section id="schedules">
+    <h2>Schedules and guardrails</h2>
+    <p>
+      Run manually, once, on an interval, daily, on weekdays, weekly, or with a
+      cron expression. Every automation records its provider, model, runtime
+      mode, worktree choice, capabilities, retry policy, and maximum runtime.
+    </p>
+    <div class="docs-callout"><strong>Fast loops require explicit acknowledgement.</strong><p>Use iteration caps, stop-on-error, and a natural-language stop condition to prevent unattended work from running indefinitely.</p></div>
+  </section>
+
+  <section id="lifecycle">
+    <h2>Run lifecycle</h2>
+    <div class="docs-steps">
+      <article><div><h3>Scheduled</h3><p>The next wake time is recorded using the automation’s configured schedule and time zone.</p></div></article>
+      <article><div><h3>Running</h3><p>Modesto creates or resumes the target thread and starts the provider with the saved runtime policy.</p></div></article>
+      <article><div><h3>Checkpointed</h3><p>Changed files, checks, incomplete work, and the result are preserved at the end of the run.</p></div></article>
+      <article><div><h3>Needs review or complete</h3><p>Results requiring attention enter the review queue; clean no-op or acknowledged runs remain in history.</p></div></article>
+    </div>
+  </section>
+
+  <section id="results">
+    <h2>Review results</h2>
+    <p>
+      Finished runs appear in <strong>Needs review</strong> when they contain
+      findings, changed files, or a result requiring attention. Mark a result
+      read, archive it, or open the generated thread to inspect the full run.
+    </p>
+    <p>
+      A failed run retains its error and partial activity. Retry only after
+      deciding whether the operation is safe to repeat; a provider can fail
+      after changing files but before reporting completion.
+    </p>
+  </section>
+
+  <section id="webhooks">
+    <h2>Signed webhooks</h2>
+    <p>
+      A webhook is a durable trigger for an existing automation. Create one in
+      the Automations panel, copy the URL and the one-time secret, and send{" "}
+      <code>POST /api/webhooks/incoming/&lt;webhook-id&gt;</code> with:
+    </p>
+    <div class="docs-table">
+      <div>
+        <strong>Signature</strong>
+        <span>
+          <code>x-modesto-signature: sha256=&lt;hex&gt;</code> over the raw
+          body, HMAC-SHA256 with the secret shown at create time.
+        </span>
+      </div>
+      <div>
+        <strong>Idempotency</strong>
+        <span>
+          <code>x-modesto-delivery</code> when you have a delivery id. If it is
+          absent, Modesto hashes the body. Duplicates return 202 without a
+          second run.
+        </span>
+      </div>
+      <div>
+        <strong>Size</strong>
+        <span>Bodies larger than 64 KiB are rejected.</span>
+      </div>
+    </div>
+    <p>
+      Accepted deliveries enqueue the linked automation. The payload is treated
+      as untrusted data in the agent prompt. Disabled hooks return 410; a
+      missing hook returns 404; a bad signature returns 401.
+    </p>
+  </section>
+
+  <section id="openclaw">
+    <h2>OpenClaw</h2>
+    <div class="docs-integration">
+      <img src="/integrations/openclaw.svg" alt="" />
+      <div><h3>Controlled cloud-agent intake</h3><p>Let OpenClaw submit coding tasks to selected projects and approved providers under explicit workspace and permission policy.</p></div>
+    </div>
+  </section>
+
+  <section id="langgraph">
+    <h2>LangGraph</h2>
+    <div class="docs-integration">
+      <img src="/integrations/langgraph.png" alt="" />
+      <div><h3>Invoke a deployed assistant</h3><p>Connect a LangGraph Agent Server, discover assistants, test the connection, and invoke a graph with a message or structured JSON input.</p></div>
+    </div>
+  </section>
+</DocsLayout>

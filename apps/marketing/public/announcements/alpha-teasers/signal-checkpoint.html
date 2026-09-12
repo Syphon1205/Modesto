@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Checkpoint</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./signal.css" />
+  </head>
+  <body>
+    <main class="stage" aria-label="CHECKPOINT_184">
+      <div class="row">
+        <h1 class="word mono">CHECKPOINT_184</h1>
+      </div>
+    </main>
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script>
+      ModestoTeaser.boot({
+        duration: 10,
+        sceneAt: () => 0,
+        build(tl) {
+          tl.fromTo(".row", { opacity: 0 }, { opacity: 1, duration: 0.7 }, 0.2);
+        },
+      });
+    </script>
+  </body>
+</html>

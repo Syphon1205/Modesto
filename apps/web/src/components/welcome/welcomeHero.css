@@ -1,0 +1,195 @@
+/* FILE: welcomeHero.css
+   Purpose: Motion for the first-run takeover. Everything here is decorative,
+            so every animation has a `prefers-reduced-motion` off-switch at the
+            bottom and the layout it leaves behind is the readable one.
+
+   Tone: Modesto — quiet, unhurried, one accent. Things settle into place
+   rather than announce themselves; nothing blinks, sweeps or pulses for
+   attention. Long easings over short ones. */
+
+@keyframes welcome-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes welcome-card-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -12px;
+  }
+}
+
+.welcome-theme-fan {
+  perspective: 980px;
+}
+
+.welcome-theme-tile {
+  transform-style: preserve-3d;
+  /* Slow on purpose: picking a theme is the one moment in setup where the
+     change itself is the content, so the tile eases rather than snaps. */
+  transition:
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 620ms ease,
+    color 620ms ease;
+}
+
+/* ── Agents: the detected CLIs settling into a ring ───────────── */
+
+.welcome-provider-stage {
+  /* A size container so `cqmin` below resolves against the stage. The orbit
+     radius used to be a percentage, which `translate()` resolves against the
+     *tile*, not the stage — every tile landed ~30px from the centre in a pile.
+     Container units are the fix: they measure the ring, not the token on it. */
+  container-type: size;
+  --orbit-radius: min(37cqmin, 208px);
+}
+
+/* Tiles drift out to their place on the ring and stop. No overshoot: this is
+   the app reporting what it found, not a countdown. */
+@keyframes welcome-provider-arrive {
+  from {
+    opacity: 0;
+    transform: rotate(var(--orbit-angle)) translate(calc(var(--orbit-radius) * 0.72))
+      rotate(calc(var(--orbit-angle) * -1)) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--orbit-angle)) translate(var(--orbit-radius))
+      rotate(calc(var(--orbit-angle) * -1)) scale(1);
+  }
+}
+
+.welcome-provider-tile {
+  animation: welcome-provider-arrive 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes welcome-provider-track {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Slow enough to read as ambient rather than as a spinner. */
+.welcome-provider-track {
+  animation: welcome-provider-track 68s linear infinite;
+}
+
+@keyframes welcome-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-detected {
+  animation: welcome-fade-up 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Start a project ──────────────────────────────────────────── */
+
+.welcome-project-card {
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 320ms ease,
+    box-shadow 320ms ease,
+    background-color 320ms ease;
+}
+
+.welcome-project-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--primary) 42%, var(--border));
+  box-shadow: 0 22px 50px color-mix(in oklab, var(--primary) 14%, transparent);
+}
+
+.welcome-project-card:active {
+  transform: translateY(0);
+}
+
+/* The arrow leans forward on hover — the only motion the card makes on its
+   own account. */
+.welcome-project-card .welcome-project-arrow {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.welcome-project-card:hover .welcome-project-arrow {
+  transform: translateX(4px);
+}
+
+.welcome-project-mark {
+  transition:
+    background-color 320ms ease,
+    color 320ms ease;
+}
+
+.welcome-project-card:hover .welcome-project-mark {
+  background-color: color-mix(in oklab, var(--primary) 32%, var(--background));
+  color: color-mix(in oklab, var(--primary) 62%, var(--foreground));
+}
+
+/* A single hairline of accent under a step heading. */
+.welcome-rule {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--primary) 62%, transparent),
+    transparent
+  );
+}
+
+/* Staged entrance shared by the step content. */
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-rise {
+  animation: welcome-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-hero-orbit,
+  .welcome-hero-card,
+  .welcome-provider-track,
+  .welcome-provider-tile,
+  .welcome-detected,
+  .welcome-rise {
+    animation: none !important;
+  }
+
+  .welcome-theme-tile,
+  .welcome-project-card,
+  .welcome-project-card .welcome-project-arrow,
+  .welcome-project-mark {
+    transition: none !important;
+  }
+
+  .welcome-theme-tile {
+    transform: none !important;
+  }
+
+  .welcome-project-card:hover {
+    transform: none;
+  }
+
+  /* Without the arrival animation the tiles need their final orbit position
+     applied outright, or they stack in the middle of the ring. */
+  .welcome-provider-tile {
+    opacity: 1;
+    transform: rotate(var(--orbit-angle)) translate(var(--orbit-radius))
+      rotate(calc(var(--orbit-angle) * -1));
+  }
+}

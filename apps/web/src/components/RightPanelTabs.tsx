@@ -1,0 +1,1189 @@
+import type { ContextMenuItem, PreviewSessionSnapshot, PullRequestState } from "@modesto/contracts";
+import { getTerminalLabel } from "@modesto/shared/terminalLabels";
+import {
+  Bot,
+  ChartColumn,
+  FileDiff,
+  FileText,
+  Files,
+  FileStack,
+  GitPullRequest,
+  Globe2,
+  LayoutDashboard,
+  Music2,
+  Plus,
+  Smartphone,
+  TerminalSquare,
+  Volume2,
+  VolumeOff,
+  X,
+} from "lucide-react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type ReactElement,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { isElectron } from "~/env";
+import type { DesktopPreviewOverlay } from "~/previewStateStore";
+import type { RightPanelSurface } from "~/rightPanelStore";
+import { cn } from "~/lib/utils";
+import { readLocalApi } from "~/localApi";
+import { Button } from "~/components/ui/button";
+import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
+import { Menu, MenuItem, MenuPopup, MenuShortcut, MenuTrigger } from "~/components/ui/menu";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { faviconUrlForOrigin } from "~/lib/favicon";
+import { useTheme } from "~/hooks/useTheme";
+import { COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS } from "~/workspaceTitlebar";
+
+import { PreviewPanelShell, type PreviewPanelMode } from "./preview/PreviewPanelShell";
+import { FaviconImage } from "./preview/PreviewFaviconIcon";
+import { previewBridge } from "./preview/previewBridge";
+import { PierreEntryIcon } from "./chat/PierreEntryIcon";
+import { previewOpenTabs, type EnvironmentDiffStats } from "./RightPanelEnvironments.logic";
+
+interface RightPanelTabsProps {
+  mode: PreviewPanelMode;
+  /** Chat omits repository-development surfaces while keeping work tools. */
+  conversationMode?: "chat" | "code";
+  open?: boolean;
+  maximized?: boolean;
+  /** Forwarded to PreviewPanelShell so this surface persists its own width. */
+  widthStorageKey?: string;
+  /** Forwarded to PreviewPanelShell as the initial width before a user resize. */
+  defaultWidth?: number;
+  layoutControls?: ReactNode;
+  surfaces: readonly RightPanelSurface[];
+  activeSurfaceId: string | null;
+  pendingSurfaceIds: ReadonlySet<string>;
+  previewSessions: Readonly<Record<string, PreviewSessionSnapshot>>;
+  desktopByTabId: Readonly<Record<string, DesktopPreviewOverlay>>;
+  /**
+   * Maps a server session tab id to the desktop runtime tab id the Electron
+   * preview manager is keyed by. Session ids are only unique within one server
+   * process, so desktop operations must not be addressed with them.
+   */
+  previewRuntimeTabId?: ((tabId: string) => string) | undefined;
+  terminalLabelsById: ReadonlyMap<string, string>;
+  onActivate: (surface: RightPanelSurface) => void;
+  onCloseSurface: (surface: RightPanelSurface) => void;
+  onCloseOtherSurfaces: (surface: RightPanelSurface) => void;
+  onCloseSurfacesToRight: (surface: RightPanelSurface) => void;
+  onCloseAllSurfaces: () => void;
+  onCopyFilePath: (relativePath: string) => void;
+  onAddBrowser: () => void;
+  onAddTerminal: () => void;
+  onAddDiff: () => void;
+  onAddFiles: () => void;
+  onAddPullRequest: () => void;
+  onAddAgents: () => void;
+  onAddContext: () => void;
+  onAddArtifacts: () => void;
+  onAddMusic: () => void;
+  onAddCanvas: () => void;
+  onAddDevice: () => void;
+  browserAvailable: boolean;
+  terminalAvailable: boolean;
+  diffAvailable: boolean;
+  filesAvailable: boolean;
+  pullRequestAvailable: boolean;
+  agentsAvailable: boolean;
+  contextAvailable: boolean;
+  artifactsAvailable: boolean;
+  musicAvailable: boolean;
+  canvasAvailable: boolean;
+  deviceAvailable: boolean;
+  pullRequestStatuses?: Readonly<Record<string, PullRequestTabStatus>>;
+  /** Running + waiting subagents; badges the Agents card in the empty state. */
+  liveAgentCount: number;
+  /** Workspace folder shown as "On {name}" in the empty environments list. */
+  projectLabel?: string | null;
+  diffStats?: EnvironmentDiffStats | null;
+  onOpenPreviewTab?: ((tabId: string) => void) | undefined;
+  children: ReactNode;
+}
+
+export interface PullRequestTabStatus {
+  projectId: string;
+  repository: string;
+  number: number;
+  state: PullRequestState;
+  isDraft: boolean;
+}
+
+export function surfaceActionVisibleInConversation(
+  conversationMode: "chat" | "code",
+  action: { readonly codeOnly?: boolean | undefined },
+): boolean {
+  return conversationMode === "code" || action.codeOnly !== true;
+}
+
+const SURFACE_DISABLED_REASONS = {
+  browser: "Browser previews are only available in the Modesto desktop app.",
+  terminal: "Terminal surfaces are only available from a project thread.",
+  files: "Files are only available when a project is open.",
+  diff: "Diff is only available for server threads in Git repositories.",
+  pullRequest: "This thread's branch has no pull request yet.",
+  agents: "Agents are only available from a thread.",
+  context: "Context usage is only available from a thread.",
+  artifacts: "Artifacts are only available from a thread.",
+} as const;
+
+/** Overlays that must win over the launcher's letter shortcuts. */
+const LAUNCHER_SHORTCUT_BLOCKING_LAYERS = [
+  '[data-slot="dialog-popup"]',
+  '[data-slot="alert-dialog-popup"]',
+  '[data-slot="command-dialog-popup"]',
+  '[data-slot="menu-popup"]',
+  '[data-slot="select-popup"]',
+  '[data-slot="popover-popup"]',
+  '[data-slot="combobox-popup"]',
+  '[data-slot="autocomplete-popup"]',
+].join(",");
+
+/** One-line unavailability hints for the empty-state cards. */
+const SURFACE_UNAVAILABLE_HINTS = {
+  browser: "Only available in the desktop app.",
+  terminal: "Available when a project is open.",
+  files: "Available when a project is open.",
+  diff: "Available for Git repositories.",
+  pullRequest: "No pull request on this branch yet.",
+  agents: "Available from a thread.",
+  context: "Available from a thread.",
+  artifacts: "Available from a thread.",
+} as const;
+
+type TabContextMenuAction =
+  | "copy-path"
+  | "toggle-mute"
+  | "close"
+  | "close-others"
+  | "close-to-right"
+  | "close-all";
+
+/**
+ * Desktop preview tab backing a surface, or null for non-preview surfaces, the
+ * "new browser tab" placeholder, and the web build where no desktop tab exists.
+ */
+function previewTabIdOf(
+  surface: RightPanelSurface,
+  sessions: Readonly<Record<string, PreviewSessionSnapshot>>,
+): string | null {
+  if (surface.kind !== "preview" || !surface.resourceId) return null;
+  return sessions[surface.resourceId]?.tabId ?? null;
+}
+
+/**
+ * Label and enabled state for a preview tab's mute menu entry.
+ * Stays disabled until desktop overlay state arrives: a server session id can
+ * resolve while the preview manager's createTab is still in flight, and muting
+ * then fails with a PreviewTabNotFoundError nothing surfaces to the user.
+ */
+export function tabMuteMenuItem(input: {
+  overlay: DesktopPreviewOverlay | null;
+  canResolveRuntimeTabId: boolean;
+}): { label: string; disabled: boolean } {
+  const muted = input.overlay?.audioMuted ?? false;
+  return {
+    label: muted ? "Unmute tab" : "Mute tab",
+    disabled: input.overlay === null || !input.canResolveRuntimeTabId,
+  };
+}
+
+type TabAudioState = "none" | "audible" | "muted";
+
+/**
+ * A muted tab that is not making sound shows nothing: mute is armed silently,
+ * and the indicator only appears once there is audio to speak of.
+ */
+function tabAudioState(overlay: DesktopPreviewOverlay | null): TabAudioState {
+  if (!overlay?.audible) return "none";
+  return overlay.audioMuted ? "muted" : "audible";
+}
+
+type SurfaceShortcutEvent = Pick<
+  KeyboardEvent,
+  "altKey" | "ctrlKey" | "defaultPrevented" | "isComposing" | "key" | "metaKey"
+>;
+
+export function surfaceShortcutActionForKey<
+  const Action extends { available: boolean; shortcut: string },
+>(actions: readonly Action[], event: SurfaceShortcutEvent): Action | null {
+  if (event.defaultPrevented || event.isComposing) return null;
+  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+  return (
+    actions.find(
+      (action) => action.available && action.shortcut.toLowerCase() === event.key.toLowerCase(),
+    ) ?? null
+  );
+}
+
+/**
+ * A focused editable is a typing context whether or not it has text yet: an
+ * empty chat composer at rest is still where the user's next keystrokes are
+ * meant to land, and claiming launcher letters from it would redirect prompts
+ * into whatever surface opens. The `:not` clause lets `closest` see past
+ * non-editable islands (`contenteditable="false"`) to an editable host around
+ * them, matching ComposerPendingUserInputPanel's typing guard.
+ */
+export function surfaceShortcutTargetsTypingContext(
+  target: { closest(selectors: string): unknown } | null,
+): boolean {
+  return (
+    target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !=
+    null
+  );
+}
+
+function DisabledReasonTooltip(props: { reason: string; trigger: ReactElement }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger render={props.trigger} />
+      <TooltipPopup side="top">{props.reason}</TooltipPopup>
+    </Tooltip>
+  );
+}
+
+function SurfaceMenuItem(props: {
+  available: boolean;
+  disabledReason?: string | undefined;
+  shortcut: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const item = (
+    <MenuItem
+      className={!props.available ? "data-disabled:pointer-events-auto" : undefined}
+      onClick={props.onClick}
+      disabled={!props.available}
+      aria-keyshortcuts={props.shortcut}
+    >
+      {props.children}
+      <MenuShortcut>{props.shortcut}</MenuShortcut>
+    </MenuItem>
+  );
+  if (props.available || !props.disabledReason) return item;
+  return <DisabledReasonTooltip reason={props.disabledReason} trigger={item} />;
+}
+
+/**
+ * Environments list shown when the right panel has no surfaces. Cursor-style
+ * rows for Changes / Browser / Terminal / Files, plus a quieter More section.
+ * Letter shortcuts still open a surface from anywhere outside a typing context.
+ */
+function RightPanelEmptyState(props: {
+  conversationMode: "chat" | "code";
+  previewSessions: Readonly<Record<string, PreviewSessionSnapshot>>;
+  projectLabel: string | null;
+  diffStats: EnvironmentDiffStats | null;
+  onOpenPreviewTab?: ((tabId: string) => void) | undefined;
+  onAddBrowser: () => void;
+  onAddTerminal: () => void;
+  onAddDiff: () => void;
+  onAddFiles: () => void;
+  onAddPullRequest: () => void;
+  onAddAgents: () => void;
+  onAddContext: () => void;
+  onAddArtifacts: () => void;
+  onAddMusic: () => void;
+  onAddCanvas: () => void;
+  onAddDevice: () => void;
+  browserAvailable: boolean;
+  terminalAvailable: boolean;
+  diffAvailable: boolean;
+  filesAvailable: boolean;
+  pullRequestAvailable: boolean;
+  agentsAvailable: boolean;
+  contextAvailable: boolean;
+  artifactsAvailable: boolean;
+  musicAvailable: boolean;
+  canvasAvailable: boolean;
+  deviceAvailable: boolean;
+  liveAgentCount: number;
+}) {
+  // -1 means no highlight: it only appears on hover or arrow use.
+  const [highlight, setHighlight] = useState(-1);
+
+  const actions = [
+    {
+      label: "Browser",
+      description: "Open a local app or URL.",
+      icon: Globe2,
+      shortcut: "B",
+      available: props.browserAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.browser,
+      onClick: props.onAddBrowser,
+      badgeCount: 0,
+    },
+    {
+      label: "Mobile Simulator",
+      description: "Boot iOS Simulator or the Android Emulator.",
+      icon: Smartphone,
+      shortcut: "S",
+      available: props.deviceAvailable,
+      onClick: props.onAddDevice,
+      badgeCount: 0,
+    },
+    {
+      label: "Music",
+      description: "Play from Apple Music, Spotify, and more.",
+      icon: Music2,
+      shortcut: "M",
+      available: props.musicAvailable,
+      onClick: props.onAddMusic,
+      badgeCount: 0,
+    },
+    {
+      label: "Canvas",
+      description: "Dashboards, slides, docs, and spreadsheets.",
+      icon: LayoutDashboard,
+      shortcut: "C",
+      available: props.canvasAvailable,
+      onClick: props.onAddCanvas,
+      badgeCount: 0,
+    },
+    {
+      label: "Terminal",
+      codeOnly: true,
+      description: "Start a shell in this workspace.",
+      icon: TerminalSquare,
+      shortcut: "T",
+      available: props.terminalAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.terminal,
+      onClick: props.onAddTerminal,
+      badgeCount: 0,
+    },
+    {
+      label: "Files",
+      description: "Browse and read workspace files.",
+      icon: FileText,
+      shortcut: "F",
+      available: props.filesAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.files,
+      onClick: props.onAddFiles,
+      badgeCount: 0,
+    },
+    {
+      label: "Diff",
+      codeOnly: true,
+      description: "Review changes in this thread.",
+      icon: FileDiff,
+      shortcut: "D",
+      available: props.diffAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.diff,
+      onClick: props.onAddDiff,
+      badgeCount: 0,
+    },
+    {
+      label: "Pull request",
+      codeOnly: true,
+      description: "Open this branch's pull request.",
+      icon: GitPullRequest,
+      shortcut: "P",
+      available: props.pullRequestAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.pullRequest,
+      onClick: props.onAddPullRequest,
+      badgeCount: 0,
+    },
+    {
+      label: "Agents",
+      description: "Follow sidechats, agents, and workflows.",
+      icon: Bot,
+      shortcut: "A",
+      available: props.agentsAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.agents,
+      onClick: props.onAddAgents,
+      badgeCount: props.liveAgentCount,
+    },
+    {
+      label: "Context",
+      description: "See what is filling the context window.",
+      icon: ChartColumn,
+      shortcut: "C",
+      available: props.contextAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.context,
+      onClick: props.onAddContext,
+      badgeCount: 0,
+    },
+    {
+      label: "Artifacts",
+      description: "Open the files this thread produced.",
+      icon: FileStack,
+      shortcut: "R",
+      available: props.artifactsAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.artifacts,
+      onClick: props.onAddArtifacts,
+      badgeCount: 0,
+    },
+  ].filter((action) => surfaceActionVisibleInConversation(props.conversationMode, action));
+
+  type SurfaceAction = (typeof actions)[number];
+
+  const availableActions = actions.filter((action) => action.available);
+  const highlightIndex =
+    availableActions.length === 0 ? -1 : Math.min(highlight, availableActions.length - 1);
+
+  // Letter shortcuts work while the launcher is visible, not only while it
+  // is focused; focus moves around too easily (stray clicks) to carry them.
+  // Capture phase so app-level key handlers cannot swallow the event first;
+  // typing contexts and already-handled events are left alone.
+  const shortcutActionsRef = useRef(availableActions);
+  useEffect(() => {
+    shortcutActionsRef.current = availableActions;
+  });
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const action = surfaceShortcutActionForKey(shortcutActionsRef.current, event);
+      if (!action) return;
+      if (document.querySelector(LAUNCHER_SHORTCUT_BLOCKING_LAYERS)) return;
+      const target = event.target;
+      if (target instanceof Element && surfaceShortcutTargetsTypingContext(target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      action.onClick();
+    };
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
+  }, []);
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (availableActions.length === 0) return;
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      event.preventDefault();
+      setHighlight((highlightIndex + 1) % availableActions.length);
+      return;
+    }
+    if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      setHighlight(
+        highlightIndex === -1
+          ? availableActions.length - 1
+          : (highlightIndex - 1 + availableActions.length) % availableActions.length,
+      );
+      return;
+    }
+    if (event.key === "Enter") {
+      // A focused card button owns its own activation; only open from the
+      // highlight when the container itself has focus.
+      if (event.target instanceof HTMLElement && event.target.closest("button")) return;
+      const action = availableActions[highlightIndex];
+      if (!action) return;
+      event.preventDefault();
+      action.onClick();
+    }
+  };
+
+  // Stable identity so React only runs this callback ref on mount/unmount;
+  // an inline arrow would re-attach and re-focus on every render.
+  const focusOnMount = useCallback((node: HTMLDivElement | null) => {
+    node?.focus();
+  }, []);
+
+  const isHighlighted = (action: SurfaceAction) =>
+    highlightIndex !== -1 && availableActions[highlightIndex] === action;
+
+  const actionIcon = (action: SurfaceAction, iconClassName = "size-4") => {
+    const Icon = action.icon;
+    return (
+      <span className="relative inline-flex shrink-0">
+        <Icon className={iconClassName} />
+        {action.badgeCount > 0 ? (
+          <span
+            aria-hidden
+            className="absolute -top-1.5 -right-2 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-info px-1 text-[9px] font-semibold tabular-nums text-white"
+          >
+            {action.badgeCount}
+          </span>
+        ) : null}
+      </span>
+    );
+  };
+
+  const openTabs = previewOpenTabs(props.previewSessions);
+  const environmentActionLabels = new Set(["Diff", "Browser", "Terminal", "Files"]);
+  const environmentRows = (
+    [
+      { label: "Diff", display: "Changes" },
+      { label: "Browser", display: "Browser" },
+      { label: "Terminal", display: "Terminal" },
+      { label: "Files", display: "Files" },
+    ] as const
+  ).flatMap((row) => {
+    const action = actions.find((candidate) => candidate.label === row.label);
+    return action ? [{ action, display: row.display }] : [];
+  });
+  const moreActions = actions.filter((action) => !environmentActionLabels.has(action.label));
+  const projectHeading = props.projectLabel ? `On ${props.projectLabel}` : "Workspace";
+
+  const renderEnvironmentRow = (action: SurfaceAction, display: string, trailing?: ReactNode) => {
+    const highlighted = isHighlighted(action);
+    const rowClass = cn(
+      "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px]",
+      action.available
+        ? "cursor-pointer text-foreground/90 hover:bg-accent/70 hover:text-foreground"
+        : "cursor-default text-muted-foreground/70",
+      highlighted && action.available && "bg-accent/70 text-foreground",
+    );
+    const body = (
+      <>
+        {actionIcon(action, "size-[15px]")}
+        <span className="min-w-0 flex-1 truncate">{display}</span>
+        {trailing}
+      </>
+    );
+    if (!action.available) {
+      return (
+        <div key={action.label} className={rowClass} title={action.disabledReason}>
+          {body}
+        </div>
+      );
+    }
+    return (
+      <button
+        key={action.label}
+        type="button"
+        onClick={action.onClick}
+        onMouseEnter={() => setHighlight(availableActions.indexOf(action))}
+        onMouseLeave={() =>
+          setHighlight((current) => (current === availableActions.indexOf(action) ? -1 : current))
+        }
+        className={rowClass}
+      >
+        {body}
+      </button>
+    );
+  };
+
+  return (
+    <div
+      ref={focusOnMount}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      aria-label="Environments"
+      data-surface-launcher-keys={availableActions.map((action) => action.shortcut).join("")}
+      className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pt-4 pb-6 outline-none"
+    >
+      {openTabs.length > 0 ? (
+        <section className="mb-5">
+          <h3 className="px-2 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
+            Open Tabs
+          </h3>
+          <div className="flex flex-col">
+            {openTabs.map((tab) => (
+              <button
+                key={tab.tabId}
+                type="button"
+                onClick={() => {
+                  if (props.onOpenPreviewTab) {
+                    props.onOpenPreviewTab(tab.tabId);
+                    return;
+                  }
+                  props.onAddBrowser();
+                }}
+                className="flex w-full cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] text-foreground/90 hover:bg-accent/70 hover:text-foreground"
+              >
+                <Globe2 className="size-[15px] shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{tab.title}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <section>
+        <h3 className="px-2 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
+          {projectHeading}
+        </h3>
+        <div className="flex flex-col">
+          {environmentRows.map(({ action, display }) =>
+            renderEnvironmentRow(
+              action,
+              display,
+              display === "Changes" && props.diffStats ? (
+                <span className="shrink-0 font-mono text-[12px] tabular-nums">
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    +{props.diffStats.insertions}
+                  </span>{" "}
+                  <span className="text-red-600 dark:text-red-400">
+                    −{props.diffStats.deletions}
+                  </span>
+                </span>
+              ) : undefined,
+            ),
+          )}
+        </div>
+      </section>
+      {moreActions.length > 0 ? (
+        <section className="mt-5">
+          <h3 className="px-2 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
+            More
+          </h3>
+          <div className="flex flex-col">
+            {moreActions.map((action) => renderEnvironmentRow(action, action.label))}
+          </div>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+function surfaceTitle(
+  surface: RightPanelSurface,
+  sessions: Readonly<Record<string, PreviewSessionSnapshot>>,
+  terminalLabelsById: ReadonlyMap<string, string>,
+): string {
+  switch (surface.kind) {
+    case "diff":
+      return "Diff";
+    case "files":
+      return "Files";
+    case "file":
+      return surface.relativePath.slice(surface.relativePath.lastIndexOf("/") + 1);
+    case "terminal":
+      return (
+        terminalLabelsById.get(surface.activeTerminalId) ??
+        getTerminalLabel(surface.activeTerminalId)
+      );
+    case "pull-request":
+      return `#${surface.number}`;
+    case "agents":
+      return "Agents";
+    case "context":
+      return "Context";
+    case "artifacts":
+      return "Artifacts";
+    case "music":
+      return "Music";
+    case "device":
+      return "Simulator";
+    case "slides":
+    case "docs":
+    case "sheets":
+    case "canvas":
+      return "Canvas";
+    case "preview": {
+      const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
+      if (!snapshot || snapshot.navStatus._tag === "Idle") return "Browser";
+      if (snapshot.navStatus.title.trim().length > 0) return snapshot.navStatus.title;
+      try {
+        return new URL(snapshot.navStatus.url).host || "Browser";
+      } catch {
+        return "Browser";
+      }
+    }
+  }
+}
+
+function PreviewFavicon({ capturedUrl, url }: { capturedUrl: string | null; url: string | null }) {
+  const publicProviderUrl = faviconUrlForOrigin(url, 32);
+  return (
+    <FaviconImage
+      sources={[capturedUrl, publicProviderUrl]}
+      fallback={<Globe2 className="size-3 shrink-0" />}
+      className="size-3 shrink-0 rounded-sm object-contain"
+    />
+  );
+}
+
+function sameOrigin(left: string, right: string): boolean {
+  try {
+    return new URL(left).origin === new URL(right).origin;
+  } catch {
+    return false;
+  }
+}
+
+function SurfaceIcon({
+  surface,
+  sessions,
+  desktopByTabId,
+  theme,
+  pullRequestStatuses,
+}: {
+  surface: RightPanelSurface;
+  sessions: Readonly<Record<string, PreviewSessionSnapshot>>;
+  desktopByTabId: Readonly<Record<string, DesktopPreviewOverlay>>;
+  theme: "light" | "dark";
+  pullRequestStatuses: Readonly<Record<string, PullRequestTabStatus>> | undefined;
+}) {
+  switch (surface.kind) {
+    case "preview": {
+      const snapshot = surface.resourceId ? sessions[surface.resourceId] : null;
+      const url = !snapshot || snapshot.navStatus._tag === "Idle" ? null : snapshot.navStatus.url;
+      const favicon = snapshot ? (desktopByTabId[snapshot.tabId]?.favicon ?? null) : null;
+      const capturedUrl =
+        favicon && url && sameOrigin(favicon.pageUrl, url) ? favicon.dataUrl : null;
+      return <PreviewFavicon capturedUrl={capturedUrl} url={url} />;
+    }
+    case "diff":
+      return <FileDiff className="size-3 shrink-0" />;
+    case "files":
+      return <Files className="size-3 shrink-0" />;
+    case "file":
+      return (
+        <PierreEntryIcon
+          pathValue={surface.relativePath}
+          kind="file"
+          theme={theme}
+          className="size-3"
+        />
+      );
+    case "terminal":
+      return <TerminalSquare className="size-3 shrink-0" />;
+    case "pull-request": {
+      const status = pullRequestStatuses?.[surface.id] ?? null;
+      const toneClassName =
+        status?.state === "merged"
+          ? "text-violet-600 dark:text-violet-300/90"
+          : status?.state === "closed"
+            ? "text-red-600 dark:text-red-300/90"
+            : status?.isDraft
+              ? "text-zinc-500 dark:text-zinc-400/80"
+              : status?.state === "open"
+                ? "text-emerald-600 dark:text-emerald-300/90"
+                : "text-muted-foreground";
+      return <GitPullRequest className={cn("size-3 shrink-0", toneClassName)} />;
+    }
+    case "agents":
+      return <Bot className="size-3 shrink-0" />;
+    case "context":
+      return <ChartColumn className="size-3 shrink-0" />;
+    case "artifacts":
+      return <FileStack className="size-3 shrink-0" />;
+    case "music":
+      return <Music2 className="size-3 shrink-0" />;
+    case "device":
+      return <Smartphone className="size-3 shrink-0" />;
+    case "slides":
+    case "docs":
+    case "sheets":
+    case "canvas":
+      return <LayoutDashboard className="size-3 shrink-0" />;
+  }
+}
+
+export function RightPanelTabs(props: RightPanelTabsProps) {
+  const conversationMode = props.conversationMode ?? "code";
+  const ownsDesktopTitleBar = isElectron && props.mode === "inline";
+  const { resolvedTheme } = useTheme();
+  const tabListRef = useRef<HTMLDivElement>(null);
+  const [addSurfaceMenuOpen, setAddSurfaceMenuOpen] = useState(false);
+
+  const addSurfaceActions = [
+    {
+      label: "Browser",
+      icon: Globe2,
+      shortcut: "B",
+      available: props.browserAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.browser,
+      onClick: props.onAddBrowser,
+    },
+    {
+      label: "Mobile Simulator",
+      icon: Smartphone,
+      shortcut: "S",
+      available: props.deviceAvailable,
+      onClick: props.onAddDevice,
+    },
+    {
+      label: "Music",
+      icon: Music2,
+      shortcut: "M",
+      available: props.musicAvailable,
+      onClick: props.onAddMusic,
+    },
+    {
+      label: "Canvas",
+      icon: LayoutDashboard,
+      shortcut: "C",
+      available: props.canvasAvailable,
+      onClick: props.onAddCanvas,
+    },
+    {
+      label: "Terminal",
+      codeOnly: true,
+      icon: TerminalSquare,
+      shortcut: "T",
+      available: props.terminalAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.terminal,
+      onClick: props.onAddTerminal,
+    },
+    {
+      label: "Files",
+      icon: Files,
+      shortcut: "F",
+      available: props.filesAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.files,
+      onClick: props.onAddFiles,
+    },
+    {
+      label: "Diff",
+      codeOnly: true,
+      icon: FileDiff,
+      shortcut: "D",
+      available: props.diffAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.diff,
+      onClick: props.onAddDiff,
+    },
+    {
+      label: "Pull request",
+      codeOnly: true,
+      icon: GitPullRequest,
+      shortcut: "P",
+      available: props.pullRequestAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.pullRequest,
+      onClick: props.onAddPullRequest,
+    },
+    {
+      label: "Agents",
+      icon: Bot,
+      shortcut: "A",
+      available: props.agentsAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.agents,
+      onClick: props.onAddAgents,
+    },
+    {
+      label: "Context",
+      icon: ChartColumn,
+      shortcut: "C",
+      available: props.contextAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.context,
+      onClick: props.onAddContext,
+    },
+    {
+      label: "Artifacts",
+      icon: FileStack,
+      shortcut: "R",
+      available: props.artifactsAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.artifacts,
+      onClick: props.onAddArtifacts,
+    },
+  ].filter((action) => surfaceActionVisibleInConversation(conversationMode, action));
+
+  const handleAddSurfaceMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const action = surfaceShortcutActionForKey(addSurfaceActions, event.nativeEvent);
+    if (!action) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setAddSurfaceMenuOpen(false);
+    action.onClick();
+  };
+
+  const handleTabContextMenu = useCallback(
+    async (event: ReactMouseEvent, surface: RightPanelSurface) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const api = readLocalApi();
+      if (!api) return;
+
+      const surfaceIndex = props.surfaces.findIndex((entry) => entry.id === surface.id);
+      if (surfaceIndex < 0) return;
+
+      const items: ContextMenuItem<TabContextMenuAction>[] = [];
+      if (surface.kind === "file") {
+        items.push({ id: "copy-path", label: "Copy path" });
+      }
+      const menuPreviewTabId = previewTabIdOf(surface, props.previewSessions);
+      // Desktop overlay state only arrives once the preview manager has created
+      // the tab. A server session id alone can still be ahead of that, and
+      // muting then fails with PreviewTabNotFoundError that nobody surfaces.
+      const menuOverlay = menuPreviewTabId
+        ? (props.desktopByTabId[menuPreviewTabId] ?? null)
+        : null;
+      const menuMuted = menuOverlay?.audioMuted ?? false;
+      if (surface.kind === "preview") {
+        // Not gated on audibility: silencing a quiet tab ahead of time is the
+        // point, so the item is offered whenever the tab is mutable at all.
+        items.push({
+          id: "toggle-mute",
+          ...tabMuteMenuItem({
+            overlay: menuOverlay,
+            canResolveRuntimeTabId: props.previewRuntimeTabId !== undefined,
+          }),
+        });
+      }
+      items.push(
+        { id: "close", label: "Close" },
+        {
+          id: "close-others",
+          label: "Close others",
+          disabled: props.surfaces.length <= 1,
+        },
+        {
+          id: "close-to-right",
+          label: "Close to the right",
+          disabled: surfaceIndex >= props.surfaces.length - 1,
+        },
+        {
+          id: "close-all",
+          label: "Close all",
+          disabled: props.surfaces.length === 0,
+        },
+      );
+
+      const action = await api.contextMenu.show(items, { x: event.clientX, y: event.clientY });
+      switch (action) {
+        case "copy-path":
+          if (surface.kind === "file") props.onCopyFilePath(surface.relativePath);
+          break;
+        case "toggle-mute": {
+          // menuOverlay repeats the disabled gate above: the desktop tab must
+          // exist before it can be addressed, however the menu was dismissed.
+          const runtimeTabId =
+            menuPreviewTabId && menuOverlay
+              ? (props.previewRuntimeTabId?.(menuPreviewTabId) ?? null)
+              : null;
+          if (runtimeTabId) {
+            void previewBridge?.setAudioMuted(runtimeTabId, !menuMuted).catch(() => undefined);
+          }
+          break;
+        }
+        case "close":
+          props.onCloseSurface(surface);
+          break;
+        case "close-others":
+          props.onCloseOtherSurfaces(surface);
+          break;
+        case "close-to-right":
+          props.onCloseSurfacesToRight(surface);
+          break;
+        case "close-all":
+          props.onCloseAllSurfaces();
+          break;
+        case null:
+          break;
+      }
+    },
+    [props],
+  );
+  const handleTabMouseDown = useCallback((event: ReactMouseEvent) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+  }, []);
+  const handleTabAuxClick = useCallback(
+    (event: ReactMouseEvent, surface: RightPanelSurface) => {
+      if (event.button !== 1) return;
+      event.preventDefault();
+      event.stopPropagation();
+      props.onCloseSurface(surface);
+    },
+    [props],
+  );
+
+  useEffect(() => {
+    const activeTab = tabListRef.current?.querySelector<HTMLElement>("[data-active-tab='true']");
+    activeTab?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [props.activeSurfaceId]);
+
+  return (
+    <PreviewPanelShell
+      mode={props.mode}
+      {...(props.open !== undefined ? { open: props.open } : {})}
+      {...(props.maximized !== undefined ? { maximized: props.maximized } : {})}
+      {...(props.widthStorageKey !== undefined ? { widthStorageKey: props.widthStorageKey } : {})}
+      {...(props.defaultWidth !== undefined ? { defaultWidth: props.defaultWidth } : {})}
+    >
+      <div
+        className={cn(
+          "flex h-[var(--workspace-topbar-height)] min-h-[var(--workspace-topbar-height)] shrink-0 items-center gap-1 pl-2",
+          // The sheet overlays from the viewport top, so its tab bar keeps
+          // the titlebar's height: a compact row re-centers the layout
+          // controls a few pixels higher and the cluster jumps on open.
+          props.mode === "inline" && !props.layoutControls ? "pr-36" : "pr-3",
+          ownsDesktopTitleBar && "wco:pr-[calc(var(--workspace-native-controls-inset)+6rem)]",
+          props.mode === "inline" && props.maximized && COLLAPSED_SIDEBAR_TITLEBAR_INSET_CLASS,
+        )}
+        data-right-panel-tabbar
+      >
+        <ScrollArea
+          ref={tabListRef}
+          hideScrollbars
+          scrollFade
+          className={cn("min-w-0 flex-1 rounded-none", ownsDesktopTitleBar && "drag-region")}
+          data-right-panel-tab-list
+        >
+          <div className="flex h-full w-max min-w-full items-center gap-1">
+            {props.surfaces.map((surface) => {
+              const active = surface.id === props.activeSurfaceId;
+              const pending = props.pendingSurfaceIds.has(surface.id);
+              const title = surfaceTitle(surface, props.previewSessions, props.terminalLabelsById);
+              const previewTabId = previewTabIdOf(surface, props.previewSessions);
+              // Desktop state is keyed by the session id, but desktop actions
+              // must be addressed with the runtime id.
+              const audio = tabAudioState(
+                previewTabId ? (props.desktopByTabId[previewTabId] ?? null) : null,
+              );
+              const audioRuntimeTabId = previewTabId
+                ? (props.previewRuntimeTabId?.(previewTabId) ?? null)
+                : null;
+              return (
+                <div
+                  key={surface.id}
+                  data-active-tab={active}
+                  onMouseDown={handleTabMouseDown}
+                  onAuxClick={(event) => handleTabAuxClick(event, surface)}
+                  onContextMenu={(event) => void handleTabContextMenu(event, surface)}
+                  className={cn(
+                    "cursor-pointer group/tab flex h-6 max-w-36 shrink-0 items-center gap-0.5 rounded-md pr-2 pl-1.5 text-xs",
+                    active
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                  )}
+                >
+                  <button
+                    type="button"
+                    className="cursor-pointer group/close relative flex size-4 shrink-0 items-center justify-center rounded-sm hover:bg-muted"
+                    aria-label={`Close ${title}`}
+                    onClick={() => props.onCloseSurface(surface)}
+                  >
+                    <span className="relative flex size-3 items-center justify-center group-hover/tab:hidden group-focus-visible/close:hidden">
+                      <SurfaceIcon
+                        surface={surface}
+                        sessions={props.previewSessions}
+                        desktopByTabId={props.desktopByTabId}
+                        theme={resolvedTheme}
+                        pullRequestStatuses={props.pullRequestStatuses}
+                      />
+                      {pending ? (
+                        <span
+                          className="absolute -right-0.5 -bottom-0.5 size-1.5 rounded-full bg-current"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </span>
+                    <X className="hidden size-3 group-hover/tab:block group-focus-visible/close:block" />
+                  </button>
+                  {audio === "none" || !audioRuntimeTabId ? null : (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <button
+                            type="button"
+                            className="cursor-pointer flex size-4 shrink-0 items-center justify-center rounded-sm hover:bg-muted"
+                            aria-label={audio === "muted" ? `Unmute ${title}` : `Mute ${title}`}
+                            onClick={(event) => {
+                              // Sibling of the close button, inside a tab that
+                              // activates on click: keep this to the toggle.
+                              event.stopPropagation();
+                              void previewBridge
+                                ?.setAudioMuted(audioRuntimeTabId, audio !== "muted")
+                                .catch(() => undefined);
+                            }}
+                          >
+                            {audio === "muted" ? (
+                              <VolumeOff className="size-3" />
+                            ) : (
+                              <Volume2 className="size-3" />
+                            )}
+                          </button>
+                        }
+                      />
+                      <TooltipPopup>{audio === "muted" ? "Unmute tab" : "Mute tab"}</TooltipPopup>
+                    </Tooltip>
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type="button"
+                          className="cursor-pointer flex min-w-0 items-center"
+                          onClick={() => props.onActivate(surface)}
+                        >
+                          <span className="truncate">{title}</span>
+                        </button>
+                      }
+                    />
+                    <TooltipPopup>{title}</TooltipPopup>
+                  </Tooltip>
+                </div>
+              );
+            })}
+            {props.surfaces.length > 0 ? (
+              <Menu open={addSurfaceMenuOpen} onOpenChange={setAddSurfaceMenuOpen}>
+                <MenuTrigger
+                  render={
+                    <Button
+                      aria-label="Add panel surface"
+                      className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                      size="icon-xs"
+                      variant="ghost"
+                    />
+                  }
+                >
+                  <Plus className="size-3.5" />
+                </MenuTrigger>
+                <MenuPopup
+                  align="start"
+                  side="bottom"
+                  sideOffset={6}
+                  className="min-w-44"
+                  onKeyDownCapture={handleAddSurfaceMenuKeyDown}
+                >
+                  {addSurfaceActions.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <SurfaceMenuItem
+                        key={action.label}
+                        available={action.available}
+                        disabledReason={action.disabledReason}
+                        shortcut={action.shortcut}
+                        onClick={action.onClick}
+                      >
+                        <Icon />
+                        {action.label}
+                      </SurfaceMenuItem>
+                    );
+                  })}
+                </MenuPopup>
+              </Menu>
+            ) : null}
+          </div>
+        </ScrollArea>
+        {props.layoutControls}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col" data-right-panel-surface-content>
+        {props.activeSurfaceId === null ? (
+          <RightPanelEmptyState
+            conversationMode={conversationMode}
+            previewSessions={props.previewSessions}
+            projectLabel={props.projectLabel ?? null}
+            diffStats={props.diffStats ?? null}
+            onOpenPreviewTab={props.onOpenPreviewTab}
+            onAddBrowser={props.onAddBrowser}
+            onAddTerminal={props.onAddTerminal}
+            onAddDiff={props.onAddDiff}
+            onAddFiles={props.onAddFiles}
+            onAddPullRequest={props.onAddPullRequest}
+            onAddAgents={props.onAddAgents}
+            onAddArtifacts={props.onAddArtifacts}
+            onAddMusic={props.onAddMusic}
+            onAddCanvas={props.onAddCanvas}
+            onAddDevice={props.onAddDevice}
+            onAddContext={props.onAddContext}
+            browserAvailable={props.browserAvailable}
+            terminalAvailable={props.terminalAvailable}
+            diffAvailable={props.diffAvailable}
+            filesAvailable={props.filesAvailable}
+            pullRequestAvailable={props.pullRequestAvailable}
+            agentsAvailable={props.agentsAvailable}
+            contextAvailable={props.contextAvailable}
+            artifactsAvailable={props.artifactsAvailable}
+            musicAvailable={props.musicAvailable}
+            canvasAvailable={props.canvasAvailable}
+            deviceAvailable={props.deviceAvailable}
+            liveAgentCount={props.liveAgentCount}
+          />
+        ) : (
+          props.children
+        )}
+      </div>
+    </PreviewPanelShell>
+  );
+}

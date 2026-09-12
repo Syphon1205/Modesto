@@ -1,0 +1,563 @@
+---
+import BrandArtwork from "../../components/BrandArtwork.astro";
+import Layout from "../../layouts/ResourceLayout.astro";
+---
+
+<Layout
+  title="650 sessions. 25 cities. — Modesto"
+  description="A milestone post celebrating 650+ active developer workspace sessions tracked across 25 cities globally — and what the team learned watching the early community use the product."
+>
+  <article class="article-shell">
+
+    <header class="article-header">
+      <div class="article-eyebrow">
+        <a href="/articles" class="back mono">← Blog</a>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <button type="button" id="download-pdf-btn" onclick="window.print()" class="mono" style="background: none; border: none; color: var(--faint); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: color 150ms ease;">Download PDF ↓</button>
+          <span class="mono article-date">August 14, 2026</span>
+        </div>
+      </div>
+      <div class="article-cover"><BrandArtwork /></div>
+      <div class="article-header-copy">
+        <span class="mono article-cat">Milestone</span>
+        <h1>650 sessions.<br />25 cities.</h1>
+        <p class="article-lede">
+          We shipped Modesto publicly a few months ago with no marketing, no launch campaign, and no realistic expectation of scale. This is the honest account of what happened next.
+        </p>
+        <div class="article-meta">
+          <span class="mono">Modesto Team</span>
+          <span class="meta-sep mono">·</span>
+          <span class="mono">5 min read</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-rule"></div>
+
+    <div class="article-body">
+
+      <p>
+        650 active developer workspace sessions. 25 cities across four continents. We hit that number last week, and I have been sitting with it for a few days before writing this because I wanted to say something real about it rather than something that sounds like a press release.
+      </p>
+
+      <p>
+        The honest context: we started from zero. Not zero in the "scrappy startup" sense — zero as in a GitHub repository with no public releases and a handful of people who found the project through word of mouth, Discord servers, and Hacker News threads. The first install outside our own machines happened six weeks after the first public commit. We know this because we track installs by version, and the version-one distribution is a narrow spike followed by a long tail of people who found us later.
+      </p>
+
+      <p>
+        Getting from that first install to 650 active sessions felt slow from the inside. Looking at the growth curve now, it was not slow at all.
+      </p>
+
+      <h2>Where the sessions are coming from</h2>
+
+      <p>
+        When you build a desktop GUI for AI coding agents, you assume the early adopters are going to cluster in San Francisco and New York. That is where the AI-native companies are, where the developer media is, where the conference energy is. We built for that assumption. We were wrong.
+      </p>
+
+      <p>
+        The geographic breakdown surprised us enough that we ran the numbers three times. The Central US is the epicenter. Chicago, Austin, Dallas, Denver, Houston, Minneapolis, Nashville — these cities account for a disproportionate share of our most active sessions. Not just installs. Active sessions, meaning developers who opened Modesto, started an agent run, and kept going. The cities that dominate the tech narrative are present, but they are not leading.
+      </p>
+
+      <blockquote>
+        The developers doing the most serious, sustained work with AI coding agents right now are not who the industry expected. They are engineers at mid-market software companies, independent consultants, and small product teams in cities that do not have a TechCrunch bureau.
+      </blockquote>
+
+      <p>
+        We think we understand why. The AI-native hubs are full of people building AI products. The Central US hubs are full of people building with AI — using it as a tool against real, existing, production codebases with real business stakes. They have less tolerance for toys and more patience for tools that require some setup if the payoff is genuine. Modesto requires some setup. The payoff is genuine. That combination seems to resonate most with engineers who have actual work to get done.
+      </p>
+
+      <h2>What they are doing in those sessions</h2>
+
+      <p>
+        We can see session structure — what kinds of tasks get started, how long sessions run, where they end. We cannot and do not see code or prompts. What the structure tells us is that the people using Modesto are not running demos.
+      </p>
+
+      <p>
+        The most common session pattern is a long-running task delegated to Codex or Claude Code against an existing repository. Not a new project. Not a toy. A real codebase with existing tests, existing conventions, and existing debt. These developers are handing the agent a problem — refactor this module, add pagination to these three endpoints, migrate this authentication flow — and then managing the result rather than writing every line themselves.
+      </p>
+
+      <p>
+        The second pattern we see is checkpoint-based handoff. A developer starts a session in the morning, works with the agent through the first phase of a problem, checkpoints the state, and picks it back up in the afternoon or the next day. The checkpoint carries the conversation context, the current diff, and the outstanding decisions. When they return, they do not re-establish context from scratch. This was a design bet we made early. It is clearly paying off.
+      </p>
+
+      <p>
+        The third pattern — and the one we did not fully anticipate — is cross-agent collaboration within a single project. Developers are starting a session with Codex for the implementation work and then spinning up a second session with Claude Code for the code review and the architectural critique. They use Modesto as the coordinator: same project, same checkpoint history, different agents. We built the infrastructure for this, but we did not expect people to figure it out and use it this quickly.
+      </p>
+
+      <h2>What we learned from watching</h2>
+
+      <p>
+        Early users teach you things you did not know to ask. A few of the changes we shipped in the last eight weeks came directly from watching how the community used the product in ways we had not anticipated.
+      </p>
+
+      <p>
+        The first was session naming. We shipped without any kind of automatic session labeling. Users immediately started naming sessions by hand — long, specific names like "auth-token-refresh-refactor-aug-5" — which told us the session list was already deep enough that retrieval was a problem. We shipped contextual session titles in the next release.
+      </p>
+
+      <p>
+        The second was the approval flow. We had designed the approval prompt as a blocking modal. Users were multitasking across sessions and the blocking behavior was creating friction when an agent needed sign-off and the developer was looking at a different session. We moved to an inline, non-blocking approval affordance and the average time-to-approve dropped substantially.
+      </p>
+
+      <p>
+        The third was something subtler. Developers were using the Modesto session transcript to write their own commit messages and pull request descriptions. They were reading back through the conversation history and using the agent's explanations as drafts for the human-readable record. We did not design for this. We are designing for it now.
+      </p>
+
+      <h2>The install numbers, in full</h2>
+
+      <p>
+        We have 65+ installs of the most recent version. That number is real but incomplete. It does not count auto-updates from earlier versions, which represent a meaningful fraction of active users who installed months ago and have not manually reinstalled. It does not count the developers running forks or builds from source — and there are some, visible in the GitHub traffic. It does not count the people who cloned the repository to read the code and never ran an installer.
+      </p>
+
+      <p>
+        The GitHub traffic is the most honest signal of reach. Unique visitors to the repository, unique cloners, watch counts — these are all higher than the install numbers suggest. The 650 active sessions and the 25 cities are derived from opt-in session telemetry, which means the real count of people who have touched Modesto is larger. We prefer to report the conservative number.
+      </p>
+
+      <h2>What we are accelerating</h2>
+
+      <p>
+        Traction does something useful: it tells you which bets to press. The roadmap items we are moving up because of what we have seen in the last few months are not surprises — they were always on the list — but the community's behavior has made their priority clearer.
+      </p>
+
+      <p>
+        Cross-agent orchestration is moving to the top. The developers doing multi-agent work inside a single Modesto project are doing it manually right now. They are opening sessions, setting context by hand, and coordinating through the checkpoint system. We want to make this composable — a first-class workflow where you can define a handoff sequence and Modesto handles the context routing.
+      </p>
+
+      <p>
+        Team workspaces are accelerating. Right now Modesto is a single-developer tool. The checkpoint architecture was always designed with teams in mind, but the product surface for sharing, reviewing, and co-owning sessions with teammates does not exist yet. It is next.
+      </p>
+
+      <p>
+        And the transcript-to-documentation path — the one users discovered themselves — is getting real investment. If developers are already using session transcripts to write PR descriptions, we should make that path first-class: structured, editable, and exportable in formats that fit existing review workflows.
+      </p>
+
+      <p>
+        650 sessions in 25 cities is a real number. But the more meaningful number is the one we cannot measure directly: the amount of actual work that got done inside those sessions, by developers who needed a tool that treated AI agents as serious colleagues rather than impressive toys. Thank you for building with us.
+      </p>
+
+    </div>
+
+    <div class="article-rule"></div>
+
+    <footer class="article-footer">
+      <div class="article-footer-left">
+        <span class="mono">Modesto · August 2026</span>
+        <p>Modesto is available now for macOS, Windows, and Linux. Local-first, model-agnostic, built for how software teams actually work with AI agents.</p>
+      </div>
+      <div class="article-footer-right">
+        <a href="/articles" class="mono back-link">← All articles</a>
+      </div>
+    </footer>
+
+  </article>
+
+  <!-- Print-only branded footer -->
+  <div class="article-print-footer" aria-hidden="true">
+    <img src="/modesto-logo.svg" alt="" />
+    <span>Modesto</span>
+    <span class="article-print-footer-url">modesto.dev/articles</span>
+  </div>
+</Layout>
+
+<style>
+  .article-print-footer {
+    display: none;
+  }
+
+  .article-shell {
+    width: min(100% - 48px, 1440px);
+    margin: 0 auto;
+    border-inline: 1px solid var(--line);
+  }
+
+  /* ── Header ── */
+  .article-header {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(28px, 8vw, 120px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .article-date {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-cover {
+    width: 100%;
+    aspect-ratio: 16 / 6;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .article-header-copy {
+    padding: clamp(40px, 7vw, 80px) clamp(28px, 8vw, 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: radial-gradient(ellipse 60% 45% at 50% -10%, color-mix(in srgb, var(--violet) 10%, transparent), transparent 68%);
+  }
+
+  .article-cat {
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-header h1 {
+    font-size: clamp(3rem, 7vw, 7rem);
+    font-weight: 500;
+    letter-spacing: -0.07em;
+    line-height: 0.88;
+    color: var(--ink);
+    max-width: 900px;
+  }
+
+  .article-lede {
+    max-width: 600px;
+    font-size: clamp(15px, 1.6vw, 18px);
+    line-height: 1.65;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .meta-sep {
+    opacity: 0.5;
+  }
+
+  /* ── Rule ── */
+  .article-rule {
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ── Body ── */
+  .article-body {
+    display: grid;
+    grid-template-columns: 1fr min(680px, 100%) 1fr;
+    padding: clamp(60px, 8vw, 100px) 0;
+    row-gap: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-body > * {
+    grid-column: 2;
+  }
+
+  .article-body p {
+    font-size: 17px;
+    line-height: 1.78;
+    color: var(--ink);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h2 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-top: 64px;
+    margin-bottom: 28px;
+  }
+
+  .article-body ul {
+    margin: 0 0 28px 0;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .article-body li {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .article-body blockquote {
+    margin: 48px 0;
+    padding: 32px 36px;
+    border-left: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--paper-deep) 60%, transparent);
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+    color: var(--ink);
+    font-style: normal;
+  }
+
+  /* ── Footer ── */
+  .article-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+    padding: clamp(48px, 6vw, 80px) clamp(28px, 8vw, 120px);
+    border-top: 1px solid var(--line);
+  }
+
+  .article-footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .article-footer-left > .mono {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-footer-left p {
+    max-width: 480px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .article-cta {
+    display: inline-flex;
+    gap: 24px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid currentColor;
+    font-size: 13px;
+    color: var(--ink);
+    text-decoration: none;
+    width: fit-content;
+    transition: color 150ms ease;
+  }
+
+  .article-cta:hover {
+    color: var(--accent);
+  }
+
+  .back-link {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back-link:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .article-shell {
+      width: min(100% - 32px, 1440px);
+    }
+
+    .article-body {
+      grid-template-columns: 1fr;
+      padding-inline: clamp(20px, 5vw, 40px);
+    }
+
+    .article-body > * {
+      grid-column: 1;
+    }
+
+    .article-footer {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* ── Print / "Download PDF" ──
+     No PDF library — reuses the browser's own print-to-PDF against the page
+     content already rendered. Keeps the real theme colors/gradients instead
+     of flattening to plain black-on-white, hides site chrome (nav, the ←
+     Blog/Download PDF/date bar, this article's own closing footer, and the
+     global site footer) so only the cover image through the end of the
+     article prints, and shows a small branded footer in their place. */
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    .site-header,
+    .global-footer,
+    .footer-mark,
+    .capability-ticker,
+    .article-eyebrow,
+    .article-footer {
+      display: none !important;
+    }
+
+    body {
+      background: #ffffff;
+      color: #14151a;
+    }
+
+    .article-shell {
+      width: 100%;
+      border-inline: 0;
+    }
+
+    /* Safari's print engine is well documented to mis-render CSS Grid (and
+       occasionally flex) during the print pass — tracks can collapse or
+       children can lose their placement, which is what "ignores all our
+       styling" looks like from the outside even though the colors/fonts
+       below are applied correctly. Every layout still visible in print gets
+       forced to plain block flow here so there's no grid/flex left for
+       Safari to get wrong; Chrome/Firefox render identically either way. */
+    body,
+    .article-body,
+    .article-body p,
+    .article-body li,
+    .article-header,
+    .article-header-copy {
+      font-family: "DM Sans", -apple-system, "Helvetica Neue", sans-serif;
+    }
+
+    .mono,
+    .article-meta,
+    .article-print-footer {
+      font-family: "DM Mono", ui-monospace, monospace;
+    }
+
+    .article-header {
+      display: block;
+      border-bottom: 0;
+    }
+
+    .article-header-copy {
+      display: block;
+    }
+
+    .article-cover,
+    .article-header-copy {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-header h1 {
+      color: #14151a;
+    }
+
+    .article-lede,
+    .article-meta {
+      color: #4a4d57;
+    }
+
+    .article-body {
+      display: block;
+      width: min(680px, 100%);
+      margin: 0 auto;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .article-body > * {
+      grid-column: unset;
+    }
+
+    .article-body p {
+      color: #2b2d33;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .article-body h2 {
+      color: #14151a;
+      break-after: avoid;
+      page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body li {
+      color: #2b2d33;
+    }
+
+    .article-body blockquote,
+    .article-body ul,
+    .article-body img {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body blockquote {
+      background: #f4f4f6;
+      color: #14151a;
+    }
+
+    .article-body code {
+      background: #f0f0f2;
+      border-color: #ddd;
+      color: #14151a;
+    }
+
+    /* Normal document flow, not position:fixed — a fixed-position footer
+       gets painted at the same screen coordinate on every printed page and
+       can overlap the last line or two of that page's content instead of
+       repeating cleanly, which is what was making text unreadable near page
+       breaks. This renders once, after the article ends. */
+    .article-print-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      margin-top: 32px;
+      padding: 0 4px;
+      border-top: 1px solid #ddd;
+      color: #6b6e78;
+      font: 500 10px "DM Sans", sans-serif;
+    }
+
+    .article-print-footer img {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
+    }
+
+    .article-print-footer span:first-of-type {
+      color: #14151a;
+      font-weight: 600;
+    }
+
+    .article-print-footer-url {
+      margin-left: auto;
+    }
+  }
+</style>

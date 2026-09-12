@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Every agent.</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <style>
+      .orbit {
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        width: 38cqw;
+        height: 38cqw;
+        transform: translate(-50%, -50%);
+      }
+      .ring {
+        position: absolute;
+        inset: 0;
+        color: #d5f995;
+        opacity: 0.55;
+      }
+      .ring.halo {
+        inset: -8%;
+        opacity: 0.35;
+      }
+      .core {
+        position: absolute;
+        inset: 28%;
+        color: var(--fg);
+      }
+      .core,
+      .ring {
+        width: auto;
+        height: auto;
+      }
+      .copy {
+        position: absolute;
+        left: 6cqw;
+        right: 6cqw;
+        bottom: 10cqh;
+        text-align: center;
+      }
+      .display {
+        font-size: 5.8cqw;
+      }
+      .agents {
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        width: 52cqw;
+        height: 52cqw;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+      }
+      .agents i {
+        position: absolute;
+        width: 2.1cqw;
+        height: 2.1cqw;
+        color: #c5ccb8;
+        left: 50%;
+        top: 50%;
+        margin: -1.05cqw;
+      }
+      .word {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.6cqh;
+      }
+      .version {
+        margin-top: 1.4cqh;
+        font-family: var(--mono);
+        font-size: 1cqw;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--dim);
+      }
+      body[data-ratio="9x16"] .orbit,
+      body[data-ratio="9x16"] .agents {
+        width: 72cqw;
+        height: 72cqw;
+      }
+      body[data-ratio="9x16"] .display {
+        font-size: 12cqw;
+      }
+      body[data-ratio="9x16"] .agents i {
+        width: 5cqw;
+        height: 5cqw;
+        margin: -2.5cqw;
+      }
+      body[data-ratio="1x1"] .display {
+        font-size: 7.2cqw;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" aria-label="Every agent. One workspace.">
+      <div class="bloom" aria-hidden="true"></div>
+      <div class="bloom-2" aria-hidden="true"></div>
+      <header class="brand">
+        <i class="mark" data-mark="modesto" aria-hidden="true"></i><span>modesto</span>
+        <span class="edition">HANDOFF MARK</span>
+      </header>
+      <section class="scene s0 is-first" aria-label="Orbit">
+        <div class="orbit">
+          <i class="mark ring halo" data-mark="halo"></i>
+          <i class="mark ring" data-mark="triad"></i>
+          <i class="mark core" data-mark="handoff"></i>
+        </div>
+        <div class="agents" id="agents"></div>
+        <div class="copy">
+          <p class="kicker in">MANY PATHS. ONE DIRECTION.</p>
+          <h1 class="display">
+            <span class="line"><span class="up">Every agent.</span></span>
+            <span class="line"><span class="up">One workspace.</span></span>
+          </h1>
+          <div class="word lockup in">
+            <i class="mark" data-mark="modesto"></i><span>modesto</span>
+          </div>
+          <p class="version in">1.0.0-alpha.1</p>
+        </div>
+      </section>
+      <div class="film-progress" aria-hidden="true"></div>
+    </main>
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script>
+      const slugs = ["claude", "codex", "cursor", "gemini", "grok", "opencode", "droid", "kilo"];
+      const agents = document.getElementById("agents");
+      slugs.forEach((slug, index) => {
+        const mark = document.createElement("i");
+        mark.className = "mark";
+        mark.dataset.mark = slug;
+        const angle = (index / slugs.length) * Math.PI * 2 - Math.PI / 2;
+        mark.style.transform = `translate(${Math.cos(angle) * 22}cqw, ${Math.sin(angle) * 22}cqw)`;
+        agents.append(mark);
+      });
+      ModestoTeaser.boot({
+        duration: 14,
+        sceneAt: () => 0,
+        build(tl) {
+          tl.set(".s0", { autoAlpha: 1 }, 0)
+            .fromTo(
+              ".core",
+              { scale: 0.7, opacity: 0 },
+              { scale: 1, opacity: 1, duration: 1.2 },
+              0.15,
+            )
+            .fromTo(
+              ".ring",
+              { opacity: 0, rotate: -18 },
+              { opacity: 0.5, rotate: 0, duration: 1.4, stagger: 0.12 },
+              0.25,
+            )
+            .fromTo(
+              ".agents .mark",
+              { opacity: 0, scale: 0.6 },
+              { opacity: 1, scale: 1, duration: 0.7, stagger: 0.05 },
+              0.7,
+            )
+            .fromTo(".up", { yPercent: 110 }, { yPercent: 0, duration: 1, stagger: 0.1 }, 1.5)
+            .fromTo(
+              ".in",
+              { opacity: 0, y: 10 },
+              { opacity: 1, y: 0, duration: 0.8, stagger: 0.08 },
+              1.8,
+            )
+            .to(".halo", { rotate: 18, duration: 12, ease: "none" }, 0.8)
+            .to(".ring:not(.halo)", { rotate: -12, duration: 12, ease: "none" }, 0.8)
+            .to(".agents", { rotate: 16, duration: 12, ease: "none" }, 0.8);
+        },
+      });
+    </script>
+  </body>
+</html>

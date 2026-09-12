@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Modesto — Working for</title>
+    <link rel="stylesheet" href="./tokens.css" />
+    <link rel="stylesheet" href="./films.css" />
+    <link rel="stylesheet" href="./signal.css" />
+  </head>
+  <body>
+    <main class="stage" aria-label="Working for">
+      <div class="row">
+        <div class="grid" id="grid" aria-hidden="true"></div>
+        <h1 class="word">Working for <span id="elapsed">0s</span></h1>
+      </div>
+    </main>
+    <script src="../modesto-saas-assets/vendor/gsap.min.js"></script>
+    <script src="./runtime.js"></script>
+    <script src="./flicker.js"></script>
+    <script>
+      const elapsed = document.getElementById("elapsed");
+      const paint = ModestoFlicker.mount(document.getElementById("grid"), "syncing");
+      ModestoTeaser.boot({
+        duration: 12,
+        sceneAt: () => 0,
+        onFrame(time) {
+          paint(time);
+          elapsed.textContent = `${Math.floor(time)}s`;
+        },
+        build() {},
+      });
+    </script>
+  </body>
+</html>

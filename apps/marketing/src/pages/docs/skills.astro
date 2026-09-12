@@ -1,0 +1,87 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "What a skill pack is", href: "#what" },
+  { label: "Install from GitHub", href: "#install" },
+  { label: "Where files land", href: "#paths" },
+  { label: "Uninstall", href: "#uninstall" },
+];
+---
+
+<DocsLayout
+  title="Skills"
+  description="Install a conventional SKILL.md pack from GitHub once and materialize it for both Codex and Claude — the same files, pinned to a commit."
+  currentPath="/docs/skills"
+  eyebrow="Product"
+  {toc}
+>
+  <section id="what">
+    <h2>What a skill pack is</h2>
+    <p>
+      A skill pack is a folder of skills that follow the usual{" "}
+      <code>SKILL.md</code> convention (name and description in frontmatter,
+      plus supporting files). Modesto does not require a Claude-only plugin
+      manifest. One pack can target Codex and Claude together so a handoff
+      does not drop the playbook the previous agent was using.
+    </p>
+    <p>
+      Open <strong>Skills &amp; plugins</strong> in the app. The library
+      previews skills, target providers, warnings, and the pinned revision
+      before anything is written to disk.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>Install from GitHub</h2>
+    <p>
+      Paste a GitHub repository URL, <code>owner/repo</code> shorthand, an
+      explicit ref, or a <code>/tree/&lt;ref&gt;/&lt;dir&gt;</code> path.
+      Modesto resolves the pack, pins it to an immutable commit SHA, and
+      copies a canonical bundle into Modesto’s base directory.
+    </p>
+    <ul>
+      <li>At most 50 skills, 500 files, and 5 MiB per pack.</li>
+      <li>Duplicate skill names get a deterministic suffix.</li>
+      <li>
+        <code>GITHUB_TOKEN</code> or <code>GH_TOKEN</code> is used when the
+        repo is private, through the same GitHub fetch path the rest of the
+        app already uses.
+      </li>
+    </ul>
+    <div class="docs-callout">
+      <strong>Reinstall converges on the newly resolved contents.</strong>
+      <p>
+        Installing again from the same source refreshes the pin. It will not
+        overwrite an untracked directory that happened to share the target
+        path.
+      </p>
+    </div>
+  </section>
+
+  <section id="paths">
+    <h2>Where files land</h2>
+    <p>
+      After the canonical copy is stored, Modesto materializes the same bytes
+      into provider skill directories, namespaced by source owner, repo, and
+      skill:
+    </p>
+    <div class="docs-table">
+      <div><strong>Codex</strong><span><code>~/.codex/skills</code></span></div>
+      <div><strong>Claude</strong><span><code>~/.claude/skills</code></span></div>
+    </div>
+    <p>
+      The mapping is recorded in <code>skill-packs.json</code> (source ref,
+      pinned revision, target providers). Claude-only plugins remain
+      available beside this installer for packs that are still plugin-shaped.
+    </p>
+  </section>
+
+  <section id="uninstall">
+    <h2>Uninstall</h2>
+    <p>
+      Uninstall removes only the directories Modesto tracked, and only under
+      approved roots. It does not delete skills you installed by hand.
+    </p>
+  </section>
+</DocsLayout>

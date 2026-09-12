@@ -1,0 +1,141 @@
+@font-face {
+  font-family: Manrope;
+  src: url("../modesto-saas-assets/vendor/manrope.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  --ink: #10120f;
+  --ink-2: #171a14;
+  --paper: #efe7d6;
+  --paper-2: #e7dec9;
+  --fg: #eceee6;
+  --fg-ink: #12150f;
+  --lime: #d5f995;
+  --lime-dim: #bbd996;
+  --muted: #8b9681;
+  --dim: #6d7864;
+  --line: #ffffff14;
+  --line-strong: #ffffff28;
+  --olive: #46691d;
+  --font: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  background: #0b0d0a;
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+body[data-theme="light"],
+body[data-theme="paper"] {
+  background: #d8d0bc;
+  color: var(--fg-ink);
+}
+
+em {
+  font-style: normal;
+  color: var(--lime);
+}
+
+.mark {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  -webkit-mask: var(--mark) center / contain no-repeat;
+  mask: var(--mark) center / contain no-repeat;
+}
+
+.mark[data-mark="modesto"] {
+  --mark: url("../modesto-mark-light.svg");
+}
+.mark[data-mark="handoff"] {
+  --mark: url("../../modesto-logo.svg");
+}
+.mark[data-mark="codex"] {
+  --mark: url("../modesto-saas-assets/marks/codex.svg");
+}
+.mark[data-mark="claude"] {
+  --mark: url("../modesto-saas-assets/marks/claude.svg");
+}
+.mark[data-mark="cursor"] {
+  --mark: url("../modesto-saas-assets/marks/cursor.svg");
+}
+.mark[data-mark="gemini"] {
+  --mark: url("../modesto-saas-assets/marks/gemini.svg");
+}
+.mark[data-mark="grok"] {
+  --mark: url("../modesto-saas-assets/marks/grok.svg");
+}
+.mark[data-mark="opencode"] {
+  --mark: url("../modesto-saas-assets/marks/opencode.svg");
+}
+.mark[data-mark="copilot"] {
+  --mark: url("../modesto-saas-assets/marks/copilot.svg");
+}
+.mark[data-mark="droid"] {
+  --mark: url("../modesto-saas-assets/marks/droid.svg");
+}
+.mark[data-mark="kilo"] {
+  --mark: url("../modesto-saas-assets/marks/kilo.svg");
+}
+.mark[data-mark="kimi"] {
+  --mark: url("../modesto-saas-assets/marks/kimi.svg");
+}
+.mark[data-mark="qwen"] {
+  --mark: url("../modesto-saas-assets/marks/qwen.svg");
+}
+.mark[data-mark="poolside"] {
+  --mark: url("../modesto-saas-assets/marks/poolside.svg");
+}
+.mark[data-mark="devin"] {
+  --mark: url("../modesto-saas-assets/marks/devin.svg");
+}
+.mark[data-mark="meta"] {
+  --mark: url("../modesto-saas-assets/marks/meta.svg");
+}
+.mark[data-mark="pi"] {
+  --mark: url("../modesto-saas-assets/marks/pi.svg");
+}
+.mark[data-mark="acp"] {
+  --mark: url("../modesto-saas-assets/marks/acp.svg");
+}
+.mark[data-mark="halo"] {
+  --mark: url("../logo-rings/02-halo.svg");
+}
+.mark[data-mark="triad"] {
+  --mark: url("../logo-rings/05-triad.svg");
+}
+
+body[data-ratio="16x9"] .stage {
+  width: min(100vw, 177.7778vh);
+  height: min(100vh, 56.25vw);
+}
+body[data-ratio="9x16"] .stage {
+  width: min(100vw, 56.25vh);
+  height: min(100vh, 177.7778vw);
+}
+body[data-ratio="1x1"] .stage {
+  width: min(100vw, 100vh);
+  height: min(100vh, 100vw);
+}

@@ -1,0 +1,55 @@
+---
+/*
+ * SquareMeter — a square grid that means something.
+ *
+ * Same visual language as the decorative SquareField, but every cell stands for
+ * a real item: a provider, a release, a checkpoint. `filled` marks how many read
+ * as active, so the block doubles as a small data figure instead of texture.
+ */
+interface Props {
+  total: number;
+  filled?: number;
+  columns?: number;
+  /** Optional per-cell labels, used as tooltips. */
+  labels?: string[];
+  class?: string;
+}
+
+const { total, filled = total, columns = 7, labels = [], class: className } = Astro.props;
+const cells = Array.from({ length: total }, (_, index) => ({
+  on: index < filled,
+  label: labels[index] ?? null,
+}));
+---
+
+<div
+  class:list={["square-meter", className]}
+  style={`--cols:${columns}`}
+  role="img"
+  aria-label={`${filled} of ${total}`}
+>
+  {
+    cells.map((cell) => (
+      <span class:list={["cell", { on: cell.on }]} title={cell.label ?? undefined} />
+    ))
+  }
+</div>
+
+<style>
+  .square-meter {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    gap: 4px;
+    width: fit-content;
+  }
+
+  .cell {
+    width: 14px;
+    height: 14px;
+    background: color-mix(in srgb, var(--ink) 9%, transparent);
+  }
+
+  .cell.on {
+    background: var(--accent);
+  }
+</style>

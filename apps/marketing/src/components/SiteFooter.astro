@@ -1,0 +1,49 @@
+---
+import { GITHUB_REPOSITORY_URL } from "../lib/site";
+---
+    <footer class="site-footer">
+      <div class="footer-brand">
+        <a class="brand" href="/#top">
+          <img src="/announcements/modesto-mark-light.svg" alt="" width="26" height="26" />
+          <span>Modesto</span>
+        </a>
+        <p>A home for agents that see it through. Open source. Yours to fork.</p>
+        <a class="top-link" href="/#top">Back to the top ↑</a>
+      </div>
+      <div>
+        <h3>Platform</h3>
+        <a href="/#agents">The harness</a>
+        <a href="/#workspace">Workspace</a>
+        <a href="/download">Download</a>
+      </div>
+      <div>
+        <h3>For builders</h3>
+        <a href="/docs/get-started">Quickstart</a>
+          <a href="/docs">Documentation</a>
+          <a href="/changelog">Changelog</a>
+          <a href="/articles">Blog</a>
+          <a href="/vision">Vision</a>
+          <a href="/branding">Branding</a>
+          <a href="/map">Global map</a>
+        <a href="/#playground">Try the demo</a>
+        <a href={GITHUB_REPOSITORY_URL}>GitHub</a>
+      </div>
+      <div>
+        <h3>Good to know</h3>
+        <a href="/privacy-policy">Privacy</a>
+        <a href="/terms-of-service">Terms</a>
+        <a href="/security-policy">Security</a>
+        <a href="/third-party">Third Party</a>
+      </div>
+    </footer>
+<style>
+.site-footer { width:min(1180px, calc(100% - 48px)); margin:80px auto 0; padding:48px 0 64px; border-top:1px solid var(--border); display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:32px; font-family:var(--font-sans); position:relative; z-index:1; }
+.brand {display:flex;align-items:center;gap:10px;color:var(--foreground);font-size:17px;}
+.brand img {width:26px;height:26px;}
+p {color:var(--muted-foreground);font-size:14px;line-height:1.6;max-width:28ch;margin:16px 0;}
+h3 {font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin:0 0 18px;color:var(--foreground);}
+a {display:block;text-decoration:none;font-size:13px;line-height:1.6;color:var(--muted-foreground);margin-bottom:9px;}
+a:hover {color:var(--accent-ink);}
+@media(max-width:700px){.site-footer{grid-template-columns:1fr 1fr;gap:32px 20px;}.footer-brand{grid-column:1/-1;}}
+:global([data-theme="light"]) .brand img {filter:brightness(0);}
+</style>

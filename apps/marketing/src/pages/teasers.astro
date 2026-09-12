@@ -1,0 +1,126 @@
+---
+import IslandNav from "../components/IslandNav.astro";
+import ThemeBoot from "../components/ThemeBoot.astro";
+import ThemeControls from "../components/ThemeControls.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import "../styles/brand-tokens.css";
+
+const teasers = [
+  ["bb-lineup", "Every agent.", "Billboard", "The line, at billboard scale."],
+  ["bb-thread", "Switch models.", "Billboard", "Three models, one thread."],
+  ["bb-handoff", "Claude plans.", "Billboard", "Three statements, then the relay."],
+  ["bb-folder", "No folder required.", "Billboard", "The composer, oversized."],
+  ["ig-mark", "The mark, in chrome.", "Social 3D", "Vertical-first. Real 3D, for Reels."],
+  ["editorial", "The 1.0 line.", "Editorial", "Type-led. The version, said plainly."],
+  ["handoff", "One thread.", "Handoff", "Three agents. Context stays put."],
+  ["paper", "Quiet field.", "Paper", "The light half of the brand."],
+  ["workspace", "No folder required.", "Workspace", "A chat before a project."],
+  ["desktop", "In their element.", "Desktop", "Environments, clock, Grok."],
+  ["working", "Thinking.", "Working", "The app’s own flicker."],
+  ["rings", "Every agent.", "Rings", "Handoff Mark. Quiet close."],
+] as const;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta
+      name="description"
+      content="Internal preview of the Modesto 1.0.0-alpha.1 teaser films — four billboard cuts plus the original seven motion studies."
+    />
+    <title>Teasers — Modesto 1.0 alpha</title>
+    <link
+      rel="preload"
+      href="/announcements/modesto-saas-assets/vendor/manrope.ttf"
+      as="font"
+      type="font/ttf"
+      crossorigin
+    />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <meta name="theme-color" content="#10120f" />
+    <ThemeBoot />
+    <link rel="stylesheet" href="/announcements/alpha-teasers/preview.css" />
+  </head>
+  <body class="is-site teasers-page" data-teaser-base="/announcements/alpha-teasers/">
+    <a class="skip" href="#main">Skip to main content</a>
+    <IslandNav />
+    <main id="main" class="preview-shell">
+      <div class="preview-head">
+        <div>
+          <p class="eyebrow" id="film-kicker">ALPHA TEASERS · 1.0.0-ALPHA.1</p>
+          <h1 id="film-title">Every agent.</h1>
+          <p class="lede" id="film-blurb">
+            Twelve silent teasers for the public alpha. Same ink, lime, and Manrope as the product.
+            Pick a style, then a format.
+          </p>
+        </div>
+        <div class="formats" role="group" aria-label="Film format">
+          <button type="button" aria-pressed="true" data-ratio="16x9">16:9 Landscape</button>
+          <button type="button" aria-pressed="false" data-ratio="9x16">9:16 Vertical</button>
+          <button type="button" aria-pressed="false" data-ratio="1x1">1:1 Square</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabs" role="tablist" aria-label="Teaser style">
+        {teasers.map(([id, title, style], index) => (
+          <button type="button" role="tab" aria-selected={index === 0} data-film={id}>
+            {title}
+            <small>{style}</small>
+          </button>
+        ))}
+      </div>
+
+      <div class="player-shell">
+        <div class="stage-well" data-ratio="16x9">
+          <iframe
+            class="film"
+            id="film"
+            title="Modesto alpha teaser"
+            src="/announcements/alpha-teasers/bb-lineup.html?ratio=16x9&embed=1"
+            allow="autoplay"
+          ></iframe>
+        </div>
+        <p class="error" id="error" hidden>The film could not load. Reload to try again.</p>
+        <div class="controls">
+          <button class="control play" id="play" type="button" aria-label="Pause film">Ⅱ &nbsp; Pause</button>
+          <button class="control" id="replay" type="button" aria-label="Restart film">↺</button>
+          <span class="time" id="elapsed">00:00</span>
+          <input class="seek" id="seek" type="range" min="0" max="15.99" step="0.01" value="0" aria-label="Film position" />
+          <span class="time" id="remaining">00:16</span>
+          <a class="full" id="open" href="/announcements/alpha-teasers/bb-lineup.html?ratio=16x9" target="_blank" rel="noopener">↗</a>
+        </div>
+      </div>
+      <div class="meta">
+        <span id="format-label">LANDSCAPE · 1920 × 1080</span>
+        <span id="duration-label">16 SECONDS · SILENT · GSAP</span>
+      </div>
+      <nav class="chapters" id="chapters" aria-label="Jump to a scene"></nav>
+    </main>
+    <SiteFooter />
+    <ThemeControls />
+    <script is:inline src="/announcements/alpha-teasers/catalog.js"></script>
+    <script is:inline src="/announcements/alpha-teasers/preview.js"></script>
+    <style>
+      .skip {
+        position: absolute;
+        left: 12px;
+        top: 12px;
+        z-index: 200;
+        padding: 8px 12px;
+        background: var(--lime);
+        color: #213017;
+        text-decoration: none;
+        transform: translateY(-140%);
+      }
+      .skip:focus {
+        transform: none;
+      }
+      .teasers-page .preview-shell {
+        padding-top: 118px;
+      }
+    </style>
+  </body>
+</html>

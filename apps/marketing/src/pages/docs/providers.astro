@@ -1,0 +1,185 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+// Keep this in step with PROVIDER_CLIENT_DEFINITIONS in
+// `apps/web/src/components/settings/providerDriverMeta.ts`.
+const providers = [
+  ["Claude Code", "/providers/claude.svg", "Anthropic CLI. Enabled by default."],
+  ["Codex", "/providers/codex.svg", "OpenAI CLI. Enabled by default."],
+  ["Cursor", "/providers/cursor.svg", "Cursor Agent CLI. Enabled by default."],
+  ["Grok", "/providers/grok.svg", "Grok CLI. Enabled by default."],
+  ["Gemini", "/providers/gemini.svg", "Google Gemini CLI. Enabled by default."],
+  ["Meta", "/brand/marks/meta.svg", "Muse Code CLI (muse --acp). Muse Spark. Enabled by default. Badge: New."],
+  ["GitHub Copilot", "/brand/marks/copilot.svg", "Copilot CLI (copilot --acp). Opt-in."],
+  ["Antigravity", "/providers/antigravity.svg", "Antigravity CLI (agy)"],
+  ["Factory Droid", "/providers/droid.svg", "Factory Droid CLI"],
+  ["Kilo Code", "/providers/kilo.svg", "Kilo Code CLI"],
+  ["OpenCode", "/providers/opencode.svg", "OpenCode with its configured models"],
+  ["Pi", "/providers/pi.svg", "Pi coding agent"],
+  ["Devin", "/providers/devin.svg", "Devin CLI over ACP. Early access."],
+  ["Poolside", "/providers/poolside.svg", "Poolside coding agent. Early access."],
+  ["Kimi", "/providers/kimi.svg", "Kimi CLI over ACP. Early access."],
+  ["Qwen", "/providers/qwen.svg", "Qwen Code CLI. Early access."],
+];
+
+const toc = [
+  { label: "How discovery works", href: "#discovery" },
+  { label: "Supported providers", href: "#supported" },
+  { label: "Login commands", href: "#login" },
+  { label: "Authentication", href: "#authentication" },
+  { label: "Permissions", href: "#permissions" },
+  { label: "Multiple instances", href: "#instances" },
+  { label: "Switching providers", href: "#switching" },
+  { label: "Provider states", href: "#states" },
+];
+---
+
+<DocsLayout
+  title="Providers"
+  description="Connect the coding agents Modesto supports — including Meta Muse Code and GitHub Copilot — and choose the right provider for each turn."
+  currentPath="/docs/providers"
+  eyebrow="The workspace"
+  {toc}
+>
+  <section id="discovery">
+    <h2>How provider discovery works</h2>
+    <p>
+      Modesto checks for supported local CLIs and reads the provider capabilities
+      they expose. Codex, Claude, Cursor, Gemini, Grok, and Meta are enabled by
+      default. The rest wait until you turn the instance on. Availability can
+      still vary by machine, account, project, and PATH.
+    </p>
+    <div class="docs-callout"><strong>Keep vendor setup vendor-native.</strong><p>Install, update, and authenticate each CLI through its own supported flow. Modesto uses that existing configuration.</p></div>
+  </section>
+
+  <section id="supported">
+    <h2>Supported providers</h2>
+    <div class="docs-card-grid">
+      {providers.map(([name, icon, setup]) => (
+        <article class="docs-card">
+          <img src={icon} alt="" width="28" height="28" />
+          <h3>{name}</h3>
+          <p>{setup}</p>
+        </article>
+      ))}
+    </div>
+    <p>
+      You can also add a <strong>Custom ACP Agent</strong> instance that points
+      at any CLI speaking the Agent Client Protocol. Use that for drivers
+      Modesto does not ship a named adapter for.
+    </p>
+  </section>
+
+  <section id="login">
+    <h2>Login commands</h2>
+    <p>
+      Run these on the machine that hosts Modesto, not on a phone you paired
+      later. Cursor is the one to watch: the binary is <code>cursor-agent</code>,
+      the login command is <code>agent login</code>.
+    </p>
+    <div class="docs-table">
+      <div><strong>Claude Code</strong><span><code>claude auth login</code></span></div>
+      <div><strong>Codex</strong><span><code>codex login</code></span></div>
+      <div><strong>Cursor</strong><span><code>agent login</code> (binary <code>cursor-agent</code>)</span></div>
+      <div><strong>Grok</strong><span><code>grok login</code></span></div>
+      <div>
+        <strong>Meta (Muse Code)</strong>
+        <span>
+          Binary <code>muse</code>. Sessions spawn <code>muse --acp</code>. Sign
+          in with <code>muse login</code>, or set <code>META_API_KEY</code> /
+          <code>MODEL_API_KEY</code>. Default model is Muse Spark 1.3.
+        </span>
+      </div>
+      <div>
+        <strong>GitHub Copilot</strong>
+        <span>
+          Binary <code>copilot</code>. Sessions spawn <code>copilot --acp</code>.
+          Enable the instance in settings — it is off by default.
+        </span>
+      </div>
+      <div><strong>OpenCode</strong><span><code>opencode auth login</code></span></div>
+      <div><strong>Gemini and others</strong><span>Use that CLI’s native login, then confirm Modesto discovers the binary.</span></div>
+    </div>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Provider check</span><span>Terminal</span></div>
+      <pre><code>codex --version
+claude --version
+gemini --version
+cursor-agent --version
+muse --version
+copilot --version
+opencode --version</code></pre>
+    </div>
+  </section>
+
+  <section id="authentication">
+    <h2>Authentication</h2>
+    <p>
+      Sign in through the provider CLI before launching a live session. If a
+      provider supports API-key configuration, keep the credential in its
+      approved local configuration or Modesto’s permission-protected secret store.
+    </p>
+    <p>
+      If discovery misses a CLI, set <strong>Binary path</strong> on the
+      instance. Version managers (nvm, asdf, Homebrew shims) often leave the
+      GUI process with a thinner PATH than your terminal.
+    </p>
+  </section>
+
+  <section id="permissions">
+    <h2>Permissions and execution</h2>
+    <p>
+      Permissions belong to each run. Review whether the agent can edit files,
+      execute commands, use a local checkout, or create an isolated worktree.
+      See <a href="/docs/permissions">Permission modes</a> for Supervised,
+      Auto-accept edits, Auto, Full access, and Plan. Automations persist a
+      permission snapshot so later runs stay predictable.
+    </p>
+  </section>
+
+  <section id="instances">
+    <h2>Run more than one instance of a provider</h2>
+    <p>
+      A provider is split into two things: the <strong>driver</strong> that speaks the
+      protocol, and an <strong>instance</strong> that routes work to it. Because threads and
+      sessions bind to an instance rather than a driver, you can configure the same
+      driver more than once — a <code>codex_personal</code> and a <code>codex_work</code>,
+      each with its own environment and credentials — and pick the right one per turn.
+    </p>
+    <div class="docs-table">
+      <div><strong>Driver</strong><span>Which implementation handles the protocol, probe, and adapter — <code>codex</code>, <code>claudeAgent</code>, and the rest.</span></div>
+      <div><strong>Instance</strong><span>A named routing key you define. Threads, sessions, and persisted bindings reference instance ids.</span></div>
+      <div><strong>Instance config</strong><span>Per-instance environment variables and driver-specific settings, kept separate between instances.</span></div>
+    </div>
+    <div class="docs-callout">
+      <strong>Unknown drivers degrade instead of crashing.</strong>
+      <p>
+        Driver names are open, not a fixed list, so settings and thread history that
+        reference a provider your current build doesn't ship — from a fork, a PR build,
+        or an older branch — still load. The instance is marked unavailable and
+        everything else keeps working.
+      </p>
+    </div>
+  </section>
+
+  <section id="switching">
+    <h2>Switch providers without restarting the task</h2>
+    <p>
+      Provider choice belongs to a turn, not to the entire project. Create a
+      checkpoint before switching so the destination agent receives the
+      objective, current Git state, decisions, unresolved work, checks, and next
+      action—not only a transcript.
+    </p>
+    <div class="docs-callout"><strong>Capabilities can differ.</strong><p>A model, tool, permission mode, or resume behavior available through one provider may not exist in another. Review the destination run settings before sending the handoff.</p></div>
+  </section>
+
+  <section id="states">
+    <h2>Provider states and recovery</h2>
+    <div class="docs-table">
+      <div><strong>Available</strong><span>The CLI was discovered and can be selected for a run.</span></div>
+      <div><strong>Authentication required</strong><span>The executable exists, but its native sign-in or credential setup is incomplete.</span></div>
+      <div><strong>Unavailable</strong><span>The CLI is missing, disabled, or cannot start in the current environment.</span></div>
+      <div><strong>Disconnected</strong><span>An active provider process ended or lost its session. Resume the thread after correcting the provider-side failure.</span></div>
+    </div>
+  </section>
+</DocsLayout>

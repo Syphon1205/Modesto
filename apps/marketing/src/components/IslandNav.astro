@@ -1,0 +1,72 @@
+---
+const links = [
+  ["Product", "/#playground"],
+  ["Providers", "/docs/providers"],
+  ["Docs", "/docs"],
+  ["Blog", "/articles"],
+  ["Changelog", "/changelog"],
+  ["Vision", "/vision"],
+  ["Branding", "/branding"],
+  ["Map", "/map"],
+] as const;
+
+const isCurrent = (href: string, pathname: string) => {
+  if (href === "/docs") return pathname === "/docs" || pathname.startsWith("/docs/");
+  if (href === "/articles") return pathname === "/articles" || pathname.startsWith("/articles/");
+  return pathname === href;
+};
+---
+
+<header class="island-header">
+  <a class="island-brand" href="/" aria-label="Modesto home">
+    <img src="/announcements/modesto-mark-light.svg" alt="" width="23" height="23" />
+    <span>Modesto</span>
+  </a>
+  <nav aria-label="Main navigation">
+    {links.map(([label, href]) => (
+      <a href={href} aria-current={isCurrent(href, Astro.url.pathname) ? "page" : undefined}>{label}</a>
+    ))}
+  </nav>
+  <a class="island-download" href="/download">Download <span aria-hidden="true">↗</span></a>
+</header>
+
+<style>
+  .island-header {
+    position: fixed;
+    z-index: 100;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(1120px, calc(100% - 32px));
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 10px 12px 10px 22px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 93%, transparent);
+    color: var(--foreground);
+    box-shadow: 0 8px 32px #00000024, inset 0 1px #ffffff08;
+    backdrop-filter: blur(20px);
+    font: 500 13px var(--font-sans);
+    box-sizing: border-box;
+  }
+  .island-header a { text-decoration: none; white-space: nowrap; }
+  .island-brand { display: flex; align-items: center; gap: 9px; color: inherit; font-size: 16px; letter-spacing: -.5px; }
+  .island-header nav { display: flex; justify-content: center; align-items: center; gap: 20px; flex: 1; min-width: 0; }
+  nav a { color: var(--muted-foreground); padding: 9px 0; }
+  nav a:hover, nav a[aria-current="page"] { color: var(--accent-ink); }
+  .island-download { padding: 12px 18px; border-radius: 999px; background: var(--accent); color: var(--on-accent); }
+  .island-header a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  @media (max-width: 1000px) {
+    .island-header { gap: 18px; }
+    .island-header nav { gap: 14px; justify-content: flex-start; overflow-x: auto; }
+  }
+  @media (max-width: 700px) {
+    .island-header { display: grid; grid-template-columns: 1fr auto; border-radius: 24px; top: 10px; padding: 10px 16px; gap: 7px 14px; }
+    .island-header nav { grid-column: 1 / -1; grid-row: 2; gap: 22px; }
+    .island-download { padding: 9px 14px; }
+  }
+  :global([data-theme="light"]) .island-header { box-shadow: 0 8px 32px #30251010; }
+  :global([data-theme="light"]) .island-brand img { filter: brightness(0); }
+</style>

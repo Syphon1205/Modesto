@@ -1,0 +1,15 @@
+---
+import CubeField from "./CubeField.astro";
+interface Props {
+  density?: "single" | "sparse" | "normal";
+  class?: string;
+}
+const { density = "normal", class: className } = Astro.props;
+---
+<div class:list={["cube-cluster", className]} aria-hidden="true">
+  <CubeField variant={density === "single" ? "orbit" : "scatter"} seed={density === "single" ? 17 : 29} />
+</div>
+<style>
+  .cube-cluster { position: absolute; top: 0; right: 0; width: 30%; height: 100%; pointer-events: none; }
+  @media (max-width: 900px) { .cube-cluster { display: none; } }
+</style>

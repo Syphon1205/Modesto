@@ -1,0 +1,53 @@
+title = "Modesto source secret scanning"
+
+[extend]
+useDefault = true
+
+# Narrow exceptions for reviewed non-credential values. Keep real credentials
+# detectable in tests; do not allowlist whole test directories or file types.
+[[allowlists]]
+description = "Local runtime state, dependencies, and caches — never published"
+paths = [
+  '''(^|/)\.modesto(/|$)''',
+  '''(^|/)node_modules(/|$)''',
+  '''(^|/)\.git(/|$)''',
+  '''(^|/)\.turbo(/|$)''',
+]
+
+[[allowlists]]
+description = "Pairing token character alphabet, not an issued token"
+condition = "AND"
+paths = [
+  '''apps/server/src/auth/PairingGrantStore\.ts$''',
+  '''apps/server/src/auth/Layers/BootstrapCredentialService\.ts$''',
+]
+regexTarget = "line"
+regexes = ['PAIRING_TOKEN_ALPHABET']
+
+[[allowlists]]
+description = "Keyboard shortcut encoding strings, not API keys"
+condition = "AND"
+paths = ['apps/server/src/keybindings\.ts$']
+regexTarget = "line"
+regexes = ['key: "']
+
+[[allowlists]]
+description = "Public Clerk test configuration fixtures"
+condition = "AND"
+paths = ['apps/server/src/cloud/(publicConfig|CliTokenManager)\.test\.ts$']
+regexTarget = "line"
+regexes = ['(clerkPublishableKeyFallback|MODESTO_CLERK_PUBLISHABLE_KEY): "pk_test_']
+
+[[allowlists]]
+description = "WebSocket handshake nonce fixture, not an authentication secret"
+condition = "AND"
+paths = ['apps/server/src/httpResponseErrorGuard\.test\.ts$']
+regexTarget = "line"
+regexes = ['Sec-WebSocket-Key: ']
+
+[[allowlists]]
+description = "UUID request idempotency fixtures, not credentials"
+condition = "AND"
+paths = ['packages/effect-codex-app-server/src/protocol\.test\.ts$']
+regexTarget = "line"
+regexes = ['idempotencyKey: "[0-9a-fA-F-]{36}"']

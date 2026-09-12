@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    ".plans",
+    "openwork-dev",
+    "dist",
+    "dist-electron",
+    "node_modules",
+    "bun.lock",
+    "*.tsbuildinfo",
+    "**/routeTree.gen.ts",
+    "apps/web/public/mockServiceWorker.js",
+    "openwork-dev",
+    ".claude/worktrees",
+    ".modesto-*"
+  ],
+  "sortPackageJson": {}
+}

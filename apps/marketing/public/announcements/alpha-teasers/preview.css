@@ -1,0 +1,362 @@
+@font-face {
+  font-family: Manrope;
+  src: url("../modesto-saas-assets/vendor/manrope.ttf") format("truetype");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  --ink: #10120f;
+  --fg: #eceee6;
+  --lime: #d5f995;
+  --muted: #8b9681;
+  --dim: #6d7864;
+  --card: #171a14;
+  --line: #ffffff18;
+  --font: Manrope, ui-sans-serif, system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 4px;
+}
+
+.preview-shell {
+  width: min(1440px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 28px 0 72px;
+}
+
+.preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  color: #bbd996;
+}
+
+.preview-head h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 500;
+  letter-spacing: -1.6px;
+}
+
+.lede {
+  max-width: 420px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.formats {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.formats button,
+.tabs button,
+.chapter,
+.control,
+.full,
+.export {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.formats button {
+  padding: 9px 14px;
+  border-radius: 5px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.formats button[aria-pressed="true"],
+.tabs button[aria-selected="true"] {
+  background: var(--lime);
+  color: #213017;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow: auto;
+  margin-bottom: 16px;
+  padding-bottom: 2px;
+}
+
+.tabs button {
+  flex: none;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #141711;
+  font-size: 12px;
+}
+
+.tabs button small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.player-shell {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #090b08;
+}
+
+.stage-well {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  background: radial-gradient(ellipse at 50% 50%, #22291b, #0b0e09);
+}
+
+.stage-well[data-theme="light"] {
+  background: radial-gradient(ellipse at 50% 50%, #e7dec9, #d4ccb8);
+}
+
+.stage-well[data-theme="light"] .film {
+  background: #efe7d6;
+}
+
+.film {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  background: #111310;
+}
+
+.stage-well[data-ratio="9x16"] {
+  height: min(73vh, 850px);
+  min-height: 430px;
+}
+
+.stage-well[data-ratio="9x16"] .film {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+}
+
+.stage-well[data-ratio="1x1"] {
+  height: min(73vh, 850px);
+  min-height: 320px;
+}
+
+.stage-well[data-ratio="1x1"] .film {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-top: 1px solid #ffffff12;
+  background: #181c15;
+}
+
+.play {
+  min-width: 72px;
+  color: var(--fg);
+  font-size: 12px;
+  text-align: left;
+}
+
+.time {
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.seek {
+  width: 100%;
+  accent-color: var(--lime);
+}
+
+.full,
+.export {
+  color: var(--fg);
+  text-decoration: none;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.export {
+  padding: 8px 12px;
+  border: 1px solid #d5f99538;
+  border-radius: 6px;
+  background: #d5f99518;
+  color: var(--lime);
+}
+
+.export:hover:not(:disabled) {
+  background: #d5f9951f;
+}
+
+.export:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.export-status {
+  margin: 10px 2px 0;
+  min-height: 16px;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.chapters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.chapter {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  text-align: left;
+}
+
+.chapter[aria-pressed="true"] {
+  border-color: #d5f99555;
+}
+
+.chapter .top {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.chapter strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--fg);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.error {
+  padding: 14px 20px;
+  color: #f0c9a0;
+}
+
+.preview-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 0 0;
+  width: min(1440px, calc(100% - 48px));
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -1.2px;
+}
+
+.preview-brand img {
+  width: 26px;
+}
+
+.preview-brand span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 10px;
+}
+
+@media (max-width: 760px) {
+  .preview-head,
+  .meta,
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .stage-well[data-ratio="9x16"],
+  .stage-well[data-ratio="1x1"] {
+    height: auto;
+    min-height: 0;
+  }
+  .stage-well[data-ratio="9x16"] .film,
+  .stage-well[data-ratio="1x1"] .film {
+    width: 100%;
+    height: auto;
+  }
+}

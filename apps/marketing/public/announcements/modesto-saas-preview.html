@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modesto — Brand film</title>
+    <style>
+      @font-face {
+        font-family: Manrope;
+        src: url("./modesto-saas-assets/vendor/manrope.ttf") format("truetype");
+        font-weight: 200 800;
+        font-display: swap;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #10120f;
+        color: #eceee6;
+        font-family: Manrope, Arial, sans-serif;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      a,
+      input {
+        font: inherit;
+      }
+      button,
+      a {
+        touch-action: manipulation;
+      }
+      button {
+        cursor: pointer;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #d5f995;
+        outline-offset: 5px;
+      }
+      header {
+        max-width: 1440px;
+        margin: auto;
+        padding: 30px 40px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #ffffff12;
+      }
+      .brand {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 22px;
+        font-weight: 650;
+        letter-spacing: -1.3px;
+      }
+      .brand img {
+        width: 27px;
+      }
+      .divider {
+        height: 19px;
+        width: 1px;
+        background: #ffffff26;
+        margin: 0 9px;
+      }
+      .header-label {
+        color: #959e8b;
+        font-size: 12px;
+      }
+      .edition {
+        margin-left: auto;
+        color: #7c8870;
+        font-size: 10px;
+        letter-spacing: 1.5px;
+      }
+      main {
+        max-width: 1440px;
+        margin: auto;
+        padding: 34px 40px 45px;
+      }
+      .heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 26px;
+      }
+      .eyebrow {
+        font-size: 10px;
+        color: #bbd996;
+        letter-spacing: 1.6px;
+        margin: 0 0 9px;
+      }
+      h1 {
+        font-size: clamp(22px, 3vw, 38px);
+        line-height: 1.2;
+        font-weight: 500;
+        letter-spacing: -1.8px;
+        margin: 0;
+      }
+      .formats {
+        display: flex;
+        border: 1px solid #ffffff18;
+        background: #181c15;
+        border-radius: 8px;
+        padding: 4px;
+        gap: 3px;
+      }
+      .formats button {
+        border: 0;
+        background: transparent;
+        color: #8b9681;
+        padding: 9px 14px;
+        border-radius: 5px;
+        white-space: nowrap;
+        font-size: 11px;
+      }
+      .formats button[aria-pressed="true"] {
+        background: #d5f995;
+        color: #213017;
+      }
+      .formats button:hover {
+        color: white;
+      }
+      .formats button[aria-pressed="true"]:hover {
+        color: #213017;
+      }
+      .player-shell {
+        background: #090b08;
+        border: 1px solid #ffffff1a;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+      .stage-well {
+        height: auto;
+        min-height: 280px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 50%, #22291b, #0b0e09);
+        overflow: hidden;
+      }
+      .film {
+        display: block;
+        border: 0;
+        width: 100%;
+        aspect-ratio: 16/9;
+        background: #111310;
+      }
+      .stage-well[data-ratio="9x16"] {
+        height: min(73vh, 850px);
+        min-height: 430px;
+      }
+      .stage-well[data-ratio="9x16"] .film {
+        height: 100%;
+        width: auto;
+        aspect-ratio: 9/16;
+      }
+      .stage-well[data-ratio="1x1"] {
+        height: min(73vh, 850px);
+        min-height: 320px;
+      }
+      .stage-well[data-ratio="1x1"] .film {
+        height: 100%;
+        width: auto;
+        aspect-ratio: 1;
+      }
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 16px 20px;
+        border-top: 1px solid #ffffff12;
+        background: #181c15;
+      }
+      .control {
+        border: 0;
+        background: transparent;
+        color: #e7edde;
+        min-width: 26px;
+        padding: 5px;
+      }
+      .play {
+        font-size: 12px;
+        min-width: 60px;
+        text-align: left;
+      }
+      .time {
+        font-size: 10px;
+        color: #8c9a7e;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .seek {
+        width: 100%;
+        accent-color: #d5f995;
+        cursor: pointer;
+        min-width: 30px;
+        height: 3px;
+      }
+      .full {
+        font-size: 18px;
+        color: #c5cdbd;
+        text-decoration: none;
+      }
+      .export {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d5f99538;
+        background: #d5f9950f;
+        color: #d5f995;
+        border-radius: 6px;
+        padding: 7px 12px;
+        font-size: 11px;
+        white-space: nowrap;
+        min-width: 116px;
+        text-align: center;
+        text-decoration: none;
+      }
+      .export:hover:not(:disabled) {
+        background: #d5f9951f;
+      }
+      .export:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      .export-status {
+        margin: 8px 2px 0;
+        min-height: 15px;
+        font-size: 10px;
+        letter-spacing: 0.6px;
+        color: #8fa07e;
+      }
+      .film-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: #697a5b;
+        font-size: 10px;
+        margin: 12px 2px 0;
+      }
+      .chapters {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 29px 0 0;
+      }
+      .chapter {
+        display: block;
+        text-align: left;
+        position: relative;
+        padding: 17px 18px;
+        background: transparent;
+        border: 1px solid #ffffff13;
+        border-radius: 7px;
+        color: #b1bba7;
+      }
+      .chapter[aria-pressed="true"] {
+        border-color: #b7d68b65;
+        background: #c8e9a007;
+      }
+      .chapter .top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 9px;
+        color: #6f805f;
+        letter-spacing: 1px;
+        margin-bottom: 11px;
+      }
+      .chapter strong {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .chapter p {
+        font-size: 11px;
+        line-height: 1.6;
+        color: #75836a;
+        margin: 7px 0 0;
+      }
+      .chapter:hover {
+        border-color: #bbd99688;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 30px;
+        border-top: 1px solid #ffffff10;
+        padding-top: 22px;
+        margin-top: 30px;
+        font-size: 11px;
+        line-height: 1.7;
+        color: #7d8b72;
+      }
+      .footer p {
+        margin: 0;
+        max-width: 620px;
+      }
+      .footer a {
+        color: #a8ba97;
+        text-decoration: none;
+      }
+      .footer a:hover {
+        text-decoration: underline;
+      }
+      .error {
+        padding: 15px;
+        color: #e6cfa5;
+        text-align: center;
+      }
+      .error[hidden] {
+        display: none;
+      }
+      @media (max-width: 760px) {
+        header {
+          padding: 22px;
+        }
+        .edition {
+          display: none;
+        }
+        main {
+          padding: 26px 18px;
+        }
+        .heading {
+          align-items: start;
+          flex-direction: column;
+          gap: 20px;
+        }
+        h1 {
+          letter-spacing: -1px;
+        }
+        .formats {
+          width: 100%;
+        }
+        .formats button {
+          flex: 1;
+          padding: 8px;
+        }
+        .stage-well {
+          min-height: 0;
+        }
+        .chapters {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+          margin-top: 20px;
+        }
+        .chapter {
+          padding: 13px;
+        }
+        .chapter p {
+          display: none;
+        }
+        .controls {
+          padding: 14px 10px;
+          gap: 7px;
+        }
+        .footer {
+          flex-direction: column;
+          gap: 10px;
+        }
+        .film-meta {
+          font-size: 9px;
+        }
+        .stage-well[data-ratio="1x1"] {
+          height: auto;
+          min-height: 0;
+        }
+        .stage-well[data-ratio="1x1"] .film {
+          height: auto;
+          width: 100%;
+        }
+        .stage-well[data-ratio="9x16"] {
+          min-height: 0;
+          height: min(68vh, 760px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand"><img src="./modesto-mark-light.svg" alt="" />modesto</div>
+      <span class="divider"></span><span class="header-label">Brand film</span
+      ><span class="edition">CAMPAIGN 001 / IN THEIR ELEMENT</span>
+    </header>
+    <main>
+      <div class="heading">
+        <div>
+          <p class="eyebrow">YOUR AGENTS. IN THEIR ELEMENT.</p>
+          <h1>Your agents. All in Modesto.</h1>
+        </div>
+        <div class="formats" role="group" aria-label="Film format">
+          <button aria-pressed="true" data-ratio="16x9">16:9 &nbsp; Landscape</button
+          ><button aria-pressed="false" data-ratio="9x16">9:16 &nbsp; Vertical</button
+          ><button aria-pressed="false" data-ratio="1x1">1:1 &nbsp; Square</button>
+        </div>
+      </div>
+      <div class="player-shell">
+        <div class="stage-well" data-ratio="16x9">
+          <iframe
+            class="film"
+            id="film"
+            title="Modesto brand film"
+            src="./modesto-saas.html?ratio=16x9&embed=1"
+            allow="autoplay"
+          ></iframe>
+        </div>
+        <div class="error" id="error" hidden>
+          The film could not load. Reload this page to try again.
+        </div>
+        <div class="controls">
+          <button class="control play" id="play" aria-label="Pause film">Ⅱ &nbsp; Pause</button
+          ><button class="control" id="replay" aria-label="Restart film">↺</button
+          ><span class="time" id="elapsed">00:00</span
+          ><input
+            class="seek"
+            id="seek"
+            type="range"
+            aria-label="Film position"
+            min="0"
+            max="29.99"
+            step="0.01"
+            value="0"
+          /><span class="time">00:30</span
+          ><a
+            class="full"
+            id="open"
+            href="./modesto-saas.html?ratio=16x9"
+            target="_blank"
+            rel="noopener"
+            aria-label="Open film in a new tab"
+            >↗</a
+          ><a
+            class="export"
+            id="export"
+            href="./modesto-saas-16x9.mp4"
+            download="modesto-saas-16x9.mp4"
+            aria-label="Download the film as an MP4"
+            >⤓ &nbsp; Download MP4</a
+          >
+        </div>
+      </div>
+      <div class="film-meta">
+        <span id="format-label">LANDSCAPE · 1920 × 1080</span
+        ><span>30 SECONDS · 3D MOTION STUDY · SILENT</span>
+      </div>
+      <p class="export-status" id="export-status" role="status" aria-live="polite"></p>
+      <nav class="chapters" aria-label="Jump to a scene">
+        <button class="chapter" data-time="2.3" aria-pressed="true">
+          <span class="top"><span>01 / THE OPENING</span><span>00:00</span></span
+          ><strong>In their element.</strong>
+          <p>A new home for your favorite agents.</p></button
+        ><button class="chapter" data-time="8" aria-pressed="false">
+          <span class="top"><span>02 / THE HARNESS</span><span>00:05</span></span
+          ><strong>Many agents. One harness.</strong>
+          <p>One workspace. A shared center of gravity.</p></button
+        ><button class="chapter" data-time="12.9" aria-pressed="false">
+          <span class="top"><span>03 / THE PRODUCT</span><span>00:10</span></span
+          ><strong>Pick an agent. Get to work.</strong>
+          <p>Select. Send. Let your agent work.</p></button
+        ><button class="chapter" data-time="27" aria-pressed="false">
+          <span class="top"><span>04 / THE CLOSE</span><span>00:24</span></span
+          ><strong>Every agent. One workspace.</strong>
+          <p>One workspace for the way you work.</p>
+        </button>
+      </nav>
+      <div class="footer">
+        <p>
+          Live motion preview with layouts composed for each format. Select a scene to pause and
+          inspect it. Composer styling follows the supplied Modesto UI. Prompt and generated result
+          are illustrative. Download MP4 saves the rendered file for the selected format.
+        </p>
+        <p>
+          3D in <a href="https://threejs.org/" target="_blank" rel="noopener">Three.js</a> · Motion
+          by <a href="https://gsap.com/" target="_blank" rel="noopener">GSAP</a> · Type in
+          <a href="https://fonts.google.com/specimen/Manrope" target="_blank" rel="noopener"
+            >Manrope</a
+          ><br />Art direction inspired by
+          <a href="https://www.framer.com/" target="_blank" rel="noopener">Framer</a> &amp;
+          <a href="https://cursor.com/" target="_blank" rel="noopener">Cursor</a>
+        </p>
+      </div>
+    </main>
+    <script src="./modesto-saas-preview.js"></script>
+  </body>
+</html>

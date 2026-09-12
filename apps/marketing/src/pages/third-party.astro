@@ -1,0 +1,161 @@
+---
+import LegalPage from "../components/LegalPage.astro";
+
+const sections = [
+  ["introduction", "Introduction"],
+  ["software", "Open-source software in Modesto"],
+  ["providers", "Coding-agent providers you connect"],
+  ["trademarks", "Names and trademarks"],
+  ["notices", "Full notices"],
+  ["contact", "Contact us"],
+] as const;
+---
+
+<LegalPage
+  title="Third Party — Modesto"
+  description="Open-source notices, provider trademarks, and third-party software Modesto depends on."
+  heading="Third Party"
+  lede="Modesto is built on other people’s work and connects to tools you already use. This page explains those relationships: the open-source software shipped with Modesto, the coding-agent providers you choose, and where the full license notices live."
+  effectiveDate="2026-09-08"
+  lastUpdated="2026-09-12"
+  sections={sections}
+>
+  <section id="introduction">
+    <p class="section-number">01</p>
+    <h2>Introduction</h2>
+    <p>
+      Modesto includes and depends on third-party open-source software, and it can talk to
+      third-party coding agents, model providers, identity services, and infrastructure that you
+      install or authenticate yourself. This notice describes those two different kinds of
+      “third party,” because they are easy to confuse and they have different privacy and
+      licensing consequences.
+    </p>
+    <p>
+      Software we ship with Modesto is subject to the licenses of those projects. The App itself is
+      AGPL-3.0 because it bundles the Bible Strong avatar engine; see the repository{" "}
+      <a href="https://github.com/Syphon1205/Modesto/blob/main/LICENSE">LICENSE</a> and{" "}
+      <a href="https://github.com/Syphon1205/Modesto/blob/main/THIRD_PARTY_NOTICES.md"
+        >third-party notices</a
+      >. Services you connect at runtime are subject to those services’ own terms. We do not claim
+      ownership of either. Our{" "}<a href="/privacy-policy">Privacy Policy</a> and{" "}<a href="/terms-of-service"
+        >Terms of Service</a
+      >{" "}explain how that split works for data and liability.
+    </p>
+  </section>
+
+  <section id="software">
+    <p class="section-number">02</p>
+    <h2>Open-Source Software in Modesto</h2>
+    <p>
+      The authoritative inventory of third-party packages is the workspace <code>package.json</code>
+      files and <code>bun.lock</code> in the{" "}<a href="https://github.com/Syphon1205/Modesto"
+        >Modesto repository</a
+      >. Each dependency remains subject to its own license and copyright notices. Do not treat
+      this page as a substitute for those texts.
+    </p>
+    <p>Major runtime and tooling dependencies include, among others:</p>
+    <ul>
+      <li>@bible-strong/avatar-core and @bible-strong/avatar-react — AGPL-3.0-only</li>
+      <li>React and React DOM — MIT</li>
+      <li>Electron — MIT</li>
+      <li>Vite — MIT</li>
+      <li>TanStack Router, Query, Virtual, and Pacer — MIT</li>
+      <li>Effect and Effect platform packages — MIT</li>
+      <li>Tailwind CSS — MIT</li>
+      <li>Base UI — MIT</li>
+      <li>xterm.js packages — MIT</li>
+      <li>Astro — MIT</li>
+      <li>Vitest — MIT</li>
+    </ul>
+    <p>
+      This list is a convenience summary. License texts distributed by each project control if
+      there is any conflict with this page. Original copyright and license notices for
+      third-party code must not be removed. If code is adapted from another project, the source,
+      license, and nature of the adaptation are recorded in the repository’s third-party notices.
+    </p>
+  </section>
+
+  <section id="providers">
+    <p class="section-number">03</p>
+    <h2>Coding-Agent Providers You Connect</h2>
+    <p>
+      Modesto is a harness, not a model host. When you install and sign in to Codex, Claude Code,
+      Cursor Agent, Gemini CLI, Grok, Meta (Muse Code / Muse Spark), Factory Droid, Kilo,
+      OpenCode, Pi, or another supported provider, you are using that provider’s software and
+      accounts. Prompts, files, and related context you send leave your machine on that
+      provider’s terms.
+    </p>
+    <p>
+      We do not endorse a provider by listing it. We do not control a provider’s uptime, pricing,
+      retention, training practices, or output quality. Review each provider’s terms, privacy
+      policy, and data-control settings before you send it confidential, proprietary, regulated,
+      or personal information. Disconnecting a provider in Modesto does not delete data that
+      provider already received; you must use that provider’s own tools.
+    </p>
+    <p>
+      Some providers are reached through locally installed CLIs, SDKs, or protocols such as ACP.
+      Those binaries are not Modesto, even when the App launches or detects them. Their licenses
+      and security properties are the provider’s.
+    </p>
+  </section>
+
+  <section id="trademarks">
+    <p class="section-number">04</p>
+    <h2>Names and Trademarks</h2>
+    <p>
+      Provider names, logos, and trademarks belong to their respective owners. Listing a
+      provider, showing its mark in the App or on the Site, or describing an integration is not a
+      claim that Modesto is affiliated with, sponsored by, or endorsed by that owner, and it is
+      not a claim that we copied that owner’s product.
+    </p>
+    <p>
+      Connections tiles, composer mentions, and similar pickers show third-party product marks
+      (Gmail, Slack, Figma, Higgsfield, Canva, Supabase, and others) so you can recognise apps you
+      already use. Most of those SVG paths come from{" "}
+      <a href="https://github.com/simple-icons/simple-icons">Simple Icons</a> (CC0). Official
+      geometry is used where a mark is only recognisable in its published form. The marks remain
+      the owners’ trademarks.
+    </p>
+    <p>
+      OpenAI Codex, Claude, Cursor, Gemini, Grok, Meta, Factory, Kilo, OpenCode, Pi, Cline,
+      Continue, T3 Code, and Codex Monitor are among the ecosystem names you may see in Modesto
+      or in our documentation. They are used to identify compatible tools and references. The
+      Modesto name, Handoff Mark, and related brand assets are described on the{" "}<a
+        href="/branding">Branding</a
+      >{" "}page.
+    </p>
+  </section>
+
+  <section id="notices">
+    <p class="section-number">05</p>
+    <h2>Full Notices</h2>
+    <p>
+      The complete third-party notice file, including additional attributions such as artwork
+      licenses, lives in the repository:
+    </p>
+    <p>
+      <a href="https://github.com/Syphon1205/Modesto/blob/main/THIRD_PARTY_NOTICES.md"
+        >github.com/Syphon1205/Modesto/blob/main/THIRD_PARTY_NOTICES.md</a
+      >
+    </p>
+    <p>
+      If you believe a required notice is missing or incorrect, open an issue or pull request on
+      that file. Architectural or design inspiration is acknowledged separately and is not
+      described as copied code without evidence.
+    </p>
+  </section>
+
+  <section id="contact">
+    <p class="section-number">06</p>
+    <h2>Contact Us</h2>
+    <p>
+      Questions about third-party notices, attribution, or provider listings can be sent through
+      the public repository:
+    </p>
+    <address>
+      <strong>Modesto</strong><br />
+      Tanner Davidson<br />
+      <a href="https://github.com/Syphon1205/Modesto">github.com/Syphon1205/Modesto</a>
+    </address>
+  </section>
+</LegalPage>

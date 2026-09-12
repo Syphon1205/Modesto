@@ -1,0 +1,111 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "How pairing works", href: "#how" },
+  { label: "Create a link", href: "#create" },
+  { label: "Phone and another browser", href: "#clients" },
+  { label: "Environments are not pairing", href: "#environments" },
+  { label: "Revoke access", href: "#revoke" },
+  { label: "Network notes", href: "#network" },
+];
+---
+
+<DocsLayout
+  title="Remote access"
+  description="The agents stay on the host machine. Pair a phone or another browser to that host with a one-time credential — there is no Modesto cloud relay."
+  currentPath="/docs/remote"
+  eyebrow="Reference"
+  {toc}
+>
+  <section id="how">
+    <h2>How pairing works</h2>
+    <p>
+      Modesto’s server listens on the machine where the desktop app (or a
+      local <code>bun run</code> server) is running. Additional clients —
+      the iOS or Android app, or a browser on another computer — authenticate
+      with a pairing token issued by that host.
+    </p>
+    <p>
+      The token is a one-time credential. After it is claimed, the client
+      holds a session. Agents, repositories, and provider CLIs never leave
+      the host. The remote UI is a window onto that machine.
+    </p>
+    <div class="docs-callout">
+      <strong>There is no T3 Connect-style hosted tunnel.</strong>
+      <p>
+        Reachability is your network: same LAN, a VPN, SSH port forwarding, or
+        whatever you already use to hit a local port. Modesto does not broker
+        a public relay for you.
+      </p>
+    </div>
+  </section>
+
+  <section id="create">
+    <h2>Create a pairing link</h2>
+    <ol>
+      <li>On the host, open settings and create a pairing credential.</li>
+      <li>Copy the token or pairing URL. It is shown once.</li>
+      <li>On the other device, paste the token or open the URL.</li>
+      <li>Confirm the client can see the same projects as the host.</li>
+    </ol>
+    <p>
+      Grant only the scopes that client needs. A phone that should watch
+      threads does not need the same access as a second full desktop.
+    </p>
+  </section>
+
+  <section id="clients">
+    <h2>Phone and another browser</h2>
+    <div class="docs-table">
+      <div>
+        <strong>iOS / Android</strong>
+        <span>
+          Install from the <a href="/download">download page</a>, then pair
+          to the host. The phone does not install provider CLIs.
+        </span>
+      </div>
+      <div>
+        <strong>Another browser</strong>
+        <span>
+          Open the host URL (after you have made it reachable) and complete
+          pairing. Loopback on the same machine can skip pairing.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section id="environments">
+    <h2>Environments are not pairing</h2>
+    <p>
+      Pairing is a remote UI onto a host that is already running. WSL and SSH
+      are extra places that host can run agents. A pairing token does not
+      create an SSH backend, and adding an SSH environment does not pair a
+      phone. Configure backends on{" "}
+      <a href="/docs/desktop">Desktop &amp; environments</a>.
+    </p>
+  </section>
+
+  <section id="revoke">
+    <h2>Revoke access</h2>
+    <p>
+      List pairing links on the host and revoke any device you no longer
+      trust. Revocation ends that session; create a new link if you need the
+      device again. Treat a pairing URL like a password — do not commit it
+      or paste it into a public issue.
+    </p>
+  </section>
+
+  <section id="network">
+    <h2>Network notes</h2>
+    <ul>
+      <li>Prefer a VPN or SSH tunnel over exposing the server port to the public internet.</li>
+      <li>If you bind to a non-default port, use that port in the pairing URL.</li>
+      <li>
+        When developing beside an existing desktop instance, use an isolated
+        home directory and port offset. See{" "}
+        <a href="/docs/development">Local development</a>.
+      </li>
+    </ul>
+  </section>
+</DocsLayout>

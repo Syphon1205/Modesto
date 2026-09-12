@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <filter id="wash1" x="-60%" y="-60%" width="220%" height="220%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="5" seed="7" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="220" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="16" />
+    </filter>
+    <filter id="wash2" x="-60%" y="-60%" width="220%" height="220%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018 0.013" numOctaves="5" seed="23" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="240" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="14" />
+    </filter>
+    <filter id="wash3" x="-60%" y="-60%" width="220%" height="220%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.022 0.017" numOctaves="4" seed="41" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="180" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+    <filter id="wash4" x="-60%" y="-60%" width="220%" height="220%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.016 0.024" numOctaves="4" seed="59" result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="200" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="20" />
+    </filter>
+    <filter id="paperGrain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" stitchTiles="stitch" result="n" />
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.045 0" />
+    </filter>
+    <radialGradient id="vign" cx="50%" cy="38%" r="75%">
+      <stop offset="0%" stop-color="#0d0e0c" stop-opacity="0" />
+      <stop offset="100%" stop-color="#0d0e0c" stop-opacity="0.9" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="900" fill="#0d0e0c" />
+
+  <ellipse cx="260" cy="160" rx="340" ry="260" fill="#5aa679" opacity="0.85" filter="url(#wash1)" />
+  <ellipse cx="120" cy="440" rx="300" ry="240" fill="#3f7a56" opacity="0.75" filter="url(#wash3)" />
+  <ellipse cx="620" cy="120" rx="260" ry="200" fill="#e0b25e" opacity="0.7" filter="url(#wash2)" />
+  <ellipse cx="980" cy="60" rx="300" ry="230" fill="#4a8f6a" opacity="0.8" filter="url(#wash4)" />
+  <ellipse cx="1340" cy="180" rx="320" ry="260" fill="#7fc2c9" opacity="0.65" filter="url(#wash1)" />
+  <ellipse cx="1150" cy="420" rx="260" ry="210" fill="#c9784f" opacity="0.55" filter="url(#wash3)" />
+  <ellipse cx="760" cy="360" rx="280" ry="220" fill="#6cb083" opacity="0.7" filter="url(#wash2)" />
+  <ellipse cx="1480" cy="480" rx="240" ry="200" fill="#e0b25e" opacity="0.4" filter="url(#wash4)" />
+  <ellipse cx="420" cy="620" rx="260" ry="200" fill="#3f7a56" opacity="0.55" filter="url(#wash3)" />
+
+  <rect width="1600" height="900" fill="url(#vign)" />
+  <rect width="1600" height="900" filter="url(#paperGrain)" />
+</svg>

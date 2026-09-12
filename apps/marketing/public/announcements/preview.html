@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modesto 0.4.0 — Instagram 1:1 Announcement Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #080808;
+        color: #f0f0f1;
+        font-family:
+          "DM Sans",
+          -apple-system,
+          sans-serif;
+        padding: 40px 24px 80px;
+      }
+      header {
+        max-width: 1200px;
+        margin: 0 auto 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding-bottom: 20px;
+      }
+      h1 {
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+      p.mono {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: #6e9c72;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .section-title {
+        max-width: 1200px;
+        margin: 40px auto 20px;
+        font-size: 18px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .section-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .grid {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 24px;
+      }
+      .card {
+        background: #121214;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .card img {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        display: block;
+        background: #0d0e0c;
+      }
+      .card-footer {
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.02);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .card-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #f0f0f1;
+      }
+      .card-meta {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+      .btn {
+        display: inline-flex;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: #1e1e22;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #f0f0f1;
+        text-decoration: none;
+        font-size: 11px;
+        font-family: "DM Mono", monospace;
+        transition: all 120ms ease;
+      }
+      .btn:hover {
+        background: #6e9c72;
+        color: #0d0e0c;
+        border-color: #6e9c72;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="mono">Instagram 1:1 Announcements · Release 0.4.0</p>
+        <h1>Modesto Design Assets</h1>
+      </div>
+      <div style="text-align: right">
+        <p class="mono" style="color: rgba(255, 255, 255, 0.5)">Aspect Ratio 1:1 (1080×1080 SVG)</p>
+      </div>
+    </header>
+
+    <div class="section-title">16:9 Landscape Announcement Video (Master)</div>
+    <div style="max-width: 1200px; margin: 0 auto 30px">
+      <div class="card" style="padding: 16px; background: #0e0e10">
+        <video
+          controls
+          autoplay
+          muted
+          loop
+          playsinline
+          style="width: 100%; border-radius: 8px; aspect-ratio: 16/9; background: #000"
+        >
+          <source src="./modesto-0.4.0-berkeley-16x9-master.mp4" type="video/mp4" />
+          Your browser does not support HTML5 video.
+        </video>
+        <div class="card-footer" style="margin-top: 14px; border-top: none">
+          <div>
+            <div class="card-title" style="font-size: 15px; margin-bottom: 4px">
+              Modesto 0.4.0 Berkeley — 16:9 Master Cut
+            </div>
+            <div class="card-meta">
+              1920×1080 @ 60fps · Pure Minimal Typography · ChatGPT Style · 'One more thing...' ·
+              Modesto Reveal
+            </div>
+          </div>
+          <a href="./modesto-0.4.0-berkeley-16x9-master.mp4" download class="btn">Download MP4 ↓</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Carousel Set (Dark Mode — Primary Look)</div>
+    <div class="grid">
+      <div class="card">
+        <img src="./modesto-0.4.0-01-overview.svg" alt="Slide 1" />
+        <div class="card-footer">
+          <span class="card-title">01 · Modesto 0.4.0 is here</span>
+          <a href="./modesto-0.4.0-01-overview.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-02-open-source.svg" alt="Slide 2" />
+        <div class="card-footer">
+          <span class="card-title">02 · Now 100% open source</span>
+          <a href="./modesto-0.4.0-02-open-source.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-03-code-plus-work.svg" alt="Slide 3" />
+        <div class="card-footer">
+          <span class="card-title">03 · Code + Work. One platform</span>
+          <a href="./modesto-0.4.0-03-code-plus-work.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-04-community.svg" alt="Slide 4" />
+        <div class="card-footer">
+          <span class="card-title">04 · More than one dev</span>
+          <a href="./modesto-0.4.0-04-community.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-05-get-started.svg" alt="Slide 5" />
+        <div class="card-footer">
+          <span class="card-title">05 · Try 0.4.0 today</span>
+          <a href="./modesto-0.4.0-05-get-started.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-standalone.svg" alt="Standalone Card" />
+        <div class="card-footer">
+          <span class="card-title">Standalone Single-Post Card</span>
+          <a href="./modesto-0.4.0-standalone.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Carousel Set (Light Mode)</div>
+    <div class="grid">
+      <div class="card">
+        <img src="./modesto-0.4.0-light-01-overview.svg" alt="Slide 1 Light" />
+        <div class="card-footer">
+          <span class="card-title">01 · Overview (Light)</span>
+          <a href="./modesto-0.4.0-light-01-overview.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-light-02-open-source.svg" alt="Slide 2 Light" />
+        <div class="card-footer">
+          <span class="card-title">02 · Open Source (Light)</span>
+          <a href="./modesto-0.4.0-light-02-open-source.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-light-03-code-plus-work.svg" alt="Slide 3 Light" />
+        <div class="card-footer">
+          <span class="card-title">03 · Code + Work (Light)</span>
+          <a href="./modesto-0.4.0-light-03-code-plus-work.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-light-04-community.svg" alt="Slide 4 Light" />
+        <div class="card-footer">
+          <span class="card-title">04 · Community (Light)</span>
+          <a href="./modesto-0.4.0-light-04-community.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-light-05-get-started.svg" alt="Slide 5 Light" />
+        <div class="card-footer">
+          <span class="card-title">05 · Get Started (Light)</span>
+          <a href="./modesto-0.4.0-light-05-get-started.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="./modesto-0.4.0-standalone-light.svg" alt="Standalone Card Light" />
+        <div class="card-footer">
+          <span class="card-title">Standalone Single-Post Card (Light)</span>
+          <a href="./modesto-0.4.0-standalone-light.svg" download class="btn">SVG ↓</a>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

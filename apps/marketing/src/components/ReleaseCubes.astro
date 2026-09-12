@@ -1,0 +1,255 @@
+---
+/*
+ * ReleaseCubes — the release history as a 3D tileset you can click.
+ *
+ * One tile per shipped release, arranged on a regular grid so the set reads as
+ * a single composition rather than scattered art. Selecting a tile swaps the
+ * detail panel beside it. Tiles are real buttons, so keyboard and screen-reader
+ * users get the same behaviour; without JS the panel still renders the newest
+ * release and each tile falls back to its anchor further down the page.
+ *
+ * The CSS extrusion is the always-on tileset. WebGL (same chrome / lime / paper
+ * as the brand film) mounts behind the grid when motion is allowed.
+ */
+interface ReleaseItem {
+  tag: string;
+  name: string;
+  date: string;
+  summary: string;
+  highlights: string[];
+  url: string;
+  prerelease: boolean;
+  anchor: string;
+}
+
+interface Props {
+  releases: ReleaseItem[];
+}
+
+const { releases } = Astro.props;
+---
+
+<div class="rc" data-release-cubes>
+  <div class="rc-board">
+    <div class="rc-stage" data-rc-stage aria-hidden="true"></div>
+    <div class="rc-grid" role="tablist" aria-label="Releases">
+      {
+        releases.map((release, index) => (
+          <button
+            type="button"
+            role="tab"
+            class:list={["rc-cube", { "is-selected": index === 0 }]}
+            style={`--delay:${(index % 7) * 0.28 + Math.floor(index / 7) * 0.14}s`}
+            data-index={index}
+            aria-selected={index === 0 ? "true" : "false"}
+            aria-controls="rc-detail"
+            title={`${release.tag} — ${release.date}`}
+          >
+            <span class="rc-tile">
+              <span class="rc-face rc-front">
+                <img src="/announcements/modesto-mark-light.svg" alt="" width="28" height="28" />
+                <span class="rc-tag mono">{release.tag}</span>
+              </span>
+              <span class="rc-face rc-right" aria-hidden="true"></span>
+              <span class="rc-face rc-bottom" aria-hidden="true"></span>
+            </span>
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="rc-detail" id="rc-detail" role="tabpanel" aria-live="polite">
+    <div class="rc-meta mono">
+      <span data-field="tag">{releases[0]?.tag}</span>
+      <span data-field="date">{releases[0]?.date}</span>
+      <span data-field="pre" hidden={!releases[0]?.prerelease}>Preview</span>
+    </div>
+    <h3 data-field="name">{releases[0]?.name}</h3>
+    <p data-field="summary">{releases[0]?.summary}</p>
+    <ul data-field="highlights">
+      {releases[0]?.highlights.map((highlight) => <li>{highlight}</li>)}
+    </ul>
+    <a data-field="url" href={releases[0]?.url} target="_blank" rel="noopener noreferrer">
+      Read full notes <span aria-hidden="true">↗</span>
+    </a>
+  </div>
+</div>
+
+<script is:inline define:vars={{ releaseData: releases }}>
+  (() => {
+    const root = document.querySelector("[data-release-cubes]");
+    if (!root) return;
+    const cubes = Array.from(root.querySelectorAll(".rc-cube"));
+    const panel = root.querySelector(".rc-detail");
+    const field = (name) => panel.querySelector(`[data-field="${name}"]`);
+    const cols = 3;
+
+    const select = (index) => {
+      const release = releaseData[index];
+      if (!release) return;
+      cubes.forEach((cube, cubeIndex) => {
+        const on = cubeIndex === index;
+        cube.classList.toggle("is-selected", on);
+        cube.setAttribute("aria-selected", on ? "true" : "false");
+      });
+      field("tag").textContent = release.tag;
+      field("date").textContent = release.date;
+      field("pre").hidden = !release.prerelease;
+      field("name").textContent = release.name;
+      field("summary").textContent = release.summary;
+      const list = field("highlights");
+      list.replaceChildren();
+      for (const highlight of release.highlights) {
+        const item = document.createElement("li");
+        item.textContent = highlight;
+        list.append(item);
+      }
+      field("url").href = release.url;
+    };
+
+    cubes.forEach((cube, index) => {
+      cube.addEventListener("click", () => select(index));
+      cube.addEventListener("keydown", (event) => {
+        const step =
+          event.key === "ArrowRight"
+            ? 1
+            : event.key === "ArrowLeft"
+              ? -1
+              : event.key === "ArrowDown"
+                ? cols
+                : event.key === "ArrowUp"
+                  ? -cols
+                  : 0;
+        if (!step) return;
+        event.preventDefault();
+        const next = Math.max(0, Math.min(cubes.length - 1, index + step));
+        cubes[next].focus();
+        select(next);
+      });
+    });
+  })();
+</script>
+
+<script type="module" is:inline>
+  import { mountReleaseTiles } from "/brand/modesto-3d.js";
+  const root = document.querySelector("[data-release-cubes]");
+  mountReleaseTiles(root).catch(() => {
+    /* CSS tilesets remain as the fallback. */
+  });
+</script>
+
+<style>
+.rc {display:grid;grid-template-columns:1fr 1.2fr;gap:32px;}
+.rc-board {position:relative;}
+.rc-stage {position:absolute;inset:-36px;z-index:0;pointer-events:none;opacity:0;transition:opacity 560ms ease;}
+.rc-stage canvas {width:100%;height:100%;display:block;}
+.rc-stage[data-ready="true"] {opacity:1;}
+.rc-grid {
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  align-content:start;
+  perspective:1100px;
+  perspective-origin:40% -20%;
+}
+.rc-cube {
+  --d:14px;
+  appearance:none;
+  display:block;
+  width:100%;
+  aspect-ratio:1;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:var(--foreground);
+  cursor:pointer;
+  transform-style:preserve-3d;
+}
+.rc-tile {
+  position:relative;
+  display:block;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+  transform:rotateX(22deg) rotateY(-28deg);
+  transition:transform 280ms cubic-bezier(.2,.8,.2,1);
+}
+.rc-cube:hover .rc-tile {transform:rotateX(18deg) rotateY(-22deg) translateZ(16px);}
+.rc-cube.is-selected .rc-tile {transform:rotateX(18deg) rotateY(-22deg) translateZ(26px);}
+.rc-face {position:absolute;border-radius:14px;}
+.rc-front {
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  align-items:flex-start;
+  padding:16px;
+  background:linear-gradient(165deg,var(--card),var(--card-2));
+  border:1px solid var(--border);
+  box-shadow:0 18px 28px #10120f12;
+  transform:translateZ(calc(var(--d) / 2));
+}
+.rc-cube.is-selected .rc-front {
+  background:linear-gradient(165deg,color-mix(in srgb,var(--accent) 70%,var(--card)),var(--accent));
+  border-color:color-mix(in srgb,var(--accent-ink) 55%,transparent);
+  color:var(--on-accent);
+}
+.rc-right {
+  top:0;
+  bottom:0;
+  left:100%;
+  width:var(--d);
+  border-radius:0 6px 6px 0;
+  background:linear-gradient(180deg,#d4cebe,#8f8878);
+  transform-origin:left center;
+  transform:rotateY(90deg);
+}
+.rc-bottom {
+  left:0;
+  right:0;
+  top:100%;
+  height:var(--d);
+  border-radius:0 0 6px 6px;
+  background:linear-gradient(90deg,#b4ad9c,#6a6558);
+  transform-origin:top center;
+  transform:rotateX(-90deg);
+}
+.rc-cube.is-selected .rc-right {background:linear-gradient(180deg,#d5f995,#7ea24a);}
+.rc-cube.is-selected .rc-bottom {background:linear-gradient(90deg,#b7d96a,#5d7a38);}
+.rc-front img {opacity:.38;}
+.rc-cube.is-selected .rc-front img {opacity:.82;filter:none;}
+[data-theme="dark"] .rc-right {background:linear-gradient(180deg,#3a4334,#1b2119);}
+[data-theme="dark"] .rc-bottom {background:linear-gradient(90deg,#2a3226,#12150f);}
+[data-theme="dark"] .rc-cube.is-selected .rc-right {background:linear-gradient(180deg,#d5f995,#6e8f3f);}
+[data-theme="dark"] .rc-cube.is-selected .rc-bottom {background:linear-gradient(90deg,#b7d96a,#4d662c);}
+.rc-cube:focus-visible {outline:none;}
+.rc-cube:focus-visible .rc-front {outline:2px solid var(--accent-ink);outline-offset:3px;}
+.rc:has(.rc-stage[data-ready="true"]) .rc-tile {transform:none;transition:none;}
+.rc:has(.rc-stage[data-ready="true"]) .rc-right,
+.rc:has(.rc-stage[data-ready="true"]) .rc-bottom {display:none;}
+.rc:has(.rc-stage[data-ready="true"]) .rc-front {
+  background:transparent;
+  border-color:transparent;
+  box-shadow:none;
+}
+.rc:has(.rc-stage[data-ready="true"]) .rc-front img,
+.rc:has(.rc-stage[data-ready="true"]) .rc-tag {opacity:0;}
+.rc-detail {border:1px solid var(--border);border-radius:16px;padding:28px;background:var(--card);}
+.rc-meta {display:flex;gap:16px;color:var(--accent-ink);font-size:11px;}
+.rc-detail h3 {font-size:28px;margin:18px 0;line-height:1.2;}
+.rc-detail p,.rc-detail li {font-size:14px;color:var(--muted-foreground);line-height:1.7;}
+.rc-detail a {color:var(--accent-ink);font-size:13px;}
+@media(max-width:700px){
+  .rc{grid-template-columns:1fr;}
+  .rc-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+  .rc-front{padding:12px;}
+  .rc-stage{inset:-20px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .rc-tile{transform:rotateX(12deg) rotateY(-16deg);}
+  .rc-cube:hover .rc-tile,.rc-cube.is-selected .rc-tile{transform:rotateX(12deg) rotateY(-16deg);}
+}
+</style>

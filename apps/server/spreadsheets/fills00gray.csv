@@ -1,0 +1,7 @@
+#fills:{"0:0":"red","0:1":"amber","0:2":"purple"}
+Title,Owner,Status,Progress,
+Kickoff,Alex,Open,40%,
+Draft,Sam,In progress,80%,
+Review,Jordan,Review,=SUM(D2:D3),
+,,,,
+,,,,

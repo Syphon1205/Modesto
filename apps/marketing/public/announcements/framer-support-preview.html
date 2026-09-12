@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preview — Framer support · 9:16 / 16:9 / 1:1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: #080808;
+        color: #f0f0f1;
+        font-family:
+          "DM Sans",
+          -apple-system,
+          sans-serif;
+        padding: 36px 24px 80px;
+      }
+
+      header {
+        max-width: 1280px;
+        margin: 0 auto 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .mono {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #6e9c72;
+        margin-bottom: 6px;
+      }
+
+      header h1 {
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+
+      .note {
+        max-width: 1280px;
+        margin: 0 auto 32px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.55);
+      }
+
+      .grid {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+
+      .card {
+        background: #121214;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      .frame {
+        background: #12151c;
+        overflow: hidden;
+      }
+
+      .frame.nine {
+        aspect-ratio: 9 / 16;
+      }
+
+      .frame.wide {
+        aspect-ratio: 16 / 9;
+      }
+
+      .frame.square {
+        aspect-ratio: 1 / 1;
+      }
+
+      .frame video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #12151c;
+      }
+
+      .meta {
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .meta strong {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .meta span {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+
+      .meta-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .btn {
+        display: inline-flex;
+        padding: 6px 12px;
+        border-radius: 6px;
+        background: #1e1e22;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #f0f0f1;
+        text-decoration: none;
+        font-size: 11px;
+        font-family: "DM Mono", monospace;
+      }
+
+      .btn:hover {
+        background: #6e9c72;
+        color: #0d0e0c;
+        border-color: #6e9c72;
+      }
+
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="mono">Internal preview · not shipped</p>
+        <h1>Framer support is now in Modesto</h1>
+      </div>
+      <p class="mono" style="color: rgba(255, 255, 255, 0.45)">DM Sans · Silk · Infinite Spiral</p>
+    </header>
+
+    <p class="note">
+      Same announcement family as the Figma posts: DM Sans, Framer × Modesto, three post formats.
+      Silk from React Bits behind an infinite spiral of Framer website templates.
+    </p>
+
+    <div class="grid">
+      <article class="card">
+        <div class="frame nine">
+          <video src="./framer-support-9x16.mp4" autoplay muted loop playsinline></video>
+        </div>
+        <div class="meta">
+          <div>
+            <strong>9:16 · Stories / Reels</strong>
+            <span>1080 × 1920</span>
+          </div>
+          <div class="meta-actions">
+            <a class="btn" href="./framer-support.html?ratio=9x16" target="_blank">Open live</a>
+            <a class="btn" href="./framer-support-9x16.mp4" download>Save MP4 ↓</a>
+            <a class="btn" href="./framer-support-frames/post-9x16.png" download>Save frame ↓</a>
+          </div>
+        </div>
+      </article>
+
+      <div class="stack">
+        <article class="card">
+          <div class="frame wide">
+            <video src="./framer-support-16x9.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <div class="meta">
+            <div>
+              <strong>16:9 · Landscape</strong>
+              <span>1920 × 1080</span>
+            </div>
+            <div class="meta-actions">
+              <a class="btn" href="./framer-support.html?ratio=16x9" target="_blank">Open live</a>
+              <a class="btn" href="./framer-support-16x9.mp4" download>Save MP4 ↓</a>
+              <a class="btn" href="./framer-support-frames/post-16x9.png" download>Save frame ↓</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="frame square">
+            <video src="./framer-support-1x1.mp4" autoplay muted loop playsinline></video>
+          </div>
+          <div class="meta">
+            <div>
+              <strong>1:1 · Feed</strong>
+              <span>1080 × 1080</span>
+            </div>
+            <div class="meta-actions">
+              <a class="btn" href="./framer-support.html?ratio=1x1" target="_blank">Open live</a>
+              <a class="btn" href="./framer-support-1x1.mp4" download>Save MP4 ↓</a>
+              <a class="btn" href="./framer-support-frames/post-1x1.png" download>Save frame ↓</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <section style="max-width: 1280px; margin: 40px auto 0">
+      <h2
+        style="
+          font-size: 18px;
+          font-weight: 500;
+          margin-bottom: 16px;
+          color: rgba(255, 255, 255, 0.7);
+        "
+      >
+        Save everything
+      </h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <a class="btn" href="./framer-support-9x16.mp4" download>9:16 MP4 ↓</a>
+        <a class="btn" href="./framer-support-16x9.mp4" download>16:9 MP4 ↓</a>
+        <a class="btn" href="./framer-support-1x1.mp4" download>1:1 MP4 ↓</a>
+        <a class="btn" href="./framer-support-frames/post-9x16.png" download>9:16 frame ↓</a>
+        <a class="btn" href="./framer-support-frames/post-16x9.png" download>16:9 frame ↓</a>
+        <a class="btn" href="./framer-support-frames/post-1x1.png" download>1:1 frame ↓</a>
+      </div>
+    </section>
+  </body>
+</html>

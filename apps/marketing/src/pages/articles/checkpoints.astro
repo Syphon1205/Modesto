@@ -1,0 +1,586 @@
+---
+import BrandArtwork from "../../components/BrandArtwork.astro";
+import Layout from "../../layouts/ResourceLayout.astro";
+---
+
+<Layout
+  title="Checkpoints are how work survives. — Modesto"
+  description="An engineering deep dive into Modesto's checkpoint system — how it captures not just what changed, but why, and what comes next."
+>
+  <article class="article-shell">
+
+    <header class="article-header">
+      <div class="article-eyebrow">
+        <a href="/articles" class="back mono">← Blog</a>
+        <div style="display: flex; gap: 16px; align-items: center;">
+          <button type="button" id="download-pdf-btn" onclick="window.print()" class="mono" style="background: none; border: none; color: var(--faint); font-size: 9px; letter-spacing: 0.08em; cursor: pointer; transition: color 150ms ease;">Download PDF ↓</button>
+          <span class="mono article-date">August 15, 2026</span>
+        </div>
+      </div>
+      <div class="article-cover"><BrandArtwork /></div>
+      <div class="article-header-copy">
+        <span class="mono article-cat">Engineering</span>
+        <h1>Checkpoints are how<br />work survives.</h1>
+        <p class="article-lede">
+          Every agent session ends. The context that built it doesn't have to. Here's how Modesto's checkpoint system captures not just what changed, but why — and what comes next.
+        </p>
+        <div class="article-meta">
+          <span class="mono">Modesto Team</span>
+          <span class="meta-sep mono">·</span>
+          <span class="mono">8 min read</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="article-rule"></div>
+
+    <div class="article-body">
+
+      <p>
+        Close a coding agent session. Open a new one tomorrow. The first thing you do is re-explain where you were. The codebase is still there — git saw to that — but the understanding behind the last three hours of work is gone. You type your way back in. The agent starts cold. You start cold. This is expensive and lossy, and it happens every single day.
+      </p>
+
+      <p>
+        The problem is not the agent's memory. Most modern agents have ample context windows. The problem is that when a session ends, there is no durable record of the session's understanding — only the artifacts it produced. A diff, maybe a commit message. What the agent reasoned through, what it tried and abandoned, what it flagged as uncertain, what it was planning to do next — all of that evaporates.
+      </p>
+
+      <p>
+        Git captures the outcome. Nothing captures the reasoning. Modesto's checkpoint system is our answer to that gap.
+      </p>
+
+      <h2>What a checkpoint actually is</h2>
+
+      <p>
+        A checkpoint in Modesto is a structured snapshot of a session at a moment in time. Not just the diff produced — the full picture of what was understood, decided, and deferred when the snapshot was taken. Concretely, a checkpoint records:
+      </p>
+
+      <ul>
+        <li>What the agent understood about the task at that moment — the interpreted goal, not just the raw prompt</li>
+        <li>The decisions made: which approach was chosen, and why alternatives were considered and set aside</li>
+        <li>What was rejected and the reason — this is frequently the most valuable part, because it prevents the next session from re-exploring the same dead ends</li>
+        <li>The diff produced, linked directly to the decision context that motivated it</li>
+        <li>Outstanding questions — things the agent surfaced but couldn't resolve without more information</li>
+        <li>The next logical step, as the agent understood it when the checkpoint was taken</li>
+      </ul>
+
+      <p>
+        This is not a transcript. Transcripts are linear logs of inputs and outputs. A checkpoint is a projection — a structured extraction of the signal from the session stream, organized around the work rather than around the conversation.
+      </p>
+
+      <h2>How checkpoints differ from git commits</h2>
+
+      <p>
+        This distinction matters enough to be precise about. A git commit records what changed. It is the canonical artifact of software development and it should stay that way — Modesto produces commits like any other tool, and they live in your repository's history like any other commit.
+      </p>
+
+      <p>
+        A checkpoint records why it changed, and what comes next. These are different axes. A commit can tell you that a function was refactored; a checkpoint tells you that the original implementation had a concurrency bug that only manifests under specific load conditions, that two alternative approaches were considered, that the chosen approach trades off memory allocation for lock contention, and that the next session should address the downstream callers that now receive a different return type.
+      </p>
+
+      <blockquote>
+        A git commit is a historical record. A checkpoint is a handoff document. Both are necessary. Only Modesto makes both first-class.
+      </blockquote>
+
+      <p>
+        The reason this has not existed before is partly tooling and partly incentives. When you write code by hand, you are the checkpoint — the reasoning lives in your head, and the commit message is an approximation of it. With AI agents doing the implementation, the reasoning is articulated during the session in a form that could be captured. Modesto captures it.
+      </p>
+
+      <h2>The technical reality</h2>
+
+      <p>
+        Modesto runs Codex app-server as a JSON-RPC process over stdio, one process per provider session. Every agent action — tool calls, text output, reasoning steps, approval requests — arrives as a structured event on that stream. The session is, at its core, an event log.
+      </p>
+
+      <p>
+        A checkpoint is a projection of that event log. The server side processes the stream as events arrive, classifying and accumulating them into the checkpoint's structured fields. By the time you trigger a checkpoint manually — or one is triggered automatically at a session boundary — the projection is already mostly built. The checkpoint materializes quickly because the work of understanding the session happened incrementally.
+      </p>
+
+      <p>
+        The resulting document is model-agnostic by design. It does not contain references to Codex-specific event types or OpenAI-specific tool formats. It describes the work: the goal, the decisions, the diff, the questions, the next step. This is intentional — a checkpoint produced by a Codex session should be consumable by a Claude session, a human reviewer, or an automated pipeline. The document is the interface.
+      </p>
+
+      <h2>Handoff as a first-class operation</h2>
+
+      <p>
+        The conventional handoff in software development is a summary written by the person leaving the work. It is incomplete by default, because the person writing it has already mentally moved on and cannot fully reconstruct what it felt like to not know what they now know. The important context — the wrong turns, the subtle constraints, the unanswered questions — gets compressed or dropped.
+      </p>
+
+      <p>
+        With a checkpoint, the handoff is not written after the fact. It is built during the session and finalized at the moment you leave the work. The person — or agent — picking it up gets the full picture at the moment of highest fidelity, not a reconstruction of it from memory.
+      </p>
+
+      <p>
+        Handing a checkpoint to a different agent requires no translation. You load the checkpoint into a new session, and the incoming agent starts with everything the previous session knew: what was tried, what was decided, where it left off. The cold-start problem that opened this article is gone. The new session picks up mid-thought, not from the beginning.
+      </p>
+
+      <blockquote>
+        The session ends. The understanding doesn't. That is the only thing the checkpoint has to do — and it has to do it reliably, every time.
+      </blockquote>
+
+      <p>
+        The same mechanism works for human reviewers. A checkpoint is legible to a senior engineer who was not in the session. They can read the reasoning, evaluate the decisions, answer the outstanding questions, and hand it back to an agent for the next phase — all without the session author being present to explain anything.
+      </p>
+
+      <h2>What this enables at team scale</h2>
+
+      <p>
+        The individual productivity gains are real but not the most important thing. The more significant change is what happens to institutional knowledge when you work this way across a team.
+      </p>
+
+      <p>
+        In a conventional development environment, the reasoning behind code lives in the heads of the engineers who wrote it. Some of it makes it into commit messages, some into pull request descriptions, some into architecture decision records if the team has the discipline to maintain them. Most of it evaporates. New team members re-discover the same constraints. The same dead ends get explored again. Technical decisions get revisited without the full context of why they were made the first time.
+      </p>
+
+      <p>
+        Checkpoints change this accumulation dynamic. Every session that produces a checkpoint leaves behind a record of what was understood and why the work took the shape it did. Over time, these records become a corpus of institutional knowledge that was captured during the work — not assembled afterward, not reconstructed from imperfect memory, but recorded at the moment of highest fidelity.
+      </p>
+
+      <p>
+        This is qualitatively different from documentation. Documentation is a second-order artifact — something you produce to describe work you already did. A checkpoint is a first-order artifact, produced as part of the work itself. The overhead is low because the checkpoint is built incrementally from the session's event stream, not written from scratch when the session ends.
+      </p>
+
+      <p>
+        The result, accumulated across a team over months, is something that has historically been very hard to build: a precise, navigable record of not just what the codebase is, but how it came to be. The decisions, the tradeoffs, the alternatives that were considered and declined. The kind of knowledge that used to live only in the memory of the engineers who were there.
+      </p>
+
+      <h2>An honest accounting</h2>
+
+      <p>
+        Checkpoints are not a complete solution to the context problem. A session that is genuinely exploratory — where the agent is probing a problem space and the understanding is changing rapidly — may produce a checkpoint that is accurate to the moment but quickly stale as the next session reframes the problem. The checkpoint is a snapshot, not a live document.
+      </p>
+
+      <p>
+        We handle this by making checkpoints cheap to produce and chain. A session can produce multiple checkpoints at different stages of understanding. The chain of checkpoints traces the evolution of understanding across sessions, and the most recent one is the one that matters for handoff. The older ones are still there if you want to understand how the thinking evolved — which, in debugging and architecture review contexts, turns out to be frequently useful.
+      </p>
+
+      <p>
+        The deeper point is that the alternative — no checkpoint, context evaporating at session end — is always worse. An imperfect record of what the session understood is more useful than no record. The engineering work is in making the record as accurate and complete as possible. That is the work we are doing.
+      </p>
+
+    </div>
+
+    <div class="article-rule"></div>
+
+    <footer class="article-footer">
+      <div class="article-footer-left">
+        <span class="mono">Modesto · August 2026</span>
+        <p>Modesto is available now for macOS, Windows, and Linux. Local-first, model-agnostic, built for how software teams actually work with AI agents.</p>
+      </div>
+      <div class="article-footer-right">
+        <a href="/articles" class="mono back-link">← All articles</a>
+      </div>
+    </footer>
+
+  </article>
+
+  <!-- Print-only branded footer -->
+  <div class="article-print-footer" aria-hidden="true">
+    <img src="/modesto-logo.svg" alt="" />
+    <span>Modesto</span>
+    <span class="article-print-footer-url">modesto.dev/articles</span>
+  </div>
+</Layout>
+
+<style>
+  .article-print-footer {
+    display: none;
+  }
+
+  .article-shell {
+    width: min(100% - 48px, 1440px);
+    margin: 0 auto;
+    border-inline: 1px solid var(--line);
+  }
+
+  /* ── Header ── */
+  .article-header {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-eyebrow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px clamp(28px, 8vw, 120px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .back {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back:hover {
+    color: var(--ink);
+  }
+
+  .article-date {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-cover {
+    width: 100%;
+    aspect-ratio: 16 / 6;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .article-header-copy {
+    padding: clamp(40px, 7vw, 80px) clamp(28px, 8vw, 120px);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    background: radial-gradient(ellipse 60% 45% at 50% -10%, color-mix(in srgb, var(--violet) 10%, transparent), transparent 68%);
+  }
+
+  .article-cat {
+    color: var(--muted);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-header h1 {
+    font-size: clamp(3rem, 7vw, 7rem);
+    font-weight: 500;
+    letter-spacing: -0.07em;
+    line-height: 0.88;
+    color: var(--ink);
+    max-width: 900px;
+  }
+
+  .article-lede {
+    max-width: 600px;
+    font-size: clamp(15px, 1.6vw, 18px);
+    line-height: 1.65;
+    color: var(--muted);
+    letter-spacing: -0.01em;
+  }
+
+  .article-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .meta-sep {
+    opacity: 0.5;
+  }
+
+  /* ── Rule ── */
+  .article-rule {
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ── Body ── */
+  .article-body {
+    display: grid;
+    grid-template-columns: 1fr min(680px, 100%) 1fr;
+    padding: clamp(60px, 8vw, 100px) 0;
+    row-gap: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .article-body > * {
+    grid-column: 2;
+  }
+
+  .article-body p {
+    font-size: 17px;
+    line-height: 1.78;
+    color: var(--ink);
+    margin-bottom: 28px;
+    letter-spacing: -0.01em;
+  }
+
+  .article-body h2 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-top: 64px;
+    margin-bottom: 28px;
+  }
+
+  .article-body ul {
+    margin: 0 0 28px 0;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .article-body li {
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .article-body blockquote {
+    margin: 48px 0;
+    padding: 32px 36px;
+    border-left: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--paper-deep) 60%, transparent);
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.4;
+    color: var(--ink);
+    font-style: normal;
+  }
+
+  /* ── Footer ── */
+  .article-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: end;
+    padding: clamp(48px, 6vw, 80px) clamp(28px, 8vw, 120px);
+    border-top: 1px solid var(--line);
+  }
+
+  .article-footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .article-footer-left > .mono {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .article-footer-left p {
+    max-width: 480px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .article-cta {
+    display: inline-flex;
+    gap: 24px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid currentColor;
+    font-size: 13px;
+    color: var(--ink);
+    text-decoration: none;
+    width: fit-content;
+    transition: color 150ms ease;
+  }
+
+  .article-cta:hover {
+    color: var(--accent);
+  }
+
+  .back-link {
+    color: var(--faint);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .back-link:hover {
+    color: var(--ink);
+  }
+
+  @media (max-width: 760px) {
+    .article-shell {
+      width: min(100% - 32px, 1440px);
+    }
+
+    .article-body {
+      grid-template-columns: 1fr;
+      padding-inline: clamp(20px, 5vw, 40px);
+    }
+
+    .article-body > * {
+      grid-column: 1;
+    }
+
+    .article-footer {
+      grid-template-columns: 1fr;
+    }
+  }
+  /* ── Print / "Download PDF" ──
+     No PDF library — reuses the browser's own print-to-PDF against the page
+     content already rendered. Keeps the real theme colors/gradients instead
+     of flattening to plain black-on-white, hides site chrome (nav, the ←
+     Blog/Download PDF/date bar, this article's own closing footer, and the
+     global site footer) so only the cover image through the end of the
+     article prints, and shows a small branded footer in their place. */
+  @media print {
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+
+    .site-header,
+    .global-footer,
+    .footer-mark,
+    .capability-ticker,
+    .article-eyebrow,
+    .article-footer {
+      display: none !important;
+    }
+
+    body {
+      background: #ffffff;
+      color: #14151a;
+    }
+
+    .article-shell {
+      width: 100%;
+      border-inline: 0;
+    }
+
+    /* Safari's print engine is well documented to mis-render CSS Grid (and
+       occasionally flex) during the print pass — tracks can collapse or
+       children can lose their placement, which is what "ignores all our
+       styling" looks like from the outside even though the colors/fonts
+       below are applied correctly. Every layout still visible in print gets
+       forced to plain block flow here so there's no grid/flex left for
+       Safari to get wrong; Chrome/Firefox render identically either way. */
+    body,
+    .article-body,
+    .article-body p,
+    .article-body li,
+    .article-header,
+    .article-header-copy {
+      font-family: "DM Sans", -apple-system, "Helvetica Neue", sans-serif;
+    }
+
+    .mono,
+    .article-meta,
+    .article-print-footer {
+      font-family: "DM Mono", ui-monospace, monospace;
+    }
+
+    .article-header {
+      display: block;
+      border-bottom: 0;
+    }
+
+    .article-header-copy {
+      display: block;
+    }
+
+    .article-cover,
+    .article-header-copy {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-header h1 {
+      color: #14151a;
+    }
+
+    .article-lede,
+    .article-meta {
+      color: #4a4d57;
+    }
+
+    .article-body {
+      display: block;
+      width: min(680px, 100%);
+      margin: 0 auto;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .article-body > * {
+      grid-column: unset;
+    }
+
+    .article-body p {
+      color: #2b2d33;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .article-body h2 {
+      color: #14151a;
+      break-after: avoid;
+      page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body li {
+      color: #2b2d33;
+    }
+
+    .article-body blockquote,
+    .article-body ul,
+    .article-body img {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .article-body blockquote {
+      background: #f4f4f6;
+      color: #14151a;
+    }
+
+    .article-body code {
+      background: #f0f0f2;
+      border-color: #ddd;
+      color: #14151a;
+    }
+
+    /* Normal document flow, not position:fixed — a fixed-position footer
+       gets painted at the same screen coordinate on every printed page and
+       can overlap the last line or two of that page's content instead of
+       repeating cleanly, which is what was making text unreadable near page
+       breaks. This renders once, after the article ends. */
+    .article-print-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      margin-top: 32px;
+      padding: 0 4px;
+      border-top: 1px solid #ddd;
+      color: #6b6e78;
+      font: 500 10px "DM Sans", sans-serif;
+    }
+
+    .article-print-footer img {
+      width: 14px;
+      height: 14px;
+      object-fit: contain;
+    }
+
+    .article-print-footer span:first-of-type {
+      color: #14151a;
+      font-weight: 600;
+    }
+
+    .article-print-footer-url {
+      margin-left: auto;
+    }
+  }
+</style>

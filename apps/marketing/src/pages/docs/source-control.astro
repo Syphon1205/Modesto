@@ -1,0 +1,121 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Branches and worktrees", href: "#worktrees" },
+  { label: "Diffs", href: "#diffs" },
+  { label: "Commit and push", href: "#commit" },
+  { label: "Pull requests", href: "#prs" },
+  { label: "GitHub sign-in", href: "#github" },
+  { label: "Providers", href: "#providers" },
+];
+---
+
+<DocsLayout
+  title="Source control"
+  description="Every Code thread can own a branch and a worktree. When the change is good, commit, push, and open a pull request from the same surface."
+  currentPath="/docs/source-control"
+  eyebrow="Product"
+  {toc}
+>
+  <section id="worktrees">
+    <h2>Branches and worktrees</h2>
+    <p>
+      A Code thread is Git work, not a chat that happens to mention files.
+      When you start a thread you choose whether to use the current checkout
+      or an isolated worktree on its own branch.
+    </p>
+    <div class="docs-table">
+      <div>
+        <strong>Current checkout</strong>
+        <span>
+          The agent edits the files you already have open. Fast, and dangerous
+          if another person or agent is also writing.
+        </span>
+      </div>
+      <div>
+        <strong>Isolated worktree</strong>
+        <span>
+          Modesto creates a linked worktree so the thread can commit without
+          disturbing your main working tree. Parallel agents stay out of each
+          other’s uncommitted files.
+        </span>
+      </div>
+    </div>
+    <div class="docs-callout">
+      <strong>Checkpoints are Git objects.</strong>
+      <p>
+        Handoffs pin <code>HEAD</code> and the working tree under{" "}
+        <code>refs/modesto/agent-checkpoints/…</code>. They do not rewrite your
+        branches. See <a href="/docs/checkpoints">Checkpoints</a>.
+      </p>
+    </div>
+  </section>
+
+  <section id="diffs">
+    <h2>Diffs</h2>
+    <p>
+      Changed files stream into the thread. Open the diff beside the
+      conversation, jump file to file, and treat the working tree — not the
+      transcript — as the source of truth. If a check did not run, keep that
+      fact in the checkpoint instead of assuming the tree is clean.
+    </p>
+  </section>
+
+  <section id="commit">
+    <h2>Commit and push</h2>
+    <p>
+      Git actions live on the thread: stage, commit, push, and open a pull
+      request when the revision is ready. Generated commit messages are a
+      starting point — edit them before you push anything you would not put
+      on a shared branch.
+    </p>
+    <p>
+      Push uses the git credentials already on the machine (SSH agent,{" "}
+      <code>gh</code>, credential helper). Modesto does not mint a GitHub
+      identity for you.
+    </p>
+  </section>
+
+  <section id="prs">
+    <h2>Pull requests</h2>
+    <p>
+      When the branch has a coherent change, open a pull request from the
+      thread. Modesto can draft a title and body from the work on that
+      branch. Review the draft, choose draft vs ready, then create the PR on
+      the host you authenticated.
+    </p>
+    <p>
+      Open any pull request in Modesto to see its <strong>Context</strong>{" "}
+      tab — threads that touched the branch, handoffs between them, and a
+      one-click continue. That is the first surface of the{" "}
+      <a href="/docs/context-graph">Context Graph</a>.
+    </p>
+  </section>
+
+  <section id="github">
+    <h2>GitHub sign-in</h2>
+    <p>
+      Pull requests and GitHub identity use the real <code>gh</code> CLI on the
+      host. Modesto does not host a GitHub OAuth app for you. In settings, Sign
+      in with GitHub starts <code>gh auth login --web --clipboard</code>, shows
+      the device code, and waits until that CLI session is authenticated.
+    </p>
+    <p>
+      If <code>gh</code> is missing or signed out, GitHub actions fail with
+      “Run <code>gh auth login</code> and retry.” Complete that on the same
+      machine (or WSL/SSH environment) that owns the repo — not on a paired
+      phone.
+    </p>
+  </section>
+
+  <section id="providers">
+    <h2>Git hosts</h2>
+    <p>
+      Source control is not GitHub-only. Modesto speaks GitHub, GitLab,
+      Azure DevOps, and Bitbucket through the CLIs and APIs already on your
+      machine. Auth stays with those tools — typically <code>gh</code>,{" "}
+      <code>glab</code>, or the host’s own login.
+    </p>
+  </section>
+</DocsLayout>

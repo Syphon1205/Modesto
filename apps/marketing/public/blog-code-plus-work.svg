@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">
+  <rect width="1600" height="900" fill="#0d0e0c"/>
+  <line x1="80" y1="120" x2="1520" y2="120" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <line x1="80" y1="780" x2="1520" y2="780" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+  <circle cx="80" cy="120" r="3" fill="#4a8f6a"/>
+  <circle cx="80" cy="780" r="3" fill="#4a8f6a"/>
+  <text x="80" y="96" font-family="'DM Mono', ui-monospace, monospace" font-size="13" letter-spacing="0.12em" fill="rgba(255,255,255,0.35)">MODESTO / PRODUCT</text>
+  <text x="1520" y="96" font-family="'DM Mono', ui-monospace, monospace" font-size="13" letter-spacing="0.08em" fill="rgba(255,255,255,0.25)" text-anchor="end">AUGUST 2026</text>
+  <text x="80" y="430" font-family="'DM Sans', -apple-system, 'Helvetica Neue', sans-serif" font-size="240" font-weight="500" letter-spacing="-0.07em" fill="#f3f0e8">Code +</text>
+  <text x="80" y="660" font-family="'DM Sans', -apple-system, 'Helvetica Neue', sans-serif" font-size="240" font-weight="500" letter-spacing="-0.07em" fill="rgba(243,240,232,0.22)">Work</text>
+  <text x="80" y="810" font-family="'DM Mono', ui-monospace, monospace" font-size="13" letter-spacing="0.08em" fill="rgba(255,255,255,0.25)">ONE WORKSPACE FOR EVERY CODING AGENT</text>
+</svg>

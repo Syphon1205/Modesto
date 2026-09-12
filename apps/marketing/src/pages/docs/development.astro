@@ -1,0 +1,95 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+import { REPO_URL } from "../../lib/releases";
+
+const toc = [
+  { label: "Requirements", href: "#requirements" },
+  { label: "Run from source", href: "#source" },
+  { label: "Package boundaries", href: "#architecture" },
+  { label: "Runtime model", href: "#runtime" },
+  { label: "Safe local instances", href: "#isolation" },
+];
+---
+
+<DocsLayout
+  title="Local development"
+  description="Run Modesto from source and understand the boundaries between the desktop app, web workspace, server, and shared contracts."
+  currentPath="/docs/development"
+  eyebrow="Reference"
+  {toc}
+>
+  <section id="requirements">
+    <h2>Requirements</h2>
+    <ul>
+      <li>Bun 1.3.9 or newer</li>
+      <li>Node.js 24.13.1 or newer</li>
+      <li>Git</li>
+      <li>At least one supported coding provider for live sessions</li>
+    </ul>
+  </section>
+
+  <section id="source">
+    <h2>Run from source</h2>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Quick start</span><span>Shell</span></div>
+      <pre><code>git clone https://github.com/Syphon1205/Modesto.git
+cd Modesto
+bun install
+bun run modesto:dev</code></pre>
+    </div>
+    <div class="docs-table">
+      <div><strong><code>bun run modesto:dev</code></strong><span>Start the Electron desktop product.</span></div>
+      <div><strong><code>bun run dev:server</code></strong><span>Run the orchestration server only.</span></div>
+      <div><strong><code>bun run dev:web</code></strong><span>Run the React workspace only.</span></div>
+      <div><strong><code>bun run build</code></strong><span>Build the complete workspace.</span></div>
+      <div><strong><code>bun run test</code></strong><span>Run the Vitest suite.</span></div>
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>Package boundaries</h2>
+    <div class="docs-table">
+      <div><strong><code>apps/web</code></strong><span>React workspace, session UX, timelines, diffs, terminals, and previews.</span></div>
+      <div><strong><code>apps/server</code></strong><span>WebSocket RPC, provider orchestration, persistence, Git, worktrees, and terminals.</span></div>
+      <div><strong><code>apps/desktop</code></strong><span>Electron lifecycle, native windows, notifications, dialogs, and updates.</span></div>
+      <div><strong><code>packages/contracts</code></strong><span>Schema-only contracts shared between server and clients.</span></div>
+      <div><strong><code>packages/shared</code></strong><span>Runtime utilities shared through explicit subpath exports.</span></div>
+    </div>
+    <p><a href={`${REPO_URL}/blob/main/ARCHITECTURE.md`} target="_blank" rel="noopener noreferrer">Read the architecture reference ↗</a></p>
+  </section>
+
+  <section id="runtime">
+    <h2>Runtime model</h2>
+    <p>
+      The 0.4 rebuild sits on the T3 Code client-server foundation: typed RPC,
+      Effect services, and schema-only contracts. The server owns provider
+      processes and durable orchestration. It speaks JSON-RPC to supported
+      provider runtimes and projects structured domain events over WebSocket to
+      the React client. The client renders the task timeline, but it is not the
+      source of truth for provider state.
+    </p>
+    <div class="docs-table">
+      <div><strong>Provider session</strong><span>A managed agent process with startup, resume, turn, interruption, and failure lifecycle.</span></div>
+      <div><strong>Domain event</strong><span>A server-side record projected to clients so reconnects can rebuild predictable UI state.</span></div>
+      <div><strong>Snapshot</strong><span>The current orchestration state used to hydrate projects and threads before live events continue.</span></div>
+    </div>
+  </section>
+
+  <section id="isolation">
+    <h2>Run a safe local instance</h2>
+    <p>
+      When the desktop app is already running, use an isolated home directory
+      and non-default ports. Dry-run the configuration first, then confirm the
+      selected server and web ports are free before launching.
+    </p>
+    <div class="docs-code">
+      <div class="docs-code-head"><span>Isolated development</span><span>Shell</span></div>
+      <pre><code>env -u MODESTO_AUTH_TOKEN \
+  MODESTO_PORT_OFFSET=3158 \
+  bun run dev -- \
+  --home-dir ./.modesto-docs-dev \
+  --port 58090 \
+  --dry-run</code></pre>
+    </div>
+  </section>
+</DocsLayout>

@@ -1,0 +1,141 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+const toc = [
+  { label: "Code and Work", href: "#code-and-work" },
+  { label: "Choosing a workspace", href: "#choosing" },
+  { label: "Sessions", href: "#sessions" },
+  { label: "Connections", href: "#connections" },
+  { label: "Music and canvas", href: "#music" },
+  { label: "Artifacts and browser", href: "#artifacts" },
+  { label: "Limitations", href: "#limitations" },
+];
+---
+
+<DocsLayout
+  title="Work"
+  description="Use Modesto’s Cowork surface for research, documents, data, connected tools, browser tasks, and durable artifacts."
+  currentPath="/docs/work"
+  eyebrow="Product"
+  {toc}
+>
+  <section id="code-and-work">
+    <h2>Two focused workspaces</h2>
+    <p>
+      Modesto splits the sidebar into two workspaces because "coding agent"
+      and "cowork agent" are different jobs with different histories. Code is
+      the repository workspace: it's scoped to a project's working tree, every
+      thread has a branch and (optionally) a worktree, and everything you do
+      there — prompts, diffs, checkpoints, pull requests — is meant to end in
+      a commit.
+    </p>
+    <p>
+      Work is a separate cowork surface for tasks that aren't really about a
+      Git repository: research, document drafting, spreadsheet and data
+      cleanup, Figma or Framer, Music, and anything that leans on connected
+      tools or the browser more than it leans on source code. A Work session can still read and write
+      files on disk, but it isn't tied to a branch the way a Code thread is.
+    </p>
+    <div class="docs-callout"><strong>Work sessions stay in Work.</strong><p>They do not appear as Code chats, so each workspace keeps a clear history and purpose — you're never scrolling past research notes to find a code review, or the other way around.</p></div>
+  </section>
+
+  <section id="choosing">
+    <h2>Choosing a workspace</h2>
+    <p>
+      There's no hard rule enforced by the app — you can technically ask a
+      Code agent to summarize a PDF, and a Work agent can technically edit a
+      file. The distinction is about what the sidebar, history, and session
+      metadata organize around:
+    </p>
+    <div class="docs-table">
+      <div><strong>Use Code when…</strong><span>The task ends with a diff, a commit, or a pull request against a real Git project.</span></div>
+      <div><strong>Use Work when…</strong><span>The task ends with a document, a dataset, a design Connection, a decision, or an answer — not a code change.</span></div>
+      <div><strong>Chat with no folder</strong><span>Unscoped Code chats (1.0 alpha) are for questions without a repo. Work still needs a project. See <a href="/docs/threads">Threads</a>.</span></div>
+    </div>
+  </section>
+
+  <section id="sessions">
+    <h2>Start a Work session</h2>
+    <p>
+      Create a session from a prompt or one of the starter tasks. Choose the
+      model, attach files, and continue the conversation while Modesto keeps
+      the session and its outputs together in one place — the transcript, any
+      files it produced, and the sources it pulled in stay attached to that
+      session rather than scattered across your filesystem.
+    </p>
+    <div class="docs-table">
+      <div><strong>New session</strong><span>Start research, drafting, data, or file work with a fresh context.</span></div>
+      <div><strong>Search sessions</strong><span>Return to previous Work tasks without mixing them into Code history.</span></div>
+      <div><strong>Automations</strong><span>Schedule recurring Work sessions and open their results from the same workspace.</span></div>
+    </div>
+  </section>
+
+  <section id="connections">
+    <h2>Connections</h2>
+    <p>
+      Connections is a primary Work tab for tools, skills, plugins, and signed-in
+      web apps. It is the Work-side equivalent of Code’s Provider Tools: one
+      place to see what a session may reach.
+    </p>
+    <div class="docs-table">
+      <div>
+        <strong>Figma</strong>
+        <span>
+          Open design files in the workspace and, where you configure it, read
+          components and tokens through Figma’s remote MCP.
+        </span>
+      </div>
+      <div>
+        <strong>Framer</strong>
+        <span>
+          Edit sites beside the thread. Framer’s MCP plugin has to stay open in
+          the Framer project for that connection to answer. Copy the server URL
+          from Framer → Plugins → MCP.
+        </span>
+      </div>
+      <div>
+        <strong>Adobe apps</strong>
+        <span>
+          On desktop, launch Photoshop, After Effects, Illustrator, Premiere,
+          and the rest of that suite when they are installed. See{" "}
+          <a href="/docs/desktop">Desktop</a>.
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section id="music">
+    <h2>Music and canvas</h2>
+    <p>
+      The same right panel as Code can open <strong>Music</strong> (Apple Music
+      library on the Mac, Spotify and others via the in-app browser) and
+      <strong>Canvas</strong> for dashboards, slides, docs, and spreadsheets.
+      Those surfaces sit beside the session so listening or a live doc does not
+      replace the thread.
+    </p>
+  </section>
+
+  <section id="artifacts">
+    <h2>Artifacts and browser</h2>
+    <p>
+      A Work task can keep live files and generated artifacts in a dedicated
+      side panel — a drafted document, a cleaned-up CSV, a research brief —
+      so you can watch it take shape without leaving the conversation. The
+      browser can open beside the session for research and source inspection,
+      letting the agent (or you) check a source page without losing the
+      thread of the conversation that's citing it.
+    </p>
+  </section>
+
+  <section id="limitations">
+    <h2>Limitations</h2>
+    <p>
+      Cowork has been in Modesto long enough now to carry real session
+      history, Connections, and artifacts reliably — it's no longer the
+      just-shipped surface it was in early releases. It still isn't as deep
+      as Code around things like fine-grained permission scoping per
+      connection; treat it as actively maintained, not as a finished product
+      line — Modesto as a whole is still pre-1.0.
+    </p>
+  </section>
+</DocsLayout>

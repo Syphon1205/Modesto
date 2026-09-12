@@ -1,0 +1,392 @@
+---
+import LegalPage from "../components/LegalPage.astro";
+
+const sections = [
+  ["introduction", "Introduction"],
+  ["information", "Personal information we collect"],
+  ["uses", "How we use your personal information"],
+  ["sharing", "How we share your personal information"],
+  ["choices", "Your choices regarding your personal information"],
+  ["security", "Security of your personal information"],
+  ["international", "International users"],
+  ["children", "Children"],
+  ["do-not-track", "Do Not Track"],
+  ["updates", "Updates to this Privacy Policy"],
+  ["contact", "Contact us"],
+] as const;
+---
+
+<LegalPage
+  title="Privacy Policy — Modesto"
+  description="How the Modesto project handles information when you use the desktop app, visit modesto.dev, or connect coding-agent providers."
+  heading="Modesto Privacy Policy"
+  lede="This Privacy Policy describes how the Modesto project collects, uses, and shares personal information when you use the Modesto desktop application, visit the Modesto website, or download builds from our public GitHub releases."
+  effectiveDate="2026-09-08"
+  lastUpdated="2026-09-08"
+  sections={sections}
+>
+  <section id="introduction">
+    <p class="section-number">01</p>
+    <h2>Introduction</h2>
+    <p>
+      This Privacy Policy (the “Policy”) describes how Tanner Davidson and the Modesto project
+      (“Modesto,” “we,” “us,” or “our”) collect, use, and share personal information when you use
+      the Modesto desktop application for macOS, Windows, and Linux (the “App”), visit the Modesto
+      marketing website at{" "}<a href="https://modesto.dev">https://modesto.dev</a> (the “Site”), or
+      download release artifacts from the public repository at{" "}<a
+        href="https://github.com/Syphon1205/Modesto">https://github.com/Syphon1205/Modesto</a
+      > (together, the “Services”).
+    </p>
+    <p>
+      Modesto is a local-first, open-source control plane for coding agents. The App is designed so
+      that your projects, threads, prompts, diffs, and session history can stay on the machine you
+      control. We do not operate a cloud session broker that receives your source code while an
+      agent is working. This Policy explains the limited information we do process — mostly to
+      publish the Site, ship desktop updates, and communicate with you — and the much larger set of
+      information that stays with you or with providers you choose.
+    </p>
+    <p>
+      By using the Site or the Services, you acknowledge the practices described in this Policy. If
+      you do not agree with this Policy, please do not use the Site or the Services. This Policy
+      does not govern third-party coding agents, model providers, identity providers, or
+      infrastructure that you choose to connect to Modesto. Those parties process information under
+      their own terms and privacy policies. See our{" "}<a href="/third-party">Third Party</a> notice
+      for how those relationships work.
+    </p>
+  </section>
+
+  <section id="information">
+    <p class="section-number">02</p>
+    <h2>Personal Information We Collect</h2>
+    <p>
+      We collect personal information in different ways depending on how you use Modesto. Most App
+      data never leaves your device unless you send it to a provider you configured.
+    </p>
+
+    <h3>Information that stays on your device</h3>
+    <p>
+      When you use the App, Modesto stores project paths, thread history, drafts, model and provider
+      preferences, local settings, cached file and git metadata, and related workspace state on your
+      machine. Credentials and session tokens use platform-provided protected storage where
+      supported. This information is not collected by us unless you transmit it as part of a feature
+      you initiate — for example, by sending a prompt to a coding-agent provider, opening a GitHub
+      pull request, or asking the App to check for an update.
+    </p>
+
+    <h3>Personal information from users of the App</h3>
+    <p>When you use the App, we may process the following categories of personal information:</p>
+    <ul>
+      <li>
+        <strong>Update and version information.</strong> The built-in updater may request release
+        metadata from GitHub so the App can tell you when a new build is available. That request can
+        include a public IP address, operating-system and architecture details, and the App version
+        you are running. GitHub processes those requests under its own privacy policy.
+      </li>
+      <li>
+        <strong>Information you provide to us.</strong> We collect information that you choose to
+        send when you open a GitHub issue, discussion, or security advisory, email or message the
+        maintainer, or otherwise communicate with the project. That may include your GitHub
+        username, email address, and the contents of your report.
+      </li>
+      <li>
+        <strong>Crash or diagnostic information you choose to share.</strong> The App is not
+        designed to phone home with telemetry. If you voluntarily attach logs, screenshots, or
+        traces to a support request, we process only what you send.
+      </li>
+    </ul>
+
+    <h3>Personal information from users of the Site</h3>
+    <p>
+      When you visit the Site, our hosting and content-delivery providers may automatically log
+      online identifiers and internet-activity information, including your Internet Protocol (IP)
+      address, device and operating-system type, browser type and version, pages viewed, access
+      times, referrers, and error details. We use this operational information to serve, secure, and
+      troubleshoot the Site — not for targeted advertising.
+    </p>
+    <p>
+      If you download a desktop build from GitHub Releases, GitHub — not Modesto — records the
+      download under its own terms. We may publish aggregate download counts on the Site.
+    </p>
+
+    <h3>Information we get from others</h3>
+    <p>
+      We may receive personal information from service providers that help us operate the Site and
+      publish releases, such as GitHub, a website host, or a content-delivery network. We may
+      combine that information with information you provide directly. We also receive whatever
+      information a coding-agent provider returns to your App after you send it a request; that
+      response is delivered to your device, not stored by us as a cloud archive.
+    </p>
+
+    <h3>Cookies and local storage</h3>
+    <p>
+      The Site may use cookies or similar technologies to operate essential features, remember
+      theme or reduced-motion preferences, and understand whether pages are functioning correctly.
+      The App stores connection settings, credentials, preferences, drafts, and cached thread, file,
+      branch, and server metadata on your device. Information stored only on your device is not
+      collected by us unless it is transmitted as part of a feature you use.
+    </p>
+
+    <h3>Device permissions</h3>
+    <ul>
+      <li>
+        <strong>Files and folders.</strong> The App accesses project directories you open so it can
+        show files, diffs, and workspace context. It does not upload a project to us.
+      </li>
+      <li>
+        <strong>Network.</strong> Used to talk to providers you configure, fetch updates you
+        request, and reach local services you point the App at.
+      </li>
+      <li>
+        <strong>Notifications.</strong> Used only if you enable desktop notifications for agent
+        status.
+      </li>
+      <li>
+        <strong>Camera, photos, or microphone.</strong> Used only if a feature you start needs them
+        — for example attaching an image you select. Frames and files stay on your device unless you
+        send them to a provider.
+      </li>
+    </ul>
+  </section>
+
+  <section id="uses">
+    <p class="section-number">03</p>
+    <h2>How We Use Your Personal Information</h2>
+    <p>
+      Subject to this Policy and the terms of third-party applications you connect, we may use
+      personal information for the following purposes:
+    </p>
+    <ul>
+      <li>To publish, host, and operate the Site and public documentation;</li>
+      <li>To distribute desktop builds and updater metadata through GitHub Releases;</li>
+      <li>To respond to issues, security reports, feedback, and other communications you send;</li>
+      <li>To monitor reliability of the Site, prevent abuse, and investigate security incidents;</li>
+      <li>To comply with applicable law and enforce the terms governing the Services; and</li>
+      <li>
+        To understand, in aggregate, whether the Site and release channels are working — for
+        example page availability or download counts — without building advertising profiles.
+      </li>
+    </ul>
+
+    <h3>Training of AI models</h3>
+    <p>
+      We do not use your personal information, source code, prompts, or agent responses to train
+      artificial-intelligence models. We do not operate a model-training pipeline on user
+      workspaces. Providers you choose may train or evaluate models under their own policies; review
+      those policies before you send them code or confidential material.
+    </p>
+
+    <h3>Compliance and protection</h3>
+    <p>We may use personal information to:</p>
+    <ul>
+      <li>Comply with applicable laws, lawful requests, and legal process;</li>
+      <li>Protect the rights, privacy, safety, and property of Modesto, our users, and others;</li>
+      <li>Audit our processes for legal, contractual, and policy compliance;</li>
+      <li>Enforce the terms that govern the Site and the Services; and</li>
+      <li>
+        Prevent, identify, investigate, and deter fraudulent, harmful, unauthorized, unethical, or
+        illegal activity, including abuse of the Site or release infrastructure.
+      </li>
+    </ul>
+  </section>
+
+  <section id="sharing">
+    <p class="section-number">04</p>
+    <h2>How We Share Your Personal Information</h2>
+    <p>
+      We may disclose the categories of personal information described above to the following
+      categories of third parties.
+    </p>
+
+    <h3>Providers you choose</h3>
+    <p>
+      At your direction, prompts, files, screenshots, and related content are sent from your App to
+      coding agents and model providers you configure — for example Codex, Claude, Cursor, Gemini,
+      Grok, and other supported harnesses. Because you bring and authenticate those providers, the
+      applicable third parties vary by installation. They process information under their own terms
+      and privacy policies. Modesto does not sit in the middle as a cloud archive of those
+      sessions.
+    </p>
+
+    <h3>Infrastructure used to publish Modesto</h3>
+    <p>
+      We use specialized providers to host the Site, deliver static assets, and publish desktop
+      builds. Depending on how you reach Modesto, these may include:
+    </p>
+    <ul class="provider-list">
+      <li>
+        <strong>GitHub</strong> <em>(GitHub, Inc.)</em>.<br />
+        We use GitHub to host the source repository, issues, discussions, security advisories, and
+        release artifacts, and to serve updater metadata.<br />
+        You can view GitHub’s privacy statement here:{" "}<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+          >https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement</a
+        >.
+      </li>
+      <li>
+        <strong>Website hosting and content delivery.</strong><br />
+        The Site is served by a hosting and CDN provider so pages load quickly and remain available.
+        Those providers may process IP addresses and request logs as described above.
+      </li>
+    </ul>
+    <p>
+      These providers process information for us under their own contractual and privacy
+      obligations. We do not use an advertising network, and we do not sell personal information.
+    </p>
+
+    <h3>Professional advisors and successors</h3>
+    <p>
+      We may share personal information with lawyers or other professional advisors in the course of
+      the services they provide to the project, and in connection with a merger, acquisition,
+      reorganization, or similar transaction involving Modesto. If another party assumes
+      responsibility for the project, that party may possess the personal information collected
+      under this Policy and assume the rights and obligations described here.
+    </p>
+
+    <h3>Legal and safety disclosures</h3>
+    <p>
+      We may disclose personal information if we believe in good faith that disclosure is necessary
+      to comply with law or legal process; protect or defend the rights, property, or safety of
+      Modesto, users of the Site or the Services, or others; investigate or prevent fraud, abuse, or
+      unlawful activity; or enforce this Policy and the terms governing the Services. We may also
+      share personal information at your direction or with your consent.
+    </p>
+
+    <h3>No sale of personal information</h3>
+    <p>
+      We do not sell your personal information or share it for cross-context behavioral or targeted
+      advertising.
+    </p>
+
+    <h3>Third-party websites and services</h3>
+    <p>
+      The Site and the App may contain links to third-party websites or services, including GitHub,
+      documentation for providers, and download mirrors. When you follow a third-party link or
+      connect a third-party service, that third party may collect personal information from you. We
+      do not control and are not responsible for the privacy practices or content of third parties.
+    </p>
+  </section>
+
+  <section id="choices">
+    <p class="section-number">05</p>
+    <h2>Your Choices Regarding Your Personal Information</h2>
+
+    <h3>Local-first use</h3>
+    <p>
+      You can use the App without creating an account with us. You choose which providers to
+      install, which projects to open, and whether the App may reach the network for updates or
+      agent calls. You can disconnect providers, clear local caches, and delete local workspace
+      data from the App or by removing Modesto’s data directory on your machine.
+    </p>
+
+    <h3>Cookies and local data</h3>
+    <p>
+      You can use your browser settings to stop accepting or to delete cookies, although some Site
+      features — such as remembering a theme preference — may not function as a result. Information
+      stored only on your device remains there until you clear it or uninstall the App.
+    </p>
+
+    <h3>Retention and deletion</h3>
+    <p>
+      We retain communications you send to the project, and operational logs generated by the Site,
+      only as long as reasonably necessary to operate the Services, respond to you, protect the
+      project from abuse, comply with law, and resolve disputes. We do not retain a cloud copy of
+      your local threads or repositories. Deleting the App from your machine does not delete
+      information held by a provider you control; contact those providers or delete that
+      information directly.
+    </p>
+    <p>
+      To ask us to delete personal information we hold about you — for example an email you sent or
+      an issue you want removed from a thread we control — contact us as described below. We may
+      need to verify your identity. Public GitHub issues and comments are also subject to GitHub’s
+      own retention and deletion tools.
+    </p>
+
+    <h3>Your privacy rights</h3>
+    <p>
+      Depending on where you live, you may have rights to request access to, correction of,
+      deletion of, or a portable copy of your personal information, or to restrict or object to
+      certain processing. You may also have the right to appeal our response or complain to a
+      data-protection authority. We will honor applicable rights after verifying your request.
+    </p>
+  </section>
+
+  <section id="security">
+    <p class="section-number">06</p>
+    <h2>Security of Your Personal Information</h2>
+    <p>
+      We use administrative, technical, and organizational safeguards designed for a local-first
+      desktop product and a public website. These include encrypted transport for the Site and
+      GitHub-hosted updates, minimizing what we collect, using platform-protected storage in the
+      App for credentials, and keeping session content on your machine by default.
+    </p>
+    <p>
+      No method of transmission over the Internet or method of electronic storage is completely
+      secure. While we use reasonable efforts to protect personal information we hold, we cannot
+      guarantee its absolute security. You are responsible for securing the environments,
+      coding-agent accounts, credentials, and networks that you connect to Modesto. Our{" "}<a
+        href="/security-policy">Security Policy</a
+      >{" "}explains how to report a vulnerability and how responsibility is shared.
+    </p>
+  </section>
+
+  <section id="international">
+    <p class="section-number">07</p>
+    <h2>International Users</h2>
+    <p>
+      The Site and GitHub-hosted release infrastructure are provided from the United States and
+      other locations where our providers operate. If you use the Site or the Services from outside
+      the United States, your personal information may be transferred to and processed in the
+      United States and other countries. Where required, we rely on lawful safeguards for those
+      transfers. The App itself processes workspace data on the machine where you install it.
+    </p>
+  </section>
+
+  <section id="children">
+    <p class="section-number">08</p>
+    <h2>Children</h2>
+    <p>
+      The Site and the Services are not intended for children under 13 years of age, and you must
+      be at least 13 years old to use them. We do not knowingly collect, use, or disclose personal
+      information from children under 13. If you believe a child under 13 has provided us with
+      personal information, please contact us so that we can take appropriate action.
+    </p>
+  </section>
+
+  <section id="do-not-track">
+    <p class="section-number">09</p>
+    <h2>Do Not Track</h2>
+    <p>
+      We currently do not respond to browser “Do Not Track” signals. Modesto does not use personal
+      information for cross-context behavioral or targeted advertising.
+    </p>
+  </section>
+
+  <section id="updates">
+    <p class="section-number">10</p>
+    <h2>Updates to This Privacy Policy</h2>
+    <p>
+      We reserve the right to update this Policy from time to time. If we make material changes, we
+      will post the revised Policy at this URL, update the “Last Updated” and “Effective Date”
+      above, and provide any additional notice required by law. Except as otherwise indicated,
+      changes become effective when the revised Policy is posted.
+    </p>
+  </section>
+
+  <section id="contact">
+    <p class="section-number">11</p>
+    <h2>Contact Us</h2>
+    <p>
+      If you have questions about this Policy or wish to make a privacy or deletion request,
+      contact the Modesto maintainer through the public repository:
+    </p>
+    <address>
+      <strong>Modesto</strong><br />
+      Tanner Davidson<br />
+      <a href="https://github.com/Syphon1205/Modesto">github.com/Syphon1205/Modesto</a>
+    </address>
+    <p>
+      For security issues, use a private GitHub Security Advisory as described in the{" "}<a
+        href="/security-policy">Security Policy</a
+      >. Do not open a public issue for an unpatched vulnerability.
+    </p>
+  </section>
+</LegalPage>

@@ -1,0 +1,27 @@
+Category,Item,Price,Unit,Included_Other_Models_USD,Notes
+Plan,Hobby,0,USD/mo,Limited,No card required; limited Agent + Composer
+Plan,Start (India),649,INR/mo,0,Tax inclusive; Cursor Models only; no Other Models / Bugbot / Auto / SDK
+Plan,Pro,20,USD/mo,20,Unlimited tab; extended Agent; Cloud Agents; Bugbot on usage billing
+Plan,Pro+,60,USD/mo,70,Higher Agent + Other Models headroom; recommended for daily Agent users
+Plan,Ultra,200,USD/mo,400,Power users / multi-agent; marketed as ~20x Pro Agent limits
+Plan,Teams Standard,40,USD/user/mo,Standard team allowance,SSO; admin; marketplace; Bugbot; shared Cloud Agents
+Plan,Teams Premium,120,USD/user/mo,5x Standard Agent limits,Same Teams features with 5x Agent limits
+Plan,Enterprise,Custom,USD,Pooled usage,SCIM; audit logs; invoice/PO; advanced controls
+Usage,Typical daily Agent spend,60-100,USD/mo,,Cursor guidance for daily Agent users (often Pro+ territory)
+Usage,Typical power-user spend,200+,USD/mo,,Multi-agent / automation workloads
+Fee,Cursor Token Rate (Teams/Enterprise),0.25,USD/MTok,,On top of third-party API price; Grok + Composer exempt
+Fee,Regional data residency uplift,10,percent,,Uplift on eligible model pricing when opted in
+Fee,Legacy Max Mode surcharge,20,percent,,Legacy request-based plans only; API rate + 20%
+Cursor Model,Composer 2.5,0.5 / 2.5,USD/MTok in/out,,Cursor Models pool
+Cursor Model,Composer 2.5 Fast,3 / 15,USD/MTok in/out,,Cursor Models pool
+Cursor Model,Grok 4.6,2 / 6,USD/MTok in/out,,Cursor Models pool
+Cursor Model,Grok 4.6 Fast,4 / 12,USD/MTok in/out,,Cursor Models pool
+Cursor Model,Grok 4.5,2 / 6,USD/MTok in/out,,Cursor Models pool
+Cursor Model,Grok 4.5 Fast,4 / 18,USD/MTok in/out,,Cursor Models pool
+Other Model,Claude Sonnet 5,2 / 10,USD/MTok in/out,,Other Models pool at API rates
+Other Model,Claude Opus 5,5 / 25,USD/MTok in/out,,Other Models pool at API rates
+Other Model,Claude Fable 5.1,10 / 50,USD/MTok in/out,,~2x Opus 5; retention approval when Privacy Mode on
+Other Model,GPT-5.6 Sol,4 / 20,USD/MTok in/out,,Promotional pricing through Nov 21 2026
+Other Model,GPT-5.6 Terra,2 / 12,USD/MTok in/out,,Mid-tier GPT-5.6
+Other Model,GPT-5.6 Luna,0.2 / 1.2,USD/MTok in/out,,Cost-optimized GPT-5.6
+Other Model,Gemini 3.8 Flash,0.75 / 3.5,USD/MTok in/out,,Other Models pool
