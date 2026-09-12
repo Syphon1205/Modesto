@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/marketing/public/icon.png" width="112" height="112" alt="Modesto icon" />
+  <img src="assets/modesto-icon.png" width="112" height="112" alt="Modesto icon" />
 </p>
 
 <h1 align="center">Modesto</h1>
