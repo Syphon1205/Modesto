@@ -236,46 +236,6 @@ The architecture is documented in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 </details>
 
-## How we used Codex and GPT-5.6
-
-Modesto was developed during OpenAI Build Week using Codex and GPT-5.6 as core parts of the development process.
-
-### Codex
-
-Codex was used throughout development to:
-
-- Explore and understand the existing Modesto codebase
-- Plan and implement new application features
-- Debug Swift and SwiftUI issues
-- Refactor parts of the application architecture
-- Connect interface components to working project state
-- Investigate runtime and provider integrations
-- Review code changes before they were accepted
-- Accelerate iteration during the limited Build Week timeline
-
-Codex worked directly alongside the project repository, allowing development tasks to remain grounded in the actual codebase rather than isolated code snippets.
-
-### GPT-5.6
-
-GPT-5.6 was used to:
-
-- Define and refine the overall Modesto product direction
-- Design workflows for coding agents, research, automations, and collaboration
-- Reason through the multi-provider architecture
-- Plan the desktop-to-mobile companion experience
-- Develop the code review and agent handoff concepts
-- Identify usability problems in early interface iterations
-- Create structured implementation plans and development prompts
-- Prepare project documentation and submission materials
-
-GPT-5.6 helped transform Modesto from a basic AI coding interface into a broader coordination layer for developers, coding agents, models, and runtimes.
-
-### Other development tools
-
-Claude was also used during development for selected implementation and codebase tasks. Modesto is intentionally provider independent, and the development process reflected that approach by using different agents where they were most effective.
-
-All tools were directed, reviewed, and integrated by the project's individual developer.
-
 ## Roadmap
 
 1. Keep hardening Modesto Code — performance, reliability, and predictable recovery through restarts and partial streams.
