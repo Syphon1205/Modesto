@@ -5,11 +5,11 @@
 <h1 align="center">Modesto</h1>
 
 <p align="center">
-  <b>The open-source control plane for coding agents — local-first, multi-provider, now on 1.0.0-alpha.1 RC.</b>
+  <b>The open-source control plane for coding agents — Chat, Work, and every agent in one local desktop. 1.0.0-alpha.1 Release Candidate.</b>
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0--alpha.1%20RC-6366f1.svg?style=flat-square" />
+  <img alt="Version" src="https://img.shields.io/badge/1.0.0--alpha.1-Release%20Candidate-6366f1.svg?style=flat-square" />
   <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-orange.svg?style=flat-square" />
   <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
   <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
@@ -28,9 +28,11 @@
 
 <br />
 
-Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors.
+Modesto is a local-first desktop for Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta Muse Code, Factory Droid, Kilo, OpenCode, Pi, and other CLIs you already pay for. Built by **Tanner Davidson** and contributors.
 
-**Current public line: 1.0.0-alpha.1 RC** (semver `1.0.0-alpha.1`). This is a **release candidate** on the 1.0 line: usable, still changing, **not** a finished 1.0. Source is here; signed desktop installers are not GitHub Latest yet. Full notes, known issues, and the packaging checklist live in [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
+**1.0.0-alpha.1 is a Release Candidate.** Semver `1.0.0-alpha.1`. First public build on the 1.0 line: **Chat** and **Work** in one app, plus PRs, Agents, Tasks, Automations, Connections, and Skills & plugins. Use it. It is not a finished 1.0.
+
+Full product notes: [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
 
 <p align="center">
   <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
@@ -57,44 +59,38 @@ Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code
 
 ## Download
 
-**v1.0.0-alpha.1 RC** — release candidate, not finished 1.0.
+**1.0.0-alpha.1 — Release Candidate.** Source is this repo (AGPL-3.0-only).
 
-- **Source:** this repository (AGPL-3.0-only).
-- **Signed installers:** not published yet. GitHub
-  [Latest](https://github.com/Syphon1205/Modesto/releases/latest) is still the
-  last shipped desktop build until notarized macOS, Authenticode Windows, and
-  updater manifests land.
-- **When they land:** Apple Silicon and Intel DMGs, Windows x64 (`Modesto Team`
-  publisher metadata), Linux x64 AppImage. Installed copies then update in-app.
+Desktop matrix (when signed): Apple Silicon and Intel DMGs, Windows x64, Linux AppImage. Until those publish as GitHub Latest, use source (`bun run modesto:dev`) or the last shipped installer.
 
-See the [RC notes](docs/releases/v1.0.0-alpha.1.md) (what’s in, what’s not,
-known issues) and [all releases](https://github.com/Syphon1205/Modesto/releases).
+Notes: [v1.0.0-alpha.1 Release Candidate](docs/releases/v1.0.0-alpha.1.md) · [Releases](https://github.com/Syphon1205/Modesto/releases)
 
 ## What's new
 
-### v1.0.0-alpha.1 RC — first 1.0-line candidate
+### 1.0.0-alpha.1 — Release Candidate
 
-**This is a release candidate.** Use it, review it, expect gaps. It is not a
-claim that every surface is finished.
+This candidate is the T3-foundation Modesto with **Chat** and **Work** as first-class modes — not a packaging-only bump.
 
-**In this RC**
+**Chat and Work**
 
-- **Chats without a project** (Code only) — start and send with no folder open. Work still needs a project.
-- **Desktop environments** — local host, optional WSL/SSH; threads bind to an environment.
-- **Usage clock** — header bars for the selected model’s 5-hour and weekly provider limits (Modesto does not sell quota).
-- **Providers** — Grok and Meta Muse Code on by default; GitHub Copilot CLI opt-in; mid-thread handoff with context replay.
-- **Chat** — Mermaid / SVG / interactive HTML previews; pop-out always-on-top chat; character presets and avatars.
-- **Connections** — Figma, Framer, Higgsfield, Canva, Supabase, and other daily apps / MCP servers beside the thread.
-- **License** — AGPL-3.0-only (MIT through v0.3.x).
+- Composer toggle **Chat / Work** (locks after the first send).
+- **Chat** — conversation-first; start and send with **no project open**. Sidebar: **Chats**.
+- **Work** — project, branch, worktree, diffs, terminal, commits, pull requests.
+- Cowork beside the thread: **Connections**, **Music**, **Canvas**, **Artifacts**, **Browser**.
 
-**Known issues (short)**
+**The rest of the desk**
 
-- Signed/notarized installers and updater hop are **not live**; Latest is still `v0.3.0`.
-- Validation builds may be unsigned (Gatekeeper / SmartScreen warnings).
-- **Work** is early cowork. Native macOS extras and iOS are not in this matrix.
-- Reconnects and partial streams are still being hardened.
+- **Pull Requests** — Reviewing / Authored; Summary, Timeline, Code.
+- **Agents** — durable identities dispatched into threads.
+- **Tasks** — Kanban Draft / In Progress / Done.
+- **Automations** — schedules and webhooks.
+- **Connections** — Figma, Framer, Slack, Linear, GitHub, Adobe, MCP marketplace.
+- **Skills & plugins** — shared `SKILL.md` packs and Claude plugins.
+- Right panel: Browser, Mobile Simulator, Terminal, Files, Changes, Music, Canvas.
+- Desktop: local / WSL / SSH environments, **Pop out chat**, header **usage clock**.
+- Providers on by default: Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo.
 
-Full list: [v1.0.0-alpha.1 RC notes](docs/releases/v1.0.0-alpha.1.md).
+**Known issues** — Work cowork still polishing; folder-free send is Chat; reconnects still hardening; signed Latest installers not up yet. Details in the [RC notes](docs/releases/v1.0.0-alpha.1.md).
 
 <details>
 <summary><b>Earlier releases</b></summary>
@@ -150,29 +146,32 @@ Full list: [v1.0.0-alpha.1 RC notes](docs/releases/v1.0.0-alpha.1.md).
 <tr>
 <td width="50%" valign="top">
 
-**Multi-provider by design**
-Provider availability is discovered at runtime — nothing is hardcoded, so new agents show up automatically.
+**Chat and Work**
+Composer **Chat** for conversation (including no folder). Composer **Work** for repo threads with worktrees, diffs, and PRs.
 
-**Parallel, isolated sessions**
-Every thread gets its own Git worktree, terminal, and conversation timeline, so agents never step on each other.
+**Every agent, one picker**
+Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo, and more — discovered at runtime, switchable mid-thread with context.
 
-**Agent handoffs with context**
-Switch a thread from one provider to another mid-task — the new agent inherits the conversation, worktree, and branch instead of starting cold.
+**Pull Requests, Tasks, Automations**
+Review inbox, Kanban Draft / In Progress / Done, scheduled runs and webhooks.
 
-**Rich conversation surfaces**
-Tool calls, file changes, diffs, browser previews, approvals, and Git actions render inline, not as a wall of logs.
+**Agents and skills**
+Durable agent identities, `SKILL.md` packs, Claude plugins.
 
 </td>
 <td width="50%" valign="top">
 
-**Work & the web**
-Early cowork for investigation and local tasks — Connections (Figma, Framer, signed-in web apps), sessions, browser/artifacts. Still evolving.
+**Connections**
+Figma, Framer, Slack, Linear, GitHub, Adobe apps, MCP servers — signed-in web and native tools beside the thread.
 
-**Kanban tasks**
-Drag threads across Draft / In Progress / Done, with live status instead of a static list.
+**Right panel**
+Browser, Mobile Simulator, Terminal, Files, Changes, Music, Canvas, Artifacts.
 
-**Automations & Model Routers**
-Schedule a prompt on a cadence, or point Codex at any OpenAI-compatible endpoint — local or hosted — and it just shows up in the model picker.
+**Desktop environments**
+Local, WSL, SSH. Pop-out chat. Usage clock. Appshots.
+
+**Isolated sessions**
+Each Work thread can take its own Git worktree and terminal so agents do not collide.
 
 </td>
 </tr>
@@ -180,12 +179,12 @@ Schedule a prompt on a cadence, or point Codex at any OpenAI-compatible endpoint
 
 ## Workspaces
 
-| Workspace | What it's for                                                                                                                                              |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Code**  | Build, debug, and ship — projects, persistent sessions, parallel work, isolated worktrees, terminals, diffs, browser previews, approvals, and Git actions. |
-| **Work**  | Early local cowork — drafts, research, Connections, sessions, browser/artifacts. Still evolving; not a finished 1.0 surface.                               |
+| Mode | What it's for |
+| ---- | ------------- |
+| **Chat** | Conversation-first threads. Start and send with no project. History under **Chats**. |
+| **Work** | Ship software — project, branch, worktree, terminal, diffs, approvals, commits, PRs. |
 
-Code and Work share the same sidebar patterns and thread/composer chrome — only the job of each workspace changes.
+Connections, Music, Canvas, Artifacts, and Browser are available beside the thread so cowork does not require leaving the desk.
 
 ## Platform support
 

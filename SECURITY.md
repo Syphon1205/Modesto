@@ -4,9 +4,7 @@
 
 Security fixes are prioritized for the latest public desktop release published on
 the [Modesto releases page](https://github.com/Syphon1205/Modesto/releases).
-The current public line is **v1.0.0-alpha.1 RC**. Until signed installers
-publish as GitHub Latest, the last shipped desktop build remains the practical
-update target.
+The current public line is **1.0.0-alpha.1 (Release Candidate)**.
 
 | Version               | Supported   |
 | --------------------- | ----------- |

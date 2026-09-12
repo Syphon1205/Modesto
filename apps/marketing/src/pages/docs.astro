@@ -4,7 +4,7 @@ import { DOCS_NAV } from "../lib/docs";
 
 const toc = [
   { label: "What Modesto is", href: "#what-is-modesto" },
-  { label: "1.0.0-alpha.1 RC", href: "#alpha" },
+  { label: "Release Candidate", href: "#alpha" },
   { label: "How work moves", href: "#lifecycle" },
   { label: "Working model", href: "#working-model" },
   { label: "All docs", href: "#all-docs" },
@@ -13,7 +13,7 @@ const toc = [
 
 <DocsLayout
   title="Every agent. One workspace."
-  description="Modesto is a local-first desktop control plane for the coding agents you already pay for. Current public line is 1.0.0-alpha.1 RC."
+  description="Modesto 1.0.0-alpha.1 is a Release Candidate: Chat and Work in one local desktop for the coding agents you already pay for."
   currentPath="/docs"
   eyebrow="Overview"
   {toc}
@@ -64,84 +64,64 @@ const toc = [
   </section>
 
   <section id="alpha">
-    <h2>What 1.0.0-alpha.1 RC shipped</h2>
+    <h2>1.0.0-alpha.1 — Release Candidate</h2>
     <p>
-      Public line is <strong>1.0.0-alpha.1 RC</strong> (12 September 2026) —
-      a <strong>release candidate</strong>, not a finished 1.0. Semver is
-      <code>1.0.0-alpha.1</code>. Source is public; signed installers are not
-      GitHub Latest yet. The client-server core is typed RPC and Effect
-      services, with Git through the real <code>gh</code> CLI.
+      Public line is <strong>1.0.0-alpha.1</strong>, classified as a
+      <strong>Release Candidate</strong> (12 September 2026). First public
+      1.0-line build. Composer modes are <strong>Chat</strong> and
+      <strong>Work</strong>. Use it; it is not a finished 1.0.
     </p>
     <div class="docs-table">
       <div>
-        <strong>Chats without a project</strong>
+        <strong>Chat / Work</strong>
         <span>
-          The composer works with no folder open. Work still needs a project.{" "}
-          <a href="/docs/threads">Threads</a>
+          Composer toggle. Chat can send with no folder. Work is repo-scoped
+          (worktree, diffs, PRs).
+        </span>
+      </div>
+      <div>
+        <strong>Pull Requests, Tasks, Automations, Agents</strong>
+        <span>
+          Review inbox, Kanban Draft / In Progress / Done, scheduled runs,
+          durable agent identities.
+        </span>
+      </div>
+      <div>
+        <strong>Connections, Music, Canvas</strong>
+        <span>
+          Figma, Framer, Adobe, MCP; Apple Music / Spotify; dashboards and docs
+          in the right panel. <a href="/docs/work">Work</a>
         </span>
       </div>
       <div>
         <strong>Desktop environments</strong>
         <span>
-          Local host, plus optional WSL and SSH backends. Threads bind to an
-          environment id. <a href="/docs/desktop">Desktop</a>
+          Local, WSL, SSH. Pop-out chat. Usage clock.{" "}
+          <a href="/docs/desktop">Desktop</a>
         </span>
       </div>
       <div>
-        <strong>Usage clock</strong>
+        <strong>Providers</strong>
         <span>
-          Header bars for the selected model’s 5-hour and weekly provider
-          limits. Modesto does not sell quota.
+          Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo on by
+          default. Copilot opt-in. <a href="/docs/providers">Providers</a>
         </span>
       </div>
       <div>
-        <strong>Meta Muse Code</strong>
+        <strong>Skills & plugins</strong>
         <span>
-          First-class provider: binary <code>muse</code>, ACP{" "}
-          <code>muse --acp</code>, Muse Spark. Enabled by default.{" "}
-          <a href="/docs/providers">Providers</a>
-        </span>
-      </div>
-      <div>
-        <strong>Grok and Copilot</strong>
-        <span>
-          Grok is enabled by default. GitHub Copilot CLI is opt-in (
-          <code>copilot --acp</code>).
-        </span>
-      </div>
-      <div>
-        <strong>Pop-out chat</strong>
-        <span>
-          Desktop always-on-top window for the current thread.
-        </span>
-      </div>
-      <div>
-        <strong>Music and Connections</strong>
-        <span>
-          Right-panel Music (Apple Music on the Mac, Spotify and others in
-          the in-app browser). Figma, Framer, and installed Adobe apps from
-          Work Connections. <a href="/docs/work">Work</a>
-        </span>
-      </div>
-      <div>
-        <strong>Skill packs and webhooks</strong>
-        <span>
-          One GitHub <code>SKILL.md</code> pack for Codex and Claude. Signed
-          inbound webhooks on an existing automation.{" "}
-          <a href="/docs/skills">Skills</a> ·{" "}
-          <a href="/docs/automations">Automations</a>
+          Shared <code>SKILL.md</code> packs and Claude plugins.{" "}
+          <a href="/docs/skills">Skills</a>
         </span>
       </div>
     </div>
     <div class="docs-callout">
-      <strong>Release candidate — known gaps.</strong>
+      <strong>Release Candidate — known gaps.</strong>
       <p>
-        Signed installers are not GitHub Latest yet (<code>v0.3.0</code> still
-        is). Work is early cowork; projectless send is Code-only. Validation
-        builds may be unsigned. Reconnects and partial streams are still being
-        hardened. Full notes:
-        {" "}
-        <a href="https://github.com/Syphon1205/Modesto/blob/main/docs/releases/v1.0.0-alpha.1.md">v1.0.0-alpha.1 RC</a>.
+        Some Work flows are still landing. Folder-free send is Chat, not Work.
+        Reconnects still being hardened. Signed GitHub Latest installers are
+        not up yet. Full notes:{" "}
+        <a href="https://github.com/Syphon1205/Modesto/blob/main/docs/releases/v1.0.0-alpha.1.md">1.0.0-alpha.1 Release Candidate</a>.
       </p>
     </div>
     <div class="docs-callout">
