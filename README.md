@@ -28,7 +28,9 @@
 
 <br />
 
-Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors. Current public line: **1.0.0-alpha.1 RC**. Useful and evolving; not a finished 1.0 product.
+Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code), Factory Droid, Kilo Code, OpenCode, Pi, and other compatible agent providers in one local-first desktop — Code for shipping software, Work for local cowork tasks. Built by **Tanner Davidson** and contributors.
+
+**Current public line: 1.0.0-alpha.1 RC** (semver `1.0.0-alpha.1`). This is a **release candidate** on the 1.0 line: usable, still changing, **not** a finished 1.0. Source is here; signed desktop installers are not GitHub Latest yet. Full notes, known issues, and the packaging checklist live in [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
 
 <p align="center">
   <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
@@ -55,26 +57,44 @@ Modesto puts Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta (Muse Code
 
 ## Download
 
-**v1.0.0-alpha.1 RC.** Source is on this repo. Signed installers are still
-pending native validation and signing credentials. Until those land, GitHub
-Releases still lists the last published desktop build.
+**v1.0.0-alpha.1 RC** — release candidate, not finished 1.0.
 
-The RC matrix is Apple Silicon and Intel macOS DMGs, a Windows x64 installer
-(publisher metadata: **Modesto Team**), and a Linux x64 AppImage.
-See [release notes](docs/releases/v1.0.0-alpha.1.md) and
-[GitHub Releases](https://github.com/Syphon1205/Modesto/releases).
+- **Source:** this repository (AGPL-3.0-only).
+- **Signed installers:** not published yet. GitHub
+  [Latest](https://github.com/Syphon1205/Modesto/releases/latest) is still the
+  last shipped desktop build until notarized macOS, Authenticode Windows, and
+  updater manifests land.
+- **When they land:** Apple Silicon and Intel DMGs, Windows x64 (`Modesto Team`
+  publisher metadata), Linux x64 AppImage. Installed copies then update in-app.
 
-After the signed RC ships, installed copies update through Modesto's built-in
-updater.
+See the [RC notes](docs/releases/v1.0.0-alpha.1.md) (what’s in, what’s not,
+known issues) and [all releases](https://github.com/Syphon1205/Modesto/releases).
 
 ## What's new
 
-### v1.0.0-alpha.1 RC
+### v1.0.0-alpha.1 RC — first 1.0-line candidate
 
-- **Chats without a project** — start and send in Code with no folder open; Work still needs a project.
-- **Desktop environments** — local host plus optional WSL/SSH; header usage clock; Grok as a first-class provider.
-- **Connections** — Figma, Framer, and other daily apps in the same workspace as the thread, browser, and diffs.
-- **Still an RC alpha** — the 1.0 line, not a claim that every surface is finished.
+**This is a release candidate.** Use it, review it, expect gaps. It is not a
+claim that every surface is finished.
+
+**In this RC**
+
+- **Chats without a project** (Code only) — start and send with no folder open. Work still needs a project.
+- **Desktop environments** — local host, optional WSL/SSH; threads bind to an environment.
+- **Usage clock** — header bars for the selected model’s 5-hour and weekly provider limits (Modesto does not sell quota).
+- **Providers** — Grok and Meta Muse Code on by default; GitHub Copilot CLI opt-in; mid-thread handoff with context replay.
+- **Chat** — Mermaid / SVG / interactive HTML previews; pop-out always-on-top chat; character presets and avatars.
+- **Connections** — Figma, Framer, Higgsfield, Canva, Supabase, and other daily apps / MCP servers beside the thread.
+- **License** — AGPL-3.0-only (MIT through v0.3.x).
+
+**Known issues (short)**
+
+- Signed/notarized installers and updater hop are **not live**; Latest is still `v0.3.0`.
+- Validation builds may be unsigned (Gatekeeper / SmartScreen warnings).
+- **Work** is early cowork. Native macOS extras and iOS are not in this matrix.
+- Reconnects and partial streams are still being hardened.
+
+Full list: [v1.0.0-alpha.1 RC notes](docs/releases/v1.0.0-alpha.1.md).
 
 <details>
 <summary><b>Earlier releases</b></summary>
@@ -169,7 +189,7 @@ Code and Work share the same sidebar patterns and thread/composer chrome — onl
 
 ## Platform support
 
-The core product is a React web application served by a TypeScript/Bun server over WebSocket RPC. Electron supplies the native desktop shell for macOS, Windows, and Linux, and ships signed macOS `.dmg`s, a Windows installer, and a Linux `.AppImage`. macOS-specific SwiftUI/AppKit enhancements are planned for lifecycle, menus, settings, pickers, notifications, window restoration, deep links, and system integrations — the main workspace stays web-based.
+The core product is a React web application served by a TypeScript/Bun server over WebSocket RPC. Electron supplies the native desktop shell for macOS, Windows, and Linux. The 1.0.0-alpha.1 RC matrix is Apple Silicon and Intel DMGs, a Windows installer, and a Linux AppImage — **signed publication of that matrix is still pending**. macOS-specific SwiftUI/AppKit enhancements are planned for lifecycle, menus, settings, pickers, notifications, window restoration, deep links, and system integrations — the main workspace stays web-based.
 
 The Windows build supports WSL2 for Linux-backed projects, commands, provider
 CLIs, development, and tests. See the

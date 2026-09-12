@@ -4,9 +4,12 @@ All notable changes to Modesto are documented here, newest first.
 
 ## 1.0.0-alpha.1 RC (2026-09-12)
 
+Release candidate on the 1.0 line (semver `1.0.0-alpha.1`). Not a finished 1.0.
+Signed installers and GitHub Latest hop are still pending.
+
 ### Version line
 
-- Public line is **1.0.0-alpha.1 RC** (semver `1.0.0-alpha.1`).
+- Public line is **1.0.0-alpha.1 RC**.
 - Prepared `latest` and `modesto` updater manifests for publication after signed native builds pass.
 - Public staged versions (alpha/beta/rc) keep the production desktop bundle identity; only nightly/dev builds install alongside.
 
@@ -16,8 +19,15 @@ All notable changes to Modesto are documented here, newest first.
 - Recover expired local MCP credentials on the next turn and preserve authentication settings when editing an existing MCP connection.
 - Agent character presets, avatar customization, and clearer task dispatch feedback.
 - Chats can start and send without opening a project; Work still requires one.
-- Desktop environments list, header usage clock, and Grok as a first-class provider.
+- Desktop environments list, header usage clock, pop-out chat, Grok and Meta Muse Code as first-class providers.
 - Connections catalog for daily apps (MCP install commands and browser sign-in), including Higgsfield, Canva, Supabase, and others, with third-party brand-mark notices.
+
+### Known issues
+
+- GitHub Latest remains `v0.3.0` until notarized/signed artifacts and updater manifests publish.
+- Validation packages may be unsigned (macOS not notarized; Windows Unknown Publisher; Linux unsigned).
+- Work is early; projectless send is Code-only; iOS is not in this matrix.
+- One HTTP snapshot transfer-budget test is still above target.
 
 See [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
 

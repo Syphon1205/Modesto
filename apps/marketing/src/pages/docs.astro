@@ -66,10 +66,11 @@ const toc = [
   <section id="alpha">
     <h2>What 1.0.0-alpha.1 RC shipped</h2>
     <p>
-      Public line is <strong>1.0.0-alpha.1 RC</strong> (12 September 2026).
-      The client-server core is typed RPC and Effect services, with Git through
-      the real <code>gh</code> CLI. This RC is the first-launch product on that
-      core — not a finished 1.0.
+      Public line is <strong>1.0.0-alpha.1 RC</strong> (12 September 2026) —
+      a <strong>release candidate</strong>, not a finished 1.0. Semver is
+      <code>1.0.0-alpha.1</code>. Source is public; signed installers are not
+      GitHub Latest yet. The client-server core is typed RPC and Effect
+      services, with Git through the real <code>gh</code> CLI.
     </p>
     <div class="docs-table">
       <div>
@@ -131,6 +132,17 @@ const toc = [
           <a href="/docs/automations">Automations</a>
         </span>
       </div>
+    </div>
+    <div class="docs-callout">
+      <strong>Release candidate — known gaps.</strong>
+      <p>
+        Signed installers are not GitHub Latest yet (<code>v0.3.0</code> still
+        is). Work is early cowork; projectless send is Code-only. Validation
+        builds may be unsigned. Reconnects and partial streams are still being
+        hardened. Full notes:
+        {" "}
+        <a href="https://github.com/Syphon1205/Modesto/blob/main/docs/releases/v1.0.0-alpha.1.md">v1.0.0-alpha.1 RC</a>.
+      </p>
     </div>
     <div class="docs-callout">
       <strong>This is still Modesto, not T3 Tools.</strong>
