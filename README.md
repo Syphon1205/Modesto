@@ -5,52 +5,47 @@
 <h1 align="center">Modesto</h1>
 
 <p align="center">
-  <b>The open-source control plane for coding agents — Chat, Work, and every agent in one local desktop. 1.0.0-alpha.1 Release Candidate.</b>
+  <b>Your agents. Chat and Work. One local desk.</b><br />
+  <b>1.0.0 Aloha — Alpha Release Candidate</b>
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/1.0.0--alpha.1-Release%20Candidate-6366f1.svg?style=flat-square" />
+  <img alt="1.0.0 Aloha Alpha RC" src="https://img.shields.io/badge/1.0.0%20Aloha-Alpha%20RC-6366f1.svg?style=flat-square" />
   <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-orange.svg?style=flat-square" />
-  <img alt="Bun" src="https://img.shields.io/badge/bun-1.3.9%2B-f472b6.svg?style=flat-square" />
-  <img alt="Node" src="https://img.shields.io/badge/node-24.13.1%2B-339933.svg?style=flat-square" />
-  <img alt="Platforms" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-64748b.svg?style=flat-square" />
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-arm64-111.svg?style=flat-square" />
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-x64-111.svg?style=flat-square" />
+  <img alt="Linux" src="https://img.shields.io/badge/Linux-AppImage-111.svg?style=flat-square" />
 </p>
 
 <p align="center">
   <a href="#download">Download</a> ·
-  <a href="#whats-new">What's new</a> ·
+  <a href="#whats-in-aloha">What's in Aloha</a> ·
   <a href="#features">Features</a> ·
-  <a href="#workspaces">Workspaces</a> ·
-  <a href="#quick-start">Quick start</a> ·
-  <a href="#roadmap">Roadmap</a> ·
-  <a href="#contributing--attribution">Contributing</a>
+  <a href="#quick-start">From source</a> ·
+  <a href="https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1">Release</a>
 </p>
 
 <br />
 
-Modesto is a local-first desktop for Codex, Claude Code, Cursor Agent, Gemini CLI, Grok, Meta Muse Code, Factory Droid, Kilo, OpenCode, Pi, and other CLIs you already pay for. Built by **Tanner Davidson** and contributors.
+Hey — this is **Aloha**. That's the nickname for **1.0.0-alpha.1**, the first **Alpha Release Candidate** on the 1.0 line. Not a finished 1.0. Not a quiet docs-only drop. It's the desk: **Chat** and **Work**, plus PRs, Agents, Tasks, Automations, Connections, Music, Canvas, the whole right panel.
 
-**1.0.0-alpha.1 is a Release Candidate.** Semver `1.0.0-alpha.1`. First public build on the 1.0 line: **Chat** and **Work** in one app, plus PRs, Agents, Tasks, Automations, Connections, and Skills & plugins. Use it. It is not a finished 1.0.
-
-Full product notes: [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
+Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, and friends stay the CLIs you already pay for. Modesto just puts them in one place. Built by **Tanner Davidson** and whoever showed up.
 
 <p align="center">
   <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
-    <img src="apps/marketing/public/announcements/modesto-saas-frames/post-16x9.png" alt="Modesto film — Your agents. In their element. Click to play the 30-second film." width="100%" />
+    <img src="apps/marketing/public/announcements/modesto-saas-frames/post-16x9.png" alt="Your agents. In their element." width="100%" />
   </a>
 </p>
 
-<p align="center">
-  <em>Your agents. In their element. — Figma and Framer live in Connections beside the same thread.</em>
-</p>
+<p align="center"><em>Click the still if you want the 30-second film.</em></p>
 
 <table>
 <tr>
 <td width="50%">
-  <img src="apps/marketing/public/announcements/figma-support-frames/post-16x9.png" alt="Figma support is now in Modesto" width="100%" />
+  <img src="apps/marketing/public/announcements/figma-support-frames/post-16x9.png" alt="Figma in Connections" width="100%" />
 </td>
 <td width="50%">
-  <img src="apps/marketing/public/announcements/framer-support-frames/post-16x9.png" alt="Framer support is now in Modesto" width="100%" />
+  <img src="apps/marketing/public/announcements/framer-support-frames/post-16x9.png" alt="Framer in Connections" width="100%" />
 </td>
 </tr>
 </table>
@@ -59,38 +54,29 @@ Full product notes: [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha
 
 ## Download
 
-**1.0.0-alpha.1 — Release Candidate.** Source is this repo (AGPL-3.0-only).
+Grab **Aloha** from [the GitHub release](https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1) (this is GitHub Latest).
 
-Desktop matrix (when signed): Apple Silicon and Intel DMGs, Windows x64, Linux AppImage. Until those publish as GitHub Latest, use source (`bun run modesto:dev`) or the last shipped installer.
+| You | File |
+| --- | --- |
+| Mac (Apple Silicon) | [Modesto-1.0.0-alpha.1-arm64.dmg](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-arm64.dmg) |
+| Windows | [Modesto-1.0.0-alpha.1-x64.exe](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.exe) |
+| Linux | [Modesto-1.0.0-alpha.1-x86_64.AppImage](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x86_64.AppImage) |
 
-Notes: [v1.0.0-alpha.1 Release Candidate](docs/releases/v1.0.0-alpha.1.md) · [Releases](https://github.com/Syphon1205/Modesto/releases)
+Checksums: [SHA256SUMS.txt](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/SHA256SUMS.txt). Intel Mac isn't in this drop yet. It's an alpha RC — Gatekeeper / SmartScreen might side-eye you. That's expected.
 
-## What's new
+## What's in Aloha
 
-### 1.0.0-alpha.1 — Release Candidate
+**1.0.0-alpha.1 · Alpha Release Candidate.** Chat and Work are the headline. Everything else is the rest of the desk.
 
-This candidate is the T3-foundation Modesto with **Chat** and **Work** as first-class modes — not a packaging-only bump.
+**Chat / Work** — flip it in the composer. Chat can fire with no folder open. Work is the repo job: branch, worktree, diffs, terminal, PRs.
 
-**Chat and Work**
+**Also in the room** — Pull Requests, Agents, Tasks (Draft / In Progress / Done), Automations, Connections (Figma, Framer, Slack, Linear, Adobe, MCP…), Skills & plugins. Right panel: Browser, Mobile Simulator, Terminal, Files, Changes, Music, Canvas, Artifacts. Local / WSL / SSH. Pop-out chat. Usage clock.
 
-- Composer toggle **Chat / Work** (locks after the first send).
-- **Chat** — conversation-first; start and send with **no project open**. Sidebar: **Chats**.
-- **Work** — project, branch, worktree, diffs, terminal, commits, pull requests.
-- Cowork beside the thread: **Connections**, **Music**, **Canvas**, **Artifacts**, **Browser**.
+**Default agents** — Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo. Switch mid-thread. They keep the context.
 
-**The rest of the desk**
+It's a candidate. Reconnects can still get weird. Some Work flows are still landing. Report it, don't whisper about it.
 
-- **Pull Requests** — Reviewing / Authored; Summary, Timeline, Code.
-- **Agents** — durable identities dispatched into threads.
-- **Tasks** — Kanban Draft / In Progress / Done.
-- **Automations** — schedules and webhooks.
-- **Connections** — Figma, Framer, Slack, Linear, GitHub, Adobe, MCP marketplace.
-- **Skills & plugins** — shared `SKILL.md` packs and Claude plugins.
-- Right panel: Browser, Mobile Simulator, Terminal, Files, Changes, Music, Canvas.
-- Desktop: local / WSL / SSH environments, **Pop out chat**, header **usage clock**.
-- Providers on by default: Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo.
-
-**Known issues** — Work cowork still polishing; folder-free send is Chat; reconnects still hardening; signed Latest installers not up yet. Details in the [RC notes](docs/releases/v1.0.0-alpha.1.md).
+More: [Aloha notes](docs/releases/v1.0.0-alpha.1.md).
 
 <details>
 <summary><b>Earlier releases</b></summary>

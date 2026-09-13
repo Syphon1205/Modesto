@@ -2,9 +2,9 @@
 
 All notable changes to Modesto are documented here, newest first.
 
-## 1.0.0-alpha.1 — Release Candidate (2026-09-12)
+## 1.0.0 Aloha — Alpha Release Candidate (2026-09-12)
 
-**Classification: Release Candidate.** Semver `1.0.0-alpha.1`. First public 1.0-line build with Chat and Work as shipped composer modes.
+Nickname **Aloha**, version `1.0.0-alpha.1`. Chat and Work on the 1.0 line. Public GitHub Latest.
 
 ### Product
 
