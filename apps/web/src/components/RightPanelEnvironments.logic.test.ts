@@ -14,9 +14,9 @@ describe("environmentProjectLabel", () => {
     expect(
       environmentProjectLabel({
         title: "Modesto",
-        workspaceRoot: "/Users/tannerdavidson/Desktop/modesto-t3-migration",
+        workspaceRoot: "/Users/example/projects/modesto-app",
       }),
-    ).toBe("modesto-t3-migration");
+    ).toBe("modesto-app");
   });
 
   it("falls back to the project title", () => {
