@@ -32,20 +32,16 @@ Hey — this is **Aloha**. That's the nickname for **1.0.0-alpha.1**, the first 
 Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, and friends stay the CLIs you already pay for. Modesto just puts them in one place. Built by **Tanner Davidson** and whoever showed up.
 
 <p align="center">
-  <a href="apps/marketing/public/announcements/modesto-saas-16x9.mp4">
-    <img src="apps/marketing/public/announcements/modesto-saas-frames/post-16x9.png" alt="Your agents. In their element." width="100%" />
-  </a>
+  <img src="assets/readme/agents-in-their-element.png" alt="Your agents. In their element." width="100%" />
 </p>
-
-<p align="center"><em>Click the still if you want the 30-second film.</em></p>
 
 <table>
 <tr>
 <td width="50%">
-  <img src="apps/marketing/public/announcements/figma-support-frames/post-16x9.png" alt="Figma in Connections" width="100%" />
+  <img src="assets/readme/figma-in-modesto.png" alt="Figma in Connections" width="100%" />
 </td>
 <td width="50%">
-  <img src="apps/marketing/public/announcements/framer-support-frames/post-16x9.png" alt="Framer in Connections" width="100%" />
+  <img src="assets/readme/framer-in-modesto.png" alt="Framer in Connections" width="100%" />
 </td>
 </tr>
 </table>
@@ -205,7 +201,6 @@ Modesto uses `~/.modesto` by default. Existing `~/.modesto` state and Electron a
 ```sh
 bun run build
 bun run build:desktop
-bun run build:marketing
 bun run test
 ```
 
@@ -222,7 +217,6 @@ Desktop artifacts use the `Modesto-<version>-<arch>` name. See [docs/release.md]
 | `apps/web`           | React/Vite application, workspaces, session UX, timeline, terminal, diffs, and previews                  |
 | `apps/server`        | Bun/Node WebSocket server, provider orchestration, persistence, providers, Git, terminals, and worktrees |
 | `apps/desktop`       | Electron lifecycle, native menus, windows, notifications, file dialogs, updater, and browser integration |
-| `apps/marketing`     | Public website and release download surface                                                              |
 | `packages/contracts` | Schema-only shared contracts                                                                             |
 | `packages/shared`    | Explicitly exported runtime utilities shared by server and web                                           |
 

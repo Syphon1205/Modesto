@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="-6 -2 44 44" fill="#000">
-  <!-- Frame as four bars so CSS masks keep the window hole. -->
-  <path d="M0 0h32v8H0zM0 32h32v8H0zM0 8h8v24H0zM24 8h8v24H24z"/>
-  <path fill-opacity=".42" d="M8 16h16v16H8z"/>
-</svg>
