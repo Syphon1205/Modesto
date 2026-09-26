@@ -6,6 +6,7 @@
   "type": "module",
   "main": "dist-electron/main.cjs",
   "scripts": {
+    "build": "node scripts/build-preview-annotation-css.mjs && vp pack",
     "ensure:electron": "node scripts/ensure-electron-runtime.mjs",
     "start": "node scripts/start-electron.mjs",
     "typecheck": "tsgo --noEmit",
