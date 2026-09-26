@@ -61,8 +61,6 @@ See [docs/releases/v0.3.0.md](docs/releases/v0.3.0.md) for the full migration no
 - Composer picker membership comes from validated CLIs only — ready first, needs-login second, then Add provider; uninstalled providers stay in Provider Tools.
 - Removed the manual provider visibility list as the picker source of truth.
 
-See [docs/releases/v0.1.9.md](docs/releases/v0.1.9.md).
-
 ## 0.1.8.1 - 2026-07-30
 
 ### Provider Tools & Teams rooms
@@ -70,8 +68,6 @@ See [docs/releases/v0.1.9.md](docs/releases/v0.1.9.md).
 - Replaced manual provider picker visibility/ordering with CLI detection as the composer source of truth.
 - Added explicit Provider Tools lifecycle states, install stage machine, repair/retry/remove/copy-logs actions, and structured Hugging Face / Qwen / Kimi integrations (unsupported until E2E works).
 - Redesigned Teams into searchable/archivable rooms with a main workspace and collapsible context drawer; preserved existing project/thread data.
-
-See [docs/releases/v0.1.8.1.md](docs/releases/v0.1.8.1.md).
 
 ## 0.1.1 - 2026-07-25
 
@@ -90,7 +86,3 @@ See [docs/releases/v0.1.8.1.md](docs/releases/v0.1.8.1.md).
 - Added live conversations, file changes and review, integrated terminal and browser panels, project context, token usage, automations, and multi-provider model controls.
 - Bundled supported provider CLIs with a one-time first-launch setup so users can get started without installing each tool manually.
 - Published binary-only macOS and Windows installers under the clean Modesto product identity.
-
----
-
-Development history before the 0.1.0 public release lives in [docs/CHANGELOG-pre-release.md](docs/CHANGELOG-pre-release.md).

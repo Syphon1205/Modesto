@@ -93,7 +93,7 @@ export type ThemeDefinition = Readonly<{
 }>;
 
 /**
- * The marketing-site palette, stored as the `modesto` built-in so existing
+ * The core brand palette, stored as the `modesto` built-in so existing
  * preferences keep resolving. The card is labeled Signal so it is not a
  * second "Modesto" next to the standard zinc default.
  *

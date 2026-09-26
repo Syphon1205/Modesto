@@ -1,11 +1,8 @@
 // FILE: AmbientOrb.tsx
-// Purpose: The floating presence bubble — a soft watercolor wash, not a glass
-//          chip. Reuses the brand's own background technique (see
-//          apps/marketing/public/announcements/*.svg's "wash1/wash2/wash3"
-//          filters: feTurbulence -> feDisplacementMap -> feGaussianBlur over
-//          layered ink-and-color ellipses) at UI scale, instead of a ring +
-//          shadow + backdrop-blur badge. Status still reads by color, but the
-//          color arrives as a soft painted blob, not a hard outline.
+// Purpose: The floating presence bubble — a soft watercolor wash built from
+//          displaced, blurred ink-and-color ellipses. Status still reads by
+//          color, but the color arrives as a painted blob rather than a hard
+//          outline or glass badge.
 //
 //          Two wash layers, not one — the same two tone colors in different
 //          arrangements, one slowly crossfading over the other while both

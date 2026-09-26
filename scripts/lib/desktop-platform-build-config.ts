@@ -24,9 +24,8 @@ const MAC_DMG_BACKGROUND_PATH = "dmg-background.png";
  * dmg-builder measures the background image and then spreads this option over
  * the result (`{ position, size, ...settings.window }`), so this wins and a
  * background of any other size is cropped to its top-left corner rather than
- * scaled to fit. Exported because `scripts/build-dmg-background.py` lays the
- * art out against these numbers and the build downsamples the 2x raster to
- * them — three places that have to agree, and used to not.
+ * scaled to fit. The committed SVG backgrounds use these same dimensions and
+ * the build downsamples their 2x raster to them.
  */
 export const MAC_DMG_WINDOW = { width: 700, height: 500 } as const;
 

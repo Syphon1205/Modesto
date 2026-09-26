@@ -36,9 +36,6 @@ const upstreamCreditPaths = new Set([
   "ACKNOWLEDGEMENTS.md",
   "THIRD_PARTY_NOTICES.md",
   "CHANGELOG.md",
-  "apps/marketing/src/pages/third-party.astro",
-  "apps/marketing/src/pages/docs.astro",
-  "apps/marketing/src/pages/docs/development.astro",
 ]);
 
 function searchableBrandText(path: string, line: string): string {
@@ -126,18 +123,6 @@ export function findVisualBrandAssetViolations(
 ): BrandIdentityViolation[] {
   const filesByPath = new Map(files.map((file) => [file.path, file]));
   const violations: BrandIdentityViolation[] = [];
-  for (const file of files) {
-    if (
-      /^apps\/marketing\/public\/.*screenshot.*\.(?:png|jpe?g|webp|gif)$/i.test(file.path) &&
-      !approvedDigests.has(file.path)
-    ) {
-      violations.push({
-        path: file.path,
-        line: null,
-        text: "Public screenshot needs a visual identity review and approved digest before publication.",
-      });
-    }
-  }
   for (const [path, approvedDigest] of approvedDigests) {
     const file = filesByPath.get(path);
     if (!file) {

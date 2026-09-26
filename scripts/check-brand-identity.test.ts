@@ -57,7 +57,7 @@ describe("brand identity guard", () => {
     expect(
       findBrandIdentityViolations([
         { path: "apps/web/src/components/Header.tsx", contents: "<h1>T3 Code</h1>" },
-        { path: "apps/marketing/src/pages/download.astro", contents: "https://app.t3.codes" },
+        { path: "apps/web/src/components/DownloadLink.tsx", contents: "https://app.t3.codes" },
         { path: "apps/web/src/uiStateStore.ts", contents: '"codething:another-public-brand"' },
       ]),
     ).toHaveLength(3);
@@ -70,18 +70,6 @@ describe("brand identity guard", () => {
         { path: "source.ts", contents: '// Migrated from T3 Code\nconst label = "T3 Code";' },
       ]),
     ).toEqual([{ path: "source.ts", line: 2, text: 'const label = "T3 Code";' }]);
-  });
-
-  it("rejects unreviewed marketing screenshots, including restored upstream screenshots", () => {
-    expect(
-      findVisualBrandAssetViolations(
-        [
-          { path: "apps/marketing/public/screenshot.webp", contents: new Uint8Array([1]) },
-          { path: "apps/marketing/public/updated-screenshot.webp", contents: new Uint8Array([2]) },
-        ],
-        new Map(),
-      ),
-    ).toHaveLength(2);
   });
 
   it("requires user-facing raster assets to match a visually approved digest", () => {

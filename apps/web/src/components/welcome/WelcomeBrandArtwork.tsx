@@ -25,7 +25,7 @@ const HERO_CARDS = [
 ] as const;
 
 /**
- * The marketing hero cluster: clean CSS presentation without 3D WebGL overhead.
+ * The welcome hero cluster: clean CSS presentation without 3D WebGL overhead.
  */
 export function WelcomeHeroCluster() {
   return (

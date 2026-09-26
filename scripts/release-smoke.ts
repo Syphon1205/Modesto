@@ -4,7 +4,16 @@
 // Depends on: update-release-package-versions.ts and merge-mac-update-manifests.ts.
 
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,18 +32,31 @@ import {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-const workspaceFiles = [
-  "package.json",
-  "bun.lock",
-  "apps/server/package.json",
-  "apps/desktop/package.json",
-  "apps/web/package.json",
-  "apps/marketing/package.json",
-  "packages/contracts/package.json",
-  "packages/effect-acp/package.json",
-  "packages/shared/package.json",
-  "scripts/package.json",
-] as const;
+function discoverWorkspaceManifestFiles(): string[] {
+  const rootPackage = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8")) as {
+    workspaces?: { packages?: string[] };
+  };
+  const manifests = ["package.json", "bun.lock"];
+
+  for (const pattern of rootPackage.workspaces?.packages ?? []) {
+    if (pattern.endsWith("/*")) {
+      const directory = pattern.slice(0, -2);
+      for (const entry of readdirSync(resolve(repoRoot, directory), { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const manifest = `${directory}/${entry.name}/package.json`;
+        if (existsSync(resolve(repoRoot, manifest))) manifests.push(manifest);
+      }
+      continue;
+    }
+
+    const manifest = `${pattern}/package.json`;
+    if (existsSync(resolve(repoRoot, manifest))) manifests.push(manifest);
+  }
+
+  return manifests;
+}
+
+const workspaceFiles = discoverWorkspaceManifestFiles();
 
 function copyWorkspaceManifestFixture(targetRoot: string): void {
   for (const relativePath of workspaceFiles) {
@@ -195,7 +217,12 @@ function verifyCanonicalIdentity(): void {
 }
 
 function verifyReleaseWorkflowSafety(): void {
-  const workflow = readFileSync(resolve(repoRoot, ".github/workflows/release.yml"), "utf8");
+  const workflowPath = resolve(repoRoot, ".github/workflows/release.yml");
+  // Distribution snapshots intentionally omit private publication automation.
+  // Keep the release smoke useful for source builds while applying the workflow
+  // assertions when the private source workflow is present.
+  if (!existsSync(workflowPath)) return;
+  const workflow = readFileSync(workflowPath, "utf8");
   assertContains(
     workflow,
     "publish_release:\n        description:",

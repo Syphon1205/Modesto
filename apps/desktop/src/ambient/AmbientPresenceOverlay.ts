@@ -23,9 +23,8 @@ let hostPlatform: HostPlatform = process.platform;
  * Two tints per phase, matching the web orb's `TONE_WASH` exactly (see
  * apps/web/src/components/ambient/AmbientOrb.tsx) - the desktop overlay is a
  * separate Electron bundle with no access to that browser-only React module,
- * so the palette is kept here as a second copy rather than shared. Also drawn
- * from the brand's own wash palette (see apps/marketing/public/announcements/
- * *.svg's wash1/wash2/wash3): green for active/success, gold for waiting.
+ * so the palette is kept here as a second copy rather than shared. Green marks
+ * active or successful work; gold marks work waiting on the user.
  */
 const PHASE_WASH: Record<DesktopAmbientPresenceBubble["phase"], readonly [string, string]> = {
   starting: ["#5aa679", "#6cb083"],
