@@ -11,7 +11,9 @@ export type ComposerSlashCommand =
   | "canvas"
   | "slides"
   | "docs"
-  | "spreadsheets";
+  | "spreadsheets"
+  | "chat"
+  | "code";
 export type ComposerSubmissionIntent = "foreground" | "background";
 
 export type ParsedMultiagentComposerCommand =
@@ -301,6 +303,12 @@ export function parseStandaloneComposerSlashCommand(
   return "default";
 }
 
+export function parseConversationModeSlashCommand(text: string): "chat" | "code" | null {
+  const match = /^\/(chat|code)\s*$/i.exec(text.trim());
+  if (!match) return null;
+  return match[1]?.toLowerCase() === "chat" ? "chat" : "code";
+}
+
 /**
  * Parse `/multiagent <task>` (and the silent `/spawn` alias) for Modesto
  * fan-out: create a sibling project thread seeded with the task text.
@@ -324,11 +332,11 @@ export function parseMultiagentComposerCommand(
 export const parseSpawnComposerCommand = parseMultiagentComposerCommand;
 
 /**
- * Parse `/side` or `/side <message>` to start a sidechat on the current
+ * Parse `/side(chat)` or `/side(chat) <message>` to start a sidechat on the current
  * conversation. A bare `/side` is valid and opens an empty sidechat.
  */
 export function parseSideComposerCommand(text: string): ParsedSideComposerCommand | null {
-  const match = /^\/side(?:\s+([\s\S]*))?$/i.exec(text.trim());
+  const match = /^\/(?:side|sidechat)(?:\s+([\s\S]*))?$/i.exec(text.trim());
   if (!match) {
     return null;
   }

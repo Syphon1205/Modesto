@@ -1,4 +1,5 @@
-"use client";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
+("use client");
 
 import { scopeProjectRef, scopeThreadRef } from "@modesto/client-runtime/environment";
 import {
@@ -32,7 +33,7 @@ import {
   type SourceControlRepositoryInfo,
   PRIMARY_LOCAL_ENVIRONMENT_ID,
 } from "@modesto/contracts";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useParams } from "@tanstack/react-router";
 import * as Option from "effect/Option";
 import {
   ArrowLeftIcon,
@@ -65,6 +66,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { isDesktopLocalConnectionTarget } from "../connection/desktopLocal";
 import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstraps";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { useComposerDraftStore } from "../composerDraftStore";
 import { useClientSettings } from "../hooks/useSettings";
 import { useTheme } from "../hooks/useTheme";
 import { readLocalApi } from "../localApi";
@@ -91,6 +93,7 @@ import {
   resolveProjectPathForDispatch,
 } from "../lib/projectPaths";
 import { onOpenCommandPalette } from "../commandPaletteBus";
+import { peekProjectChatHandoff, takeProjectChatHandoff } from "../lib/projectChatHandoff";
 import { isPreviewFocused } from "../lib/previewFocus";
 import { isTerminalFocused } from "../lib/terminalFocus";
 import { selectActiveRightPanel, useRightPanelStore } from "../rightPanelStore";
@@ -514,6 +517,9 @@ export function CommandPalette({ children }: { children: ReactNode }) {
             toggleMode("command");
             return;
           }
+          if (!open) {
+            takeProjectChatHandoff();
+          }
           setOpen(open);
         }}
       >
@@ -582,7 +588,7 @@ function OpenCommandPaletteDialog(props: {
   readonly openOverlayMode: (mode: SearchOverlayMode) => void;
   readonly clearOpenIntent: () => void;
 }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { clearOpenIntent, openIntent, openOverlayMode, setOpen } = props;
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -1894,12 +1900,13 @@ function OpenCommandPaletteDialog(props: {
         cwd,
       );
       if (existing) {
+        const pendingChatTask = peekProjectChatHandoff();
         const latestThread = getLatestThreadForProject(
           threads.filter((thread) => thread.environmentId === existing.environmentId),
           existing.id,
           clientSettings.sidebarThreadSortOrder,
         );
-        if (latestThread) {
+        if (latestThread && pendingChatTask === null) {
           await navigate({
             to: "/$environmentId/$threadId",
             params: buildThreadRouteParams(
@@ -1908,7 +1915,9 @@ function OpenCommandPaletteDialog(props: {
           });
         } else {
           const navigationResult = await settlePromise(() =>
-            handleNewThread(scopeProjectRef(existing.environmentId, existing.id)),
+            handleNewThread(scopeProjectRef(existing.environmentId, existing.id), {
+              conversationMode: "code",
+            }),
           );
           if (navigationResult._tag === "Failure") {
             const error = squashAtomCommandFailure(navigationResult);
@@ -1920,6 +1929,12 @@ function OpenCommandPaletteDialog(props: {
               }),
             );
             return;
+          }
+          if (navigationResult.value) {
+            const task = takeProjectChatHandoff();
+            if (task) {
+              useComposerDraftStore.getState().setPrompt(navigationResult.value.draftId, task);
+            }
           }
         }
         setOpen(false);
@@ -1959,7 +1974,9 @@ function OpenCommandPaletteDialog(props: {
       }
 
       const navigationResult = await settlePromise(() =>
-        handleNewThread(scopeProjectRef(input.environmentId, projectId)),
+        handleNewThread(scopeProjectRef(input.environmentId, projectId), {
+          conversationMode: "code",
+        }),
       );
       if (navigationResult._tag === "Failure") {
         const error = squashAtomCommandFailure(navigationResult);
@@ -1971,6 +1988,12 @@ function OpenCommandPaletteDialog(props: {
           }),
         );
         return;
+      }
+      if (navigationResult.value) {
+        const task = takeProjectChatHandoff();
+        if (task) {
+          useComposerDraftStore.getState().setPrompt(navigationResult.value.draftId, task);
+        }
       }
       setOpen(false);
     },

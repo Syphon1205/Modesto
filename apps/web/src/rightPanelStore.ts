@@ -21,7 +21,6 @@ export const RIGHT_PANEL_KINDS = [
   "preview",
   "terminal",
   "pull-request",
-  "agents",
   "context",
   "artifacts",
   "music",
@@ -30,6 +29,8 @@ export const RIGHT_PANEL_KINDS = [
   "sheets",
   "canvas",
   "device",
+  "performance",
+  "visual",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -70,7 +71,6 @@ export type RightPanelSurface =
       repository: string;
       number: number;
     }
-  | { id: "agents"; kind: "agents" }
   | { id: "context"; kind: "context" }
   // Files this thread's agents produced or pointed at. Per thread, like the
   // transcript itself, which is why it is a panel surface rather than a page.
@@ -80,7 +80,14 @@ export type RightPanelSurface =
   | { id: "docs"; kind: "docs" }
   | { id: "sheets"; kind: "sheets" }
   | { id: "canvas"; kind: "canvas" }
-  | { id: "device"; kind: "device" };
+  | { id: "device"; kind: "device" }
+  | { id: "performance"; kind: "performance" }
+  | {
+      id: `visual:${string}`;
+      kind: "visual";
+      title: string;
+      document: string;
+    };
 
 const RIGHT_PANEL_STORAGE_KEY = "modesto:right-panel-state:v2";
 // v9 removed the "plan" surface kind (plans render inline in the transcript).
@@ -106,9 +113,13 @@ interface RightPanelStoreState {
   byThreadKey: Record<string, ThreadRightPanelState>;
   open: (
     ref: ScopedThreadRef,
-    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request">,
+    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request" | "visual">,
   ) => void;
   openBrowser: (ref: ScopedThreadRef, tabId: string | null) => void;
+  openVisual: (
+    ref: ScopedThreadRef,
+    visual: { readonly id: string; readonly title: string; readonly document: string },
+  ) => void;
   openFile: (ref: ScopedThreadRef, relativePath: string, line?: number) => void;
   openPullRequest: (
     ref: ScopedThreadRef,
@@ -135,7 +146,7 @@ interface RightPanelStoreState {
   toggleVisibility: (ref: ScopedThreadRef) => void;
   toggle: (
     ref: ScopedThreadRef,
-    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request">,
+    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request" | "visual">,
   ) => void;
   removeThread: (ref: ScopedThreadRef) => void;
 }
@@ -147,15 +158,13 @@ const EMPTY_THREAD_STATE: ThreadRightPanelState = {
 };
 
 const singletonSurface = (
-  kind: Exclude<RightPanelKind, "file" | "preview" | "terminal" | "pull-request">,
+  kind: Exclude<RightPanelKind, "file" | "preview" | "terminal" | "pull-request" | "visual">,
 ): RightPanelSurface => {
   switch (kind) {
     case "diff":
       return { id: "diff", kind };
     case "files":
       return { id: "files", kind };
-    case "agents":
-      return { id: "agents", kind };
     case "context":
       return { id: "context", kind };
     case "artifacts":
@@ -172,6 +181,8 @@ const singletonSurface = (
       return { id: "canvas", kind };
     case "device":
       return { id: "device", kind };
+    case "performance":
+      return { id: "performance", kind };
   }
 };
 
@@ -438,6 +449,25 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
               ? current.surfaces.filter((entry) => entry.id !== "browser:new")
               : current.surfaces;
             return upsertSurface({ ...current, surfaces: withoutPlaceholder }, surface);
+          }),
+        })),
+      openVisual: (ref, visual) =>
+        set((state) => ({
+          byThreadKey: updateThread(state.byThreadKey, scopedThreadKey(ref), (current) => {
+            const surface: RightPanelSurface = {
+              id: `visual:${visual.id}`,
+              kind: "visual",
+              title: visual.title,
+              document: visual.document,
+            };
+            const exists = current.surfaces.some((entry) => entry.id === surface.id);
+            return {
+              isOpen: true,
+              activeSurfaceId: surface.id,
+              surfaces: exists
+                ? current.surfaces.map((entry) => (entry.id === surface.id ? surface : entry))
+                : [...current.surfaces, surface],
+            };
           }),
         })),
       openPullRequest: (ref, target) =>
@@ -716,9 +746,28 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
       ),
       partialize: (state) => ({
         byThreadKey: Object.fromEntries(
-          Object.entries(state.byThreadKey).filter(
-            ([threadKey]) => !isPullRequestsPanelKey(threadKey),
-          ),
+          Object.entries(state.byThreadKey)
+            .filter(([threadKey]) => !isPullRequestsPanelKey(threadKey))
+            .map(([threadKey, threadState]) => {
+              // Generated documents can be large and are already durable in
+              // the transcript. Keep their panel tabs session-only instead
+              // of duplicating model output into localStorage.
+              const surfaces = threadState.surfaces.filter((surface) => surface.kind !== "visual");
+              const activeSurfaceId = surfaces.some(
+                (surface) => surface.id === threadState.activeSurfaceId,
+              )
+                ? threadState.activeSurfaceId
+                : (surfaces.at(-1)?.id ?? null);
+              return [
+                threadKey,
+                {
+                  ...threadState,
+                  surfaces,
+                  activeSurfaceId,
+                  isOpen: surfaces.length > 0 && threadState.isOpen,
+                },
+              ];
+            }),
         ),
       }),
       migrate: migratePersistedRightPanelState,

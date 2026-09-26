@@ -6,7 +6,7 @@
 // Layer: Chat composer presentation
 
 import { memo, useRef } from "react";
-import { PaperclipIcon } from "lucide-react";
+import { PaperclipIcon, PlusIcon } from "lucide-react";
 import { providerSendTurnComposerAcceptAttribute } from "@modesto/contracts";
 
 import { cn } from "~/lib/utils";
@@ -14,9 +14,11 @@ import { cn } from "~/lib/utils";
 const COMPOSER_ATTACHMENT_ACCEPT = providerSendTurnComposerAcceptAttribute();
 
 export const ComposerAttachButton = memo(function ComposerAttachButton({
+  appearance = "paperclip",
   disabled,
   onPickFiles,
 }: {
+  readonly appearance?: "paperclip" | "plus";
   readonly disabled?: boolean;
   readonly onPickFiles: (files: File[]) => void;
 }) {
@@ -47,13 +49,18 @@ export const ComposerAttachButton = memo(function ComposerAttachButton({
           "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-secondary-label transition-all duration-150 enabled:cursor-pointer hover:bg-sidebar-row-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-30 sm:h-8 sm:w-8",
         )}
         disabled={disabled}
+        data-appearance={appearance}
         aria-label={label}
         title={label}
         onClick={() => {
           inputRef.current?.click();
         }}
       >
-        <PaperclipIcon className="size-4" aria-hidden="true" />
+        {appearance === "plus" ? (
+          <PlusIcon className="size-4" aria-hidden="true" />
+        ) : (
+          <PaperclipIcon className="size-4" aria-hidden="true" />
+        )}
       </button>
     </>
   );

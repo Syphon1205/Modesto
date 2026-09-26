@@ -114,6 +114,11 @@ describe("buildThreadActionMenuItems", () => {
     const items = buildThreadActionMenuItems({ ...baseState, conversationMode: "code" });
     expect(items.find((item) => item.id === "rename")?.label).toBe("Rename thread");
     expect(items.find((item) => item.id === "pin")?.label).toBe("Pin thread");
+    expect(items.at(-1)).toMatchObject({
+      id: "delete",
+      label: "Delete session",
+      destructive: true,
+    });
   });
 });
 

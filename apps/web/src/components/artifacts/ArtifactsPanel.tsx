@@ -25,11 +25,16 @@ import {
   LayoutTemplateIcon,
   PresentationIcon,
   SheetIcon,
+  WorkflowIcon,
 } from "lucide-react";
 import { useMemo } from "react";
 
 import { useThreadMessages } from "~/state/entities";
-import { type ArtifactPreviewKind, collectThreadArtifacts } from "./artifactTargets";
+import {
+  type ArtifactPreviewKind,
+  collectThreadArtifacts,
+  collectThreadVisualArtifacts,
+} from "./artifactTargets";
 
 const ICON_BY_PREVIEW: Readonly<Record<ArtifactPreviewKind, typeof FileIcon>> = {
   markdown: FileTextIcon,
@@ -46,13 +51,18 @@ const ICON_BY_PREVIEW: Readonly<Record<ArtifactPreviewKind, typeof FileIcon>> = 
 export function ArtifactsPanel({
   threadRef,
   onOpen,
+  onOpenVisual,
 }: {
   readonly threadRef: ScopedThreadRef | null;
   /** Opens an artifact; the caller owns how (right panel, editor, external). */
   readonly onOpen: ((path: string) => void) | undefined;
+  readonly onOpenVisual?:
+    | ((visual: { readonly id: string; readonly title: string; readonly document: string }) => void)
+    | undefined;
 }) {
   const messages = useThreadMessages(threadRef);
   const artifacts = useMemo(() => collectThreadArtifacts(messages), [messages]);
+  const visuals = useMemo(() => collectThreadVisualArtifacts(messages), [messages]);
 
   if (threadRef === null) {
     return (
@@ -65,42 +75,78 @@ export function ArtifactsPanel({
     );
   }
 
-  if (artifacts.length === 0) {
+  if (artifacts.length === 0 && visuals.length === 0) {
     return (
       <div className="w-full p-6">
         <h2 className="text-base font-medium text-foreground">No artifacts yet</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Files the agent writes or links to appear here, ready to open. Paths only mentioned in
-          passing are deliberately left out.
+          Files, diagrams, and interactive previews the agent creates appear here, ready to open.
         </p>
       </div>
     );
   }
 
   return (
-    <ul className="w-full space-y-1 p-3">
-      {artifacts.map((artifact) => {
-        const Icon = ICON_BY_PREVIEW[artifact.preview];
-        return (
-          <li key={artifact.path}>
-            <button
-              type="button"
-              className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2.5 text-left hover:bg-sidebar-row-hover disabled:cursor-default disabled:opacity-60"
-              disabled={onOpen === undefined}
-              title={artifact.path}
-              onClick={() => onOpen?.(artifact.path)}
-            >
-              <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-foreground">{artifact.name}</span>
-                <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
-                  {artifact.path}
-                </span>
-              </span>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
+    <div className="w-full space-y-4 p-3">
+      {visuals.length > 0 ? (
+        <section>
+          <h3 className="px-1 pb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+            Generated visuals
+          </h3>
+          <ul className="space-y-1">
+            {visuals.map((visual) => (
+              <li key={visual.id}>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2.5 text-left hover:bg-sidebar-row-hover"
+                  onClick={() => onOpenVisual?.(visual)}
+                >
+                  <WorkflowIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-foreground">{visual.title}</span>
+                    <span className="mt-0.5 block truncate text-[11px] capitalize text-muted-foreground">
+                      {visual.language} visual
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {artifacts.length > 0 ? (
+        <section>
+          <h3 className="px-1 pb-2 text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+            Files
+          </h3>
+          <ul className="space-y-1">
+            {artifacts.map((artifact) => {
+              const Icon = ICON_BY_PREVIEW[artifact.preview];
+              return (
+                <li key={artifact.path}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-3 rounded-lg border border-border/60 bg-muted/10 px-3 py-2.5 text-left hover:bg-sidebar-row-hover disabled:cursor-default disabled:opacity-60"
+                    disabled={onOpen === undefined}
+                    title={artifact.path}
+                    onClick={() => onOpen?.(artifact.path)}
+                  >
+                    <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm text-foreground">
+                        {artifact.name}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">
+                        {artifact.path}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   );
 }

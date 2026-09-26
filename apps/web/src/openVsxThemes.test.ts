@@ -3,10 +3,12 @@ import JSZip from "jszip";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
+  importOpenVsxAppearanceExtension,
   importOpenVsxThemeExtension,
   searchOpenVsxThemes,
   type OpenVsxThemeExtension,
 } from "./openVsxThemes";
+import { getActivePierreIcons, resolvePierreIconForEntry } from "./pierre-icons";
 import { getThemeColorsForMode, themeColorToHex } from "./themePalette";
 
 const ASSET_ROOT = "https://open-vsx.org/api/demo/theme/1.0.0/file";
@@ -180,6 +182,45 @@ describe("Open VSX themes", () => {
     expect(searchUrl.searchParams.get("size")).toBe("16");
   });
 
+  it("discovers popular file-icon extensions without requiring a search term", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/-/search?")) {
+        return new Response(
+          JSON.stringify({ extensions: [{ namespace: "icons", name: "theme" }] }),
+        );
+      }
+      if (url.endsWith("/icons/theme")) {
+        return new Response(
+          JSON.stringify(extensionDetail({ namespace: "icons", license: "MIT" })),
+        );
+      }
+      if (init?.method === "HEAD") {
+        return new Response(null, { headers: { "content-length": "1024" } });
+      }
+      return new Response(
+        JSON.stringify({
+          license: "MIT",
+          contributes: { iconThemes: [{ id: "demo-icons", path: "./icons.json" }] },
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const results = await searchOpenVsxThemes("", { includeFileIconThemes: true });
+
+    expect(results).toEqual([
+      expect.objectContaining({
+        id: "icons.theme",
+        supportsColorThemes: false,
+        supportsFileIconThemes: true,
+      }),
+    ]);
+    const searchUrl = new URL(String(fetchMock.mock.calls[0]![0]));
+    expect(searchUrl.searchParams.has("query")).toBe(false);
+    expect(searchUrl.searchParams.get("sortBy")).toBe("downloadCount");
+  });
+
   it("supports sorting theme searches", async () => {
     const fetchMock = vi.fn(
       async (..._args: unknown[]) =>
@@ -220,7 +261,7 @@ describe("Open VSX themes", () => {
     );
 
     await expect(searchOpenVsxThemes("dracula")).rejects.toThrow(
-      "Open VSX theme details are unavailable",
+      "Open VSX extension details are unavailable",
     );
   });
 
@@ -239,7 +280,7 @@ describe("Open VSX themes", () => {
     );
 
     await expect(searchOpenVsxThemes("dracula")).rejects.toThrow(
-      "Open VSX theme details are unavailable",
+      "Open VSX extension details are unavailable",
     );
   });
 
@@ -451,6 +492,100 @@ describe("Open VSX themes", () => {
     await expect(importOpenVsxThemeExtension(extension)).rejects.toThrow(
       "does not match its advertised license",
     );
+  });
+
+  it("installs large file-icon manifests and keeps definitions beyond the old limit", async () => {
+    const definitions = Object.fromEntries(
+      Array.from({ length: 450 }, (_, index) => [
+        `definition-${index}`,
+        { iconPath: "./icons/file.svg" },
+      ]),
+    );
+    const fileExtensions = Object.fromEntries(
+      Array.from({ length: 450 }, (_, index) => [`extension-${index}`, `definition-${index}`]),
+    );
+    const iconTheme = {
+      iconDefinitions: definitions,
+      fileExtensions,
+      padding: "x".repeat(300 * 1024),
+    };
+    const packagedManifest = {
+      publisher: "demo",
+      name: "icons",
+      version: "1.0.0",
+      license: "MIT",
+      contributes: {
+        iconThemes: [{ id: "demo-icons", label: "Demo Icons", path: "./icons/theme.json" }],
+      },
+    };
+    const zip = new JSZip();
+    zip.file("extension/package.json", JSON.stringify(packagedManifest));
+    zip.file("extension/icons/theme.json", JSON.stringify(iconTheme));
+    zip.file(
+      "extension/icons/icons/file.svg",
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M2 1h8l4 4v10H2z"/></svg>',
+    );
+    const packageBytes = await zip.generateAsync({ type: "arraybuffer" });
+    const checksum = [...sha256(new Uint8Array(packageBytes))]
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    const extension: OpenVsxThemeExtension = {
+      collectionId: "open-vsx:demo.icons",
+      id: "demo.icons",
+      name: "Demo Icons",
+      publisher: "demo",
+      description: "",
+      downloadCount: 1,
+      iconUrl: null,
+      sourceUrl: null,
+      license: "MIT",
+      manifestUrl: `${ASSET_ROOT}/package.json`,
+      sha256Url: `${ASSET_ROOT}/demo.icons-1.0.0.sha256`,
+      version: "1.0.0",
+      vsixUrl: `${ASSET_ROOT}/demo.icons-1.0.0.vsix`,
+    };
+    const stored = new Map<string, string>();
+    vi.stubGlobal("window", {
+      dispatchEvent: vi.fn(),
+      localStorage: {
+        getItem: (key: string) => stored.get(key) ?? null,
+        removeItem: (key: string) => stored.delete(key),
+        setItem: (key: string, value: string) => stored.set(key, value),
+      },
+    });
+    vi.stubGlobal("document", {
+      body: { prepend: vi.fn() },
+      createElement: () => ({
+        id: "",
+        innerHTML: "",
+        setAttribute: vi.fn(),
+        style: {},
+      }),
+      getElementById: () => null,
+    });
+    vi.stubGlobal("indexedDB", undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url === extension.manifestUrl) return new Response(JSON.stringify(packagedManifest));
+        if (url === extension.sha256Url) return new Response(checksum);
+        return new Response(packageBytes, {
+          headers: { "Content-Length": String(packageBytes.byteLength) },
+        });
+      }),
+    );
+
+    const imported = await importOpenVsxAppearanceExtension(extension);
+
+    expect(imported.fileIconThemeInstalled).toBe(true);
+    expect(resolvePierreIconForEntry("file.extension-449", "file")?.token).not.toBe("default");
+    const activeIcons = getActivePierreIcons();
+    expect(
+      typeof activeIcons === "string"
+        ? activeIcons
+        : activeIcons.spriteSheet?.match(/<svg\b/g)?.length,
+    ).toBe(1);
   });
 
   it("stops import work when the request is cancelled", async () => {

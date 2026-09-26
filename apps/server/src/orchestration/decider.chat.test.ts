@@ -1,4 +1,5 @@
 import {
+  ApprovalRequestId,
   CommandId,
   DEFAULT_PROVIDER_INTERACTION_MODE,
   ProjectId,
@@ -10,7 +11,7 @@ import * as Effect from "effect/Effect";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 
 import { decideOrchestrationCommand } from "./decider.ts";
-import { createEmptyReadModel } from "./projector.ts";
+import { createEmptyReadModel, projectEvent } from "./projector.ts";
 
 const now = "2026-01-01T00:00:00.000Z";
 
@@ -43,6 +44,8 @@ it.layer(NodeServices.layer)("decider chat thread.create", (it) => {
       expect(event.payload).toMatchObject({
         threadId: ThreadId.make("thread-unscoped-chat"),
         conversationMode: "chat",
+        runtimeMode: "approval-required",
+        interactionMode: "default",
       });
     }),
   );
@@ -71,6 +74,52 @@ it.layer(NodeServices.layer)("decider chat thread.create", (it) => {
       }).pipe(Effect.flip);
 
       expect(error.message).toContain("does not exist");
+    }),
+  );
+
+  it.effect("never accepts a mutation approval in chat", () =>
+    Effect.gen(function* () {
+      const created = yield* decideOrchestrationCommand({
+        command: {
+          type: "thread.create",
+          commandId: CommandId.make("cmd-safe-chat"),
+          threadId: ThreadId.make("thread-safe-chat"),
+          projectId: ProjectId.make("unscoped-chat"),
+          title: "Safe chat",
+          modelSelection: {
+            instanceId: ProviderInstanceId.make("codex"),
+            model: "gpt-5-codex",
+          },
+          interactionMode: "plan",
+          runtimeMode: "full-access",
+          conversationMode: "chat",
+          branch: null,
+          worktreePath: null,
+          createdAt: now,
+        },
+        readModel: createEmptyReadModel(now),
+      });
+      const createdEvent = Array.isArray(created) ? created[0] : created;
+      const readModel = yield* projectEvent(createEmptyReadModel(now), {
+        ...createdEvent,
+        sequence: 1,
+      });
+
+      const response = yield* decideOrchestrationCommand({
+        command: {
+          type: "thread.approval.respond",
+          commandId: CommandId.make("cmd-approve-chat"),
+          threadId: ThreadId.make("thread-safe-chat"),
+          requestId: ApprovalRequestId.make("approval-chat"),
+          decision: "acceptForSession",
+          createdAt: now,
+        },
+        readModel,
+      });
+      const responseEvent = Array.isArray(response) ? response[0] : response;
+
+      expect(responseEvent.type).toBe("thread.approval-response-requested");
+      expect(responseEvent.payload).toMatchObject({ decision: "decline" });
     }),
   );
 });

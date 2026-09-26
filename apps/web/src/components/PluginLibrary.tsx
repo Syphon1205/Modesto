@@ -131,7 +131,12 @@ function PluginPreviewCard({
   );
 }
 
-export function PluginLibrary() {
+export function PluginLibrary({
+  embedded = false,
+  installedOnly = false,
+  query = "",
+}: { embedded?: boolean; installedOnly?: boolean; query?: string } = {}) {
+  const Container = embedded ? "div" : SidebarInset;
   const environmentId = useAtomValue(primaryEnvironmentIdAtom);
   const list = useEnvironmentQuery(
     environmentId === null ? null : claudePluginList({ environmentId, input: {} }),
@@ -194,73 +199,87 @@ export function PluginLibrary() {
     [environmentId, uninstallCommand, uninstallingId],
   );
 
-  const installedPlugins = list.data?.plugins ?? [];
+  const installedPlugins = (list.data?.plugins ?? []).filter((plugin) =>
+    `${plugin.name} ${plugin.description ?? ""}`.toLowerCase().includes(query.toLowerCase()),
+  );
 
   return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground isolate">
+    <Container
+      className={
+        embedded
+          ? "min-w-0 w-full"
+          : "h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground isolate"
+      }
+    >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
-        <WorkspacePageHeader electron={isElectron}>
-          <WorkspaceBreadcrumb ariaLabel="Plugins breadcrumb">
-            <WorkspaceBreadcrumbItem current>
-              <h1>Skills &amp; plugins</h1>
-            </WorkspaceBreadcrumbItem>
-          </WorkspaceBreadcrumb>
-        </WorkspacePageHeader>
+        {embedded ? null : (
+          <WorkspacePageHeader electron={isElectron}>
+            <WorkspaceBreadcrumb ariaLabel="Plugins breadcrumb">
+              <WorkspaceBreadcrumbItem current>
+                <h1>Skills &amp; plugins</h1>
+              </WorkspaceBreadcrumbItem>
+            </WorkspaceBreadcrumb>
+          </WorkspacePageHeader>
+        )}
 
         <ScrollArea className="min-h-0 flex-1">
           <WorkspacePageContainer width="wide">
             <div className="flex flex-col gap-6 py-6">
-              <SkillPackLibrary />
+              {embedded ? null : <SkillPackLibrary />}
 
-              <div className="border-t border-border/60" />
-              <div className="flex flex-col gap-2">
-                <h2 className="text-sm font-medium text-foreground">Install a Claude plugin</h2>
-                <p className="text-sm text-muted-foreground">
-                  Paste a GitHub repo that follows{" "}
-                  <a
-                    href="https://code.claude.com/docs/en/plugins-reference"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    Claude Code's plugin format
-                  </a>{" "}
-                  - its skills, commands, and agents install into your real{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.claude</code> directory.
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    value={url}
-                    onChange={(event) => setUrl(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") void handlePreview();
-                    }}
-                    placeholder="https://github.com/owner/repo"
-                    disabled={previewPending}
-                    className="max-w-md"
-                  />
-                  <Button
-                    onClick={() => void handlePreview()}
-                    disabled={!url.trim() || previewPending}
-                  >
-                    {previewPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-                    Preview
-                  </Button>
-                </div>
-                {previewErrorMessage ? (
-                  <p className="text-sm text-destructive">{previewErrorMessage}</p>
-                ) : null}
-              </div>
+              {embedded ? null : <div className="border-t border-border/60" />}
+              {installedOnly ? null : (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <h2 className="text-sm font-medium text-foreground">Install a Claude plugin</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Paste a GitHub repo that follows{" "}
+                      <a
+                        href="https://code.claude.com/docs/en/plugins-reference"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline"
+                      >
+                        Claude Code's plugin format
+                      </a>{" "}
+                      - its skills, commands, and agents install into your real{" "}
+                      <code className="rounded bg-muted px-1 py-0.5 text-xs">~/.claude</code>{" "}
+                      directory.
+                    </p>
+                    <div className="flex gap-2">
+                      <Input
+                        value={url}
+                        onChange={(event) => setUrl(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") void handlePreview();
+                        }}
+                        placeholder="https://github.com/owner/repo"
+                        disabled={previewPending}
+                        className="max-w-md"
+                      />
+                      <Button
+                        onClick={() => void handlePreview()}
+                        disabled={!url.trim() || previewPending}
+                      >
+                        {previewPending ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+                        Preview
+                      </Button>
+                    </div>
+                    {previewErrorMessage ? (
+                      <p className="text-sm text-destructive">{previewErrorMessage}</p>
+                    ) : null}
+                  </div>
 
-              {preview ? (
-                <PluginPreviewCard
-                  preview={preview}
-                  installing={installPending}
-                  onInstall={() => void handleInstall()}
-                  onDismiss={() => setPreview(null)}
-                />
-              ) : null}
-
+                  {preview ? (
+                    <PluginPreviewCard
+                      preview={preview}
+                      installing={installPending}
+                      onInstall={() => void handleInstall()}
+                      onDismiss={() => setPreview(null)}
+                    />
+                  ) : null}
+                </>
+              )}
               <div className="flex flex-col gap-3">
                 <h2 className="text-sm font-medium text-foreground">Installed plugins</h2>
                 {list.isPending && installedPlugins.length === 0 ? (
@@ -327,6 +346,6 @@ export function PluginLibrary() {
           </WorkspacePageContainer>
         </ScrollArea>
       </div>
-    </SidebarInset>
+    </Container>
   );
 }

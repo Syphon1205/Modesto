@@ -10,7 +10,7 @@ import {
 import {
   ArchiveIcon,
   BlocksIcon,
-  BotIcon,
+  CpuIcon,
   GitBranchIcon,
   KeyboardIcon,
   Link2Icon,
@@ -35,6 +35,8 @@ import {
 } from "../ui/sidebar";
 import { T3ConnectSidebarAvatar, T3ConnectSidebarSignIn } from "../clerk/T3ConnectSidebarSignIn";
 import { SidebarUtilityMenu } from "../sidebar/SidebarChrome";
+import { GitHubAccountRow } from "../sidebar/GitHubAccountRow";
+import { useInterfaceStyle } from "../../hooks/useSettings";
 import { scrollToSettingsTarget } from "./settingsLayout";
 import {
   searchSettings,
@@ -49,7 +51,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/general": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/keybindings": KeyboardIcon,
-  "/settings/providers": BotIcon,
+  "/settings/providers": CpuIcon,
   "/settings/integrations": BlocksIcon,
   "/settings/source-control": GitBranchIcon,
   "/settings/connections": Link2Icon,
@@ -66,12 +68,64 @@ export const SETTINGS_NAV_ITEMS: ReadonlyArray<{
   icon: SETTINGS_SECTION_ICONS[to],
 }));
 
+const SETTINGS_NAV_GROUPS: ReadonlyArray<{
+  label: string;
+  paths: ReadonlyArray<SettingsPath>;
+}> = [
+  {
+    label: "Personal",
+    paths: ["/settings/general", "/settings/appearance", "/settings/keybindings"],
+  },
+  {
+    label: "Workspace",
+    paths: ["/settings/providers", "/settings/integrations", "/settings/source-control"],
+  },
+  {
+    label: "Data & access",
+    paths: ["/settings/connections", "/settings/archived"],
+  },
+];
+
+const OPENCODE_SETTINGS_NAV_GROUPS: typeof SETTINGS_NAV_GROUPS = [
+  {
+    label: "Desktop",
+    paths: ["/settings/general", "/settings/appearance", "/settings/keybindings"],
+  },
+  {
+    label: "Server",
+    paths: ["/settings/connections", "/settings/providers", "/settings/integrations"],
+  },
+  {
+    label: "Advanced",
+    paths: ["/settings/source-control", "/settings/archived"],
+  },
+];
+
+const GITHUB_SETTINGS_NAV_GROUPS: typeof SETTINGS_NAV_GROUPS = [
+  {
+    label: "Settings",
+    paths: [
+      "/settings/general",
+      "/settings/connections",
+      "/settings/source-control",
+      "/settings/appearance",
+      "/settings/keybindings",
+      "/settings/integrations",
+      "/settings/providers",
+      "/settings/archived",
+    ],
+  },
+];
+
 function SettingsSectionIcon({ to }: { to: SettingsPath }) {
   const Icon = SETTINGS_SECTION_ICONS[to];
   return <Icon className="mt-0.5 size-3.5 shrink-0 text-sidebar-muted-foreground/60" />;
 }
 
 export function SettingsSidebarNav({ pathname }: { pathname: string }) {
+  const interfaceStyle = useInterfaceStyle();
+  const isOpenCode = interfaceStyle === "opencode";
+  const isGitHub = interfaceStyle === "github";
   const navigate = useNavigate();
   const currentHash = useLocation({ select: (location) => location.hash });
   const { isMobile, setOpenMobile, open, setOpen } = useSidebar();
@@ -102,7 +156,8 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
           target.isContentEditable ||
           // Keep focus inside open dialogs and popups instead of escaping
           // their focus trap into the sidebar search.
-          target.closest('[role="dialog"], [aria-modal="true"], [data-slot$="popup"]') !== null)
+          (target.closest('[role="dialog"], [aria-modal="true"], [data-slot$="popup"]') !== null &&
+            !target.closest("[data-settings-dialog]")))
       ) {
         return;
       }
@@ -179,9 +234,13 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   );
   return (
     <>
-      <SidebarContent className="overflow-x-hidden">
+      <SidebarContent data-opencode-settings-nav="" className="overflow-x-hidden">
         <SidebarGroup className="gap-2 p-[var(--sidebar-content-inset)]">
-          <div className="flex h-8 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground">
+          {isGitHub ? <GitHubAccountRow settingsHeader /> : null}
+          <div
+            data-settings-search=""
+            className="flex h-8 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground"
+          >
             <SearchIcon className="size-4 shrink-0 text-sidebar-muted-foreground/80" />
             <Input
               ref={searchInputRef}
@@ -194,7 +253,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                 setActiveResultIndex(0);
               }}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Search"
+              placeholder="Search settings…"
               aria-label="Search settings"
               role="combobox"
               aria-autocomplete="list"
@@ -265,32 +324,87 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))
-              : SETTINGS_NAV_ITEMS.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => handleSectionClick(item.to)}
-                      >
-                        <Icon />
-                        <span className="truncate">{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+              : (isGitHub
+                  ? GITHUB_SETTINGS_NAV_GROUPS
+                  : isOpenCode
+                    ? OPENCODE_SETTINGS_NAV_GROUPS
+                    : SETTINGS_NAV_GROUPS
+                ).map((group) => (
+                  <SidebarMenuItem key={group.label} className="list-none pt-2 first:pt-0">
+                    <p className="px-2 pb-1 text-[11px] font-medium text-sidebar-muted-foreground/65">
+                      {group.label}
+                    </p>
+                    <SidebarMenu className="gap-px">
+                      {group.paths.map((to) => {
+                        const item = SETTINGS_NAV_ITEMS.find((candidate) => candidate.to === to);
+                        if (!item) return null;
+                        const Icon = item.icon;
+                        const isActive = pathname === item.to || pathname.startsWith(`${item.to}/`);
+                        return (
+                          <SidebarMenuItem key={item.to}>
+                            <SidebarMenuButton
+                              isActive={isActive}
+                              className="h-8 gap-2 rounded-md px-2 text-xs data-[active=true]:bg-sidebar-accent"
+                              onClick={() => handleSectionClick(item.to)}
+                            >
+                              <Icon className="size-4" />
+                              <span className="truncate">
+                                {isGitHub && item.to === "/settings/general"
+                                  ? "General"
+                                  : isGitHub && item.to === "/settings/appearance"
+                                    ? "Themes"
+                                    : isGitHub && item.to === "/settings/keybindings"
+                                      ? "Accessibility"
+                                      : isGitHub && item.to === "/settings/providers"
+                                        ? "Model providers"
+                                        : isGitHub && item.to === "/settings/integrations"
+                                          ? "Customize"
+                                          : isGitHub && item.to === "/settings/source-control"
+                                            ? "Sessions"
+                                            : isGitHub && item.to === "/settings/connections"
+                                              ? "Accounts"
+                                              : isGitHub && item.to === "/settings/archived"
+                                                ? "Experimental"
+                                                : isOpenCode && item.to === "/settings/keybindings"
+                                                  ? "Shortcuts"
+                                                  : isOpenCode &&
+                                                      item.to === "/settings/connections"
+                                                    ? "Servers"
+                                                    : isOpenCode &&
+                                                        item.to === "/settings/integrations"
+                                                      ? "Models"
+                                                      : item.label}
+                              </span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarMenuItem>
+                ))}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-[var(--sidebar-content-inset)]">
-        <T3ConnectSidebarSignIn />
-        <div className="flex items-center gap-1">
-          <div className="min-w-0 flex-1">
-            <SidebarUtilityMenu />
+      <SidebarFooter
+        data-opencode-settings-footer={isOpenCode || undefined}
+        className="p-[var(--sidebar-content-inset)]"
+      >
+        {isGitHub ? null : isOpenCode ? (
+          <div className="flex flex-col gap-2 px-1 py-1 text-[11px] leading-none text-sidebar-muted-foreground/55">
+            <span>Modesto Desktop</span>
+            <span>OpenCode interface</span>
           </div>
-          <T3ConnectSidebarAvatar />
-        </div>
+        ) : (
+          <>
+            <T3ConnectSidebarSignIn />
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <SidebarUtilityMenu />
+              </div>
+              <T3ConnectSidebarAvatar />
+            </div>
+          </>
+        )}
       </SidebarFooter>
     </>
   );

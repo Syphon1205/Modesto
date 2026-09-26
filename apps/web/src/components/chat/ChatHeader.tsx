@@ -11,7 +11,7 @@ import {
   squashAtomCommandFailure,
 } from "@modesto/client-runtime/state/runtime";
 import type { ChangeRequestSettleSource } from "@modesto/client-runtime/state/thread-settled";
-import { ChevronDownIcon, PictureInPicture2, SquarePen } from "lucide-react";
+import { ChevronDownIcon, LaptopIcon, PictureInPicture2, SquarePen } from "lucide-react";
 import {
   memo,
   useCallback,
@@ -46,9 +46,15 @@ import {
   WorkspaceBreadcrumbSeparator,
 } from "../WorkspaceBreadcrumb";
 import { cn } from "~/lib/utils";
+import type { ProviderLayout } from "~/providerLayouts";
 
 interface ChatHeaderProps {
   regularChat: boolean;
+  /**
+   * Claude/Codex/Cursor interface styles arrange the title like their desktop
+   * app instead of the default project breadcrumb.
+   */
+  layout?: ProviderLayout | null;
   compactChrome?: boolean;
   onPopOutChat?: () => void;
   activeThreadEnvironmentId: EnvironmentId;
@@ -124,6 +130,7 @@ export function shouldShowOpenInPicker(input: {
 
 export const ChatHeader = memo(function ChatHeader({
   regularChat,
+  layout = null,
   compactChrome = false,
   onPopOutChat,
   activeThreadEnvironmentId,
@@ -292,98 +299,128 @@ export const ChatHeader = memo(function ChatHeader({
     },
     [commitRename],
   );
+  // Codex titles every unsent draft "New chat", project or not.
+  const draftTitle = regularChat || layout === "codex" ? "New chat" : activeThreadTitle;
+  const titleNode =
+    renamingTitle !== null ? (
+      <input
+        autoFocus
+        aria-label="Thread title"
+        className="min-w-0 flex-1 rounded-sm bg-transparent text-sm font-medium text-foreground outline-none ring-1 ring-ring/50 focus:ring-ring"
+        defaultValue={renamingTitle}
+        onBlur={(event) => {
+          if (renameCommittedRef.current) return;
+          commitRename(event.currentTarget.value);
+        }}
+        onFocus={(event) => event.currentTarget.select()}
+        onKeyDown={handleRenameKeyDown}
+      />
+    ) : isServerThread ? (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <button
+              ref={titleButtonRef}
+              type="button"
+              aria-label={`Thread actions for ${activeThreadTitle}`}
+              aria-haspopup="menu"
+              onClick={openMenuFromTitle}
+              onDoubleClick={handleTitleDoubleClick}
+              onBlur={cancelPendingTitleMenu}
+              className="group/thread-title inline-flex min-w-0 max-w-full cursor-pointer items-center gap-1 rounded-sm text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          }
+        >
+          <h2 className="min-w-0 truncate">{activeThreadTitle}</h2>
+          <ChevronDownIcon
+            aria-hidden
+            data-thread-title-chevron
+            className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/thread-title:opacity-100 group-focus-visible/thread-title:opacity-100"
+          />
+        </TooltipTrigger>
+        <TooltipPopup side="top">{activeThreadTitle}</TooltipPopup>
+      </Tooltip>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <h2 aria-label={draftTitle} className="min-w-0 flex-1 truncate">
+              {draftTitle}
+            </h2>
+          }
+        />
+        <TooltipPopup side="top">{draftTitle}</TooltipPopup>
+      </Tooltip>
+    );
+  const providerTitle =
+    layout === null ? null : (
+      <div
+        data-provider-chat-title={layout}
+        className="flex min-w-0 flex-1 items-center gap-2 text-foreground"
+      >
+        {layout === "claude" ? (
+          <LaptopIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+        ) : null}
+        <div className="flex min-w-0 shrink items-center font-semibold">{titleNode}</div>
+        {!regularChat && activeProjectName && layout !== "cursor" ? (
+          <button
+            type="button"
+            aria-label={`New thread in ${activeProjectName}`}
+            title={`New thread in ${activeProjectName}`}
+            onClick={onNewThreadInProject}
+            data-provider-project-chip={layout}
+            className={cn(
+              "max-w-40 shrink-0 truncate text-muted-foreground transition-colors hover:text-foreground",
+              layout === "claude" && "rounded-md bg-secondary px-1.5 py-0.5 text-xs",
+            )}
+          >
+            {activeProjectName}
+          </button>
+        ) : null}
+      </div>
+    );
   return (
     <div
       className="@container/header-actions flex min-w-0 flex-1 items-center gap-2 sm:gap-3"
       onContextMenu={handleHeaderContextMenu}
     >
-      <WorkspaceBreadcrumb ariaLabel="Thread breadcrumb" className="flex-1">
-        {/* Coding threads keep their project visible; regular chats use a
+      {providerTitle ?? (
+        <WorkspaceBreadcrumb ariaLabel="Thread breadcrumb" className="flex-1">
+          {/* Coding threads keep their project visible; regular chats use a
             simpler conversation-first header. */}
-        {!regularChat && activeProjectName ? (
-          <>
-            <WorkspaceBreadcrumbItem>
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      type="button"
-                      aria-label={`New thread in ${activeProjectName}`}
-                      onClick={onNewThreadInProject}
-                      className="inline-flex min-w-0 cursor-pointer items-center gap-1.5 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                    />
-                  }
-                >
-                  <ProjectFavicon
-                    environmentId={activeThreadEnvironmentId}
-                    cwd={activeProjectCwd ?? ""}
-                    faviconPath={activeProjectFaviconPath}
-                    className="size-3.5"
-                  />
-                  <span className="max-w-40 truncate">{activeProjectName}</span>
-                </TooltipTrigger>
-                <TooltipPopup side="top">New thread in {activeProjectName}</TooltipPopup>
-              </Tooltip>
-            </WorkspaceBreadcrumbItem>
-            <WorkspaceBreadcrumbSeparator />
-          </>
-        ) : null}
-        <WorkspaceBreadcrumbItem current className="flex-1">
-          {renamingTitle !== null ? (
-            <input
-              autoFocus
-              aria-label="Thread title"
-              className="min-w-0 flex-1 rounded-sm bg-transparent text-sm font-medium text-foreground outline-none ring-1 ring-ring/50 focus:ring-ring"
-              defaultValue={renamingTitle}
-              onBlur={(event) => {
-                if (renameCommittedRef.current) return;
-                commitRename(event.currentTarget.value);
-              }}
-              onFocus={(event) => event.currentTarget.select()}
-              onKeyDown={handleRenameKeyDown}
-            />
-          ) : isServerThread ? (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    ref={titleButtonRef}
-                    type="button"
-                    aria-label={`Thread actions for ${activeThreadTitle}`}
-                    aria-haspopup="menu"
-                    onClick={openMenuFromTitle}
-                    onDoubleClick={handleTitleDoubleClick}
-                    onBlur={cancelPendingTitleMenu}
-                    className="group/thread-title inline-flex min-w-0 max-w-full cursor-pointer items-center gap-1 rounded-sm text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                }
-              >
-                <h2 className="min-w-0 truncate">{activeThreadTitle}</h2>
-                <ChevronDownIcon
-                  aria-hidden
-                  data-thread-title-chevron
-                  className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/thread-title:opacity-100 group-focus-visible/thread-title:opacity-100"
-                />
-              </TooltipTrigger>
-              <TooltipPopup side="top">{activeThreadTitle}</TooltipPopup>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <h2
-                    aria-label={regularChat ? "New chat" : activeThreadTitle}
-                    className="min-w-0 flex-1 truncate"
+          {!regularChat && activeProjectName ? (
+            <>
+              <WorkspaceBreadcrumbItem>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        aria-label={`New thread in ${activeProjectName}`}
+                        onClick={onNewThreadInProject}
+                        className="inline-flex min-w-0 cursor-pointer items-center gap-1.5 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                    }
                   >
-                    {regularChat ? "New chat" : activeThreadTitle}
-                  </h2>
-                }
-              />
-              <TooltipPopup side="top">{regularChat ? "New chat" : activeThreadTitle}</TooltipPopup>
-            </Tooltip>
-          )}
-        </WorkspaceBreadcrumbItem>
-      </WorkspaceBreadcrumb>
+                    <ProjectFavicon
+                      environmentId={activeThreadEnvironmentId}
+                      cwd={activeProjectCwd ?? ""}
+                      faviconPath={activeProjectFaviconPath}
+                      className="size-3.5"
+                    />
+                    <span className="max-w-40 truncate">{activeProjectName}</span>
+                  </TooltipTrigger>
+                  <TooltipPopup side="top">New thread in {activeProjectName}</TooltipPopup>
+                </Tooltip>
+              </WorkspaceBreadcrumbItem>
+              <WorkspaceBreadcrumbSeparator />
+            </>
+          ) : null}
+          <WorkspaceBreadcrumbItem current className="flex-1">
+            {titleNode}
+          </WorkspaceBreadcrumbItem>
+        </WorkspaceBreadcrumb>
+      )}
       {onPopOutChat && !compactChrome ? (
         <div className="flex shrink-0 items-center">
           <Tooltip>
@@ -427,7 +464,7 @@ export const ChatHeader = memo(function ChatHeader({
           </Tooltip>
         </div>
       ) : null}
-      {regularChat ? null : (
+      {regularChat || layout === "claude" || layout === "cursor" ? null : (
         <div
           data-chat-header-actions
           className={cn(
@@ -435,7 +472,7 @@ export const ChatHeader = memo(function ChatHeader({
             rightPanelOpen ? "pr-0" : PANEL_LAYOUT_CONTROLS_HEADER_INSET_CLASS,
           )}
         >
-          {activeProjectScripts && (
+          {activeProjectScripts && layout === null && (
             <ProjectScriptsControl
               scripts={activeProjectScripts}
               fileScripts={fileScripts}

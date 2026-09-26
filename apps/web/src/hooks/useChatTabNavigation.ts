@@ -26,7 +26,7 @@ export interface ChatTabNavigation {
   readonly closeTab: (key: string) => void;
 }
 
-export function useChatTabNavigation(): ChatTabNavigation {
+export function useChatTabNavigation(input?: { readonly onEmpty?: () => void }): ChatTabNavigation {
   const navigate = useNavigate();
 
   const goToTab = useCallback(
@@ -57,11 +57,16 @@ export function useChatTabNavigation(): ChatTabNavigation {
         goToTab(fallback);
         return;
       }
-      // Nothing left to show; the index route decides what an empty workspace
-      // looks like rather than this hook guessing.
+      // The owner can create a real draft session. A bare draft route has no
+      // backing composer state, and navigating to the index first leaves a
+      // visibly blank window while its redirect effect races to create one.
+      if (input?.onEmpty) {
+        input.onEmpty();
+        return;
+      }
       void navigate({ to: "/" });
     },
-    [goToTab, navigate],
+    [goToTab, input, navigate],
   );
 
   return { activateTab: goToTab, closeTab };

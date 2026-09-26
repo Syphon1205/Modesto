@@ -53,4 +53,13 @@ describe("marketplaceInstallClipboardText", () => {
     expect(item).toBeDefined();
     expect(marketplaceInstallClipboardText(item!)).toBeNull();
   });
+
+  it("links the featured Impeccable skill to its maintained source", () => {
+    const item = findMarketplaceItemById("impeccable");
+    expect(item).toMatchObject({
+      kind: "skill-pack",
+      install: "external",
+      href: "https://github.com/pbakaus/impeccable",
+    });
+  });
 });

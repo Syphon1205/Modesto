@@ -121,8 +121,8 @@ function renderTabs(
       onAddPullRequest={() => undefined}
       onAddDiff={() => undefined}
       onAddFiles={() => undefined}
-      onAddAgents={() => undefined}
       onAddContext={() => undefined}
+      onAddPerformance={() => undefined}
       onAddArtifacts={() => undefined}
       onAddMusic={() => undefined}
       onAddCanvas={() => undefined}
@@ -133,7 +133,6 @@ function renderTabs(
       diffAvailable={false}
       filesAvailable={false}
       pullRequestAvailable={false}
-      agentsAvailable={false}
       contextAvailable={false}
       artifactsAvailable={false}
       musicAvailable

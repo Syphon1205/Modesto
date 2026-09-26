@@ -1,3 +1,4 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 // FILE: ProviderModelReleaseNotification.tsx
 // Purpose: Announce models a provider has just started offering - "Grok 4.6 is
 //          out" - in the bottom-right updates stack.
@@ -9,7 +10,6 @@
 // are not the same event and are not worth collapsing into one message.
 
 import { useAtomValue } from "@effect/atom-react";
-import { useNavigate } from "@tanstack/react-router";
 import { SparklesIcon } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 
@@ -49,7 +49,7 @@ function ProviderModelReleaseIcon({ release }: { readonly release: ProviderModel
 }
 
 export function ProviderModelReleaseNotification() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const providers = useAtomValue(primaryServerProvidersAtom);
   const { seen, recordSeen } = useSeenProviderModels();
   const recordSeenRef = useRef(recordSeen);

@@ -12,6 +12,7 @@ import {
   OrchestrationThread,
   OrchestrationThreadDetailSnapshot,
   ProjectScript,
+  ProjectKind,
   TurnId,
   type OrchestrationCheckpointSummary,
   type OrchestrationLatestTurn,
@@ -75,6 +76,7 @@ const decodeThread = Schema.decodeUnknownEffect(OrchestrationThread);
 const THREAD_DETAIL_ACTIVITY_LIMIT = 500;
 const ProjectionProjectDbRowSchema = ProjectionProject.mapFields(
   Struct.assign({
+    kind: Schema.optional(ProjectKind),
     defaultModelSelection: Schema.NullOr(Schema.fromJsonString(ModelSelection)),
     scripts: Schema.fromJsonString(Schema.Array(ProjectScript)),
   }),
@@ -316,6 +318,7 @@ function mapProjectShellRow(
 ): OrchestrationProjectShell {
   return {
     id: row.projectId,
+    ...(row.kind === "chat" ? { kind: "chat" as const } : {}),
     title: row.title,
     workspaceRoot: row.workspaceRoot,
     repositoryIdentity,
@@ -394,6 +397,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
       sql`
         SELECT
           project_id AS "projectId",
+          kind,
           title,
           workspace_root AS "workspaceRoot",
           default_model_selection_json AS "defaultModelSelection",
@@ -1684,6 +1688,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
 
               const projects: ReadonlyArray<OrchestrationProject> = projectRows.map((row) => ({
                 id: row.projectId,
+                ...(row.kind === "chat" ? { kind: "chat" as const } : {}),
                 title: row.title,
                 workspaceRoot: row.workspaceRoot,
                 repositoryIdentity: repositoryIdentities.get(row.projectId) ?? null,
@@ -1818,6 +1823,7 @@ const makeProjectionSnapshotQuery = Effect.gen(function* () {
                 updatedAt = maxIso(updatedAt, row.updatedAt);
                 projects.push({
                   id: row.projectId,
+                  ...(row.kind === "chat" ? { kind: "chat" as const } : {}),
                   title: row.title,
                   workspaceRoot: row.workspaceRoot,
                   defaultModelSelection: row.defaultModelSelection,

@@ -1,3 +1,4 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import {
   ArrowLeftIcon,
   ChartNoAxesColumnIcon,
@@ -6,7 +7,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { memo, useCallback } from "react";
-import { Link, useCanGoBack, useLocation, useNavigate } from "@tanstack/react-router";
+import { Link, useCanGoBack, useLocation } from "@tanstack/react-router";
 
 import { useEnvironmentIdentificationMode } from "../../hooks/useSettings";
 import { cn } from "../../lib/utils";
@@ -130,7 +131,7 @@ function SidebarUtilityItem({
 }
 
 export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const canGoBack = useCanGoBack();
   const { isMobile, setOpenMobile } = useSidebar();
   const currentFooterPage = useLocation({

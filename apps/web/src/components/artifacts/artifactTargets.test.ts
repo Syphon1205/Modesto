@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   classifyArtifactPreview,
   collectThreadArtifacts,
+  collectThreadVisualArtifacts,
   findArtifactTargets,
 } from "./artifactTargets";
 
@@ -152,5 +153,27 @@ describe("collecting a thread's artifacts", () => {
     });
 
     expect(collected).toHaveLength(2);
+  });
+});
+
+describe("collecting generated visuals", () => {
+  it("keeps diagrams and interactive previews from assistant replies", () => {
+    const collected = collectThreadVisualArtifacts([
+      assistant('```mermaid title="Request flow"\ngraph LR\n  A --> B\n```'),
+      assistant("```html\n<button>Run</button>\n```"),
+    ]);
+
+    expect(collected).toHaveLength(2);
+    expect(collected.map((visual) => visual.title)).toEqual([
+      "Interactive preview",
+      "Request flow",
+    ]);
+    expect(collected[1]?.document).toContain("graph LR");
+  });
+
+  it("ignores visual code written by the user", () => {
+    expect(
+      collectThreadVisualArtifacts([{ role: "user", text: "```mermaid\ngraph LR\nA-->B\n```" }]),
+    ).toEqual([]);
   });
 });

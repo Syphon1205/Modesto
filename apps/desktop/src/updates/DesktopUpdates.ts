@@ -6,6 +6,11 @@ import {
   type DesktopUpdateCheckResult,
   type DesktopUpdateState,
 } from "@modesto/contracts";
+import {
+  MODESTO_DESKTOP_DEVELOPMENT_UPDATE_CHANNEL,
+  MODESTO_DESKTOP_UPDATE_CHANNEL,
+  MODESTO_DESKTOP_UPDATE_FEED_URL,
+} from "@modesto/shared/desktopIdentity";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
@@ -28,6 +33,7 @@ import * as ElectronWindow from "../electron/ElectronWindow.ts";
 import * as IpcChannels from "../ipc/channels.ts";
 import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import { normalizeDesktopUpdateReleaseNotes } from "./releaseNotes.ts";
+import { toPublicDesktopVersion } from "./releaseVersion.ts";
 import { resolveDefaultDesktopUpdateChannel } from "./updateChannels.ts";
 import {
   createInitialDesktopUpdateState,
@@ -191,7 +197,11 @@ function createBaseUpdateState(
   environment: DesktopEnvironment.DesktopEnvironment["Service"],
 ): DesktopUpdateState {
   return {
-    ...createInitialDesktopUpdateState(environment.appVersion, environment.runtimeInfo, channel),
+    ...createInitialDesktopUpdateState(
+      toPublicDesktopVersion(environment.appVersion),
+      environment.runtimeInfo,
+      channel,
+    ),
     enabled,
     status: enabled ? "idle" : "disabled",
   };
@@ -262,7 +272,7 @@ export const make = Effect.gen(function* () {
   const lastLoggedDownloadMilestoneRef = yield* Ref.make(-1);
   const updateStateRef = yield* Ref.make<DesktopUpdateState>(
     createInitialDesktopUpdateState(
-      environment.appVersion,
+      toPublicDesktopVersion(environment.appVersion),
       environment.runtimeInfo,
       environment.defaultDesktopSettings.updateChannel,
     ),
@@ -336,12 +346,32 @@ export const make = Effect.gen(function* () {
   ) {
     yield* Effect.annotateCurrentSpan({ channel });
     const allowsPrerelease = channel === "nightly";
-    yield* electronUpdater.setChannel(channel);
+    const updaterChannel =
+      channel === "nightly"
+        ? MODESTO_DESKTOP_DEVELOPMENT_UPDATE_CHANNEL
+        : MODESTO_DESKTOP_UPDATE_CHANNEL;
+    if (!config.mockUpdates) {
+      yield* electronUpdater.setFeedURL(
+        channel === "nightly"
+          ? ({
+              provider: "github",
+              owner: "Syphon1205",
+              repo: "Modesto",
+              releaseType: "prerelease",
+            } as ElectronUpdater.ElectronUpdaterFeedUrl)
+          : ({
+              provider: "generic",
+              url: MODESTO_DESKTOP_UPDATE_FEED_URL,
+            } as ElectronUpdater.ElectronUpdaterFeedUrl),
+      );
+    }
+    yield* electronUpdater.setChannel(updaterChannel);
     yield* electronUpdater.setAllowPrerelease(allowsPrerelease);
     yield* electronUpdater.setAllowDowngrade(allowsPrerelease);
     yield* electronUpdater.setFullChangelog(allowsPrerelease);
     yield* logUpdaterInfo("using update channel", {
       channel,
+      updaterChannel,
       allowPrerelease: allowsPrerelease,
       allowDowngrade: allowsPrerelease,
       fullChangelog: allowsPrerelease,
@@ -581,6 +611,7 @@ export const make = Effect.gen(function* () {
       Effect.flatMap(
         Effect.fn("desktop.updates.applyUpdateAvailable")(function* (info) {
           const state = yield* Ref.get(updateStateRef);
+          const publicVersion = toPublicDesktopVersion(info.version);
           if (resolveDefaultDesktopUpdateChannel(info.version) !== state.channel) {
             yield* logUpdaterInfo("ignoring update that does not match selected channel", {
               version: info.version,
@@ -593,13 +624,19 @@ export const make = Effect.gen(function* () {
           }
 
           const checkedAt = yield* currentIsoTimestamp;
-          const releaseNotes = normalizeDesktopUpdateReleaseNotes(info.releaseNotes, info.version);
+          const releaseNotes = normalizeDesktopUpdateReleaseNotes(info.releaseNotes, publicVersion);
           yield* setState(
-            reduceDesktopUpdateStateOnUpdateAvailable(state, info.version, checkedAt, releaseNotes),
+            reduceDesktopUpdateStateOnUpdateAvailable(
+              state,
+              publicVersion,
+              checkedAt,
+              releaseNotes,
+            ),
           );
           yield* Ref.set(lastLoggedDownloadMilestoneRef, -1);
           yield* logUpdaterInfo("update available", {
-            version: info.version,
+            version: publicVersion,
+            updaterVersion: info.version,
             releaseNoteGroups: releaseNotes.length,
           });
         }),
@@ -704,8 +741,12 @@ export const make = Effect.gen(function* () {
       Effect.flatMap(
         Effect.fn("desktop.updates.applyUpdateDownloaded")(function* (info) {
           const state = yield* Ref.get(updateStateRef);
-          yield* setState(reduceDesktopUpdateStateOnDownloadComplete(state, info.version));
-          yield* logUpdaterInfo("update downloaded", { version: info.version });
+          const publicVersion = toPublicDesktopVersion(info.version);
+          yield* setState(reduceDesktopUpdateStateOnDownloadComplete(state, publicVersion));
+          yield* logUpdaterInfo("update downloaded", {
+            version: publicVersion,
+            updaterVersion: info.version,
+          });
         }),
       ),
       Effect.catchCause((cause) => {
@@ -738,6 +779,13 @@ export const make = Effect.gen(function* () {
         yield* electronUpdater.setFeedURL({
           provider: "generic",
           url: `http://localhost:${config.mockUpdateServerPort}`,
+        } as ElectronUpdater.ElectronUpdaterFeedUrl);
+      } else {
+        // Always use Modesto's dedicated release feed. Packaged app-update.yml
+        // files from the T3 foundation are treated only as an enablement marker.
+        yield* electronUpdater.setFeedURL({
+          provider: "generic",
+          url: MODESTO_DESKTOP_UPDATE_FEED_URL,
         } as ElectronUpdater.ElectronUpdaterFeedUrl);
       }
 

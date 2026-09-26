@@ -1,6 +1,6 @@
 import { memo, type PointerEventHandler } from "react";
-import { ChevronDownIcon, ChevronLeftIcon } from "lucide-react";
-import { useEnvironmentIdentificationMode } from "~/hooks/useSettings";
+import { ChevronDownIcon, ChevronLeftIcon, CornerDownLeftIcon } from "lucide-react";
+import { useEnvironmentIdentificationMode, useInterfaceStyle } from "~/hooks/useSettings";
 import { cn } from "~/lib/utils";
 import { StageBackdropButtonArt, useSidebarStageBackdropVariant } from "../SidebarStageBackdrop";
 import { Button } from "../ui/button";
@@ -31,6 +31,8 @@ interface ComposerPrimaryActionsProps {
   /** Enter-to-send is disabled on mobile viewports, where stop would otherwise
    * be the only primary action and a running turn could not be steered. */
   showSendWhileRunning?: boolean;
+  /** Claude Code draws a return glyph where the other shells draw an up arrow. */
+  sendGlyph?: "arrow" | "return";
   onPreviousPendingQuestion: () => void;
   onInterrupt: () => void;
   onImplementPlanInNewThread: () => void;
@@ -72,6 +74,7 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
   hasSendableContent,
   preserveComposerFocusOnPointerDown = false,
   showSendWhileRunning = false,
+  sendGlyph = "arrow",
   onPreviousPendingQuestion,
   onInterrupt,
   onImplementPlanInNewThread,
@@ -80,16 +83,17 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
     ? { onPointerDown: preventPointerFocus }
     : undefined;
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
+  const interfaceStyle = useInterfaceStyle();
   const isSendDisabled = sendDisabledReason !== null;
   const stageBackdropVariant = useSidebarStageBackdropVariant(
-    environmentIdentificationMode === "artwork",
+    environmentIdentificationMode === "artwork" && interfaceStyle !== "github",
   );
 
   const renderStopGenerationButton = (insidePendingAction: boolean) => (
     <button
       type="button"
       className={cn(
-        "flex cursor-pointer items-center justify-center rounded-full bg-destructive/90 text-white shadow-xs shadow-destructive/24 inset-shadow-[0_1px_--theme(--color-white/16%)] transition-all duration-150 hover:bg-destructive hover:scale-105 active:inset-shadow-[0_1px_--theme(--color-black/8%)] active:shadow-none",
+        "flex cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xs transition-colors duration-150 hover:bg-primary/90",
         insidePendingAction
           ? "size-8 sm:size-7"
           : showSendWhileRunning && hasSendableContent
@@ -220,9 +224,10 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
 
   const sendButton = (
     <button
+      data-composer-send=""
       type="submit"
       className={cn(
-        "relative isolate flex h-9 w-9 items-center justify-center overflow-hidden rounded-full shadow-xs transition-all duration-150 enabled:cursor-pointer enabled:inset-shadow-[0_1px_--theme(--color-white/16%)] hover:scale-105 active:inset-shadow-[0_1px_--theme(--color-black/8%)] active:shadow-none disabled:pointer-events-none disabled:opacity-30 disabled:shadow-none disabled:hover:scale-100 sm:h-8 sm:w-8",
+        "relative isolate flex h-9 w-9 items-center justify-center overflow-hidden rounded-full shadow-xs transition-[background-color,filter,box-shadow,opacity,transform] duration-150 ease-[var(--ease-fluid)] motion-reduce:transform-none motion-reduce:transition-none enabled:cursor-pointer enabled:inset-shadow-[0_1px_--theme(--color-white/16%)] enabled:hover:scale-[1.04] enabled:active:scale-[0.96] active:inset-shadow-[0_1px_--theme(--color-black/8%)] active:shadow-none disabled:pointer-events-none disabled:opacity-30 disabled:shadow-none sm:h-8 sm:w-8",
         stageBackdropVariant
           ? "bg-transparent text-white enabled:shadow-black/24 enabled:hover:brightness-110"
           : "bg-message-action text-message-action-foreground enabled:shadow-message-action/24 hover:bg-message-action-hover",
@@ -256,6 +261,8 @@ export const ComposerPrimaryActions = memo(function ComposerPrimaryActions({
       ) : null}
       {isConnecting || isSendBusy ? (
         <Spinner className="size-3.5" aria-hidden="true" />
+      ) : sendGlyph === "return" ? (
+        <CornerDownLeftIcon className="size-4" aria-hidden="true" />
       ) : (
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <path

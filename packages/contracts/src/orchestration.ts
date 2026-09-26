@@ -544,8 +544,15 @@ export const ProjectFaviconPath = TrimmedNonEmptyString.check(
 );
 export type ProjectFaviconPath = typeof ProjectFaviconPath.Type;
 
+/** The product surface a project belongs to. Older snapshots omit this. */
+export const ProjectKind = Schema.Literals(["project", "chat", "studio"]);
+export type ProjectKind = typeof ProjectKind.Type;
+
 export const OrchestrationProject = Schema.Struct({
   id: ProjectId,
+  // Optional on the wire so snapshots created before chat projects existed
+  // remain readable. Consumers should treat a missing value as "project".
+  kind: Schema.optional(ProjectKind),
   title: TrimmedNonEmptyString,
   workspaceRoot: TrimmedNonEmptyString,
   repositoryIdentity: Schema.optional(Schema.NullOr(RepositoryIdentity)),
@@ -751,6 +758,7 @@ export type OrchestrationReadModel = typeof OrchestrationReadModel.Type;
 
 export const OrchestrationProjectShell = Schema.Struct({
   id: ProjectId,
+  kind: Schema.optional(ProjectKind),
   title: TrimmedNonEmptyString,
   workspaceRoot: TrimmedNonEmptyString,
   repositoryIdentity: Schema.optional(Schema.NullOr(RepositoryIdentity)),

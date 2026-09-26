@@ -30,6 +30,7 @@ import {
   openAppshotPrivacySettings,
 } from "./methods/appshots.ts";
 import { openApplication } from "./methods/openApplication.ts";
+import { playSystemSound } from "./methods/systemSounds.ts";
 import {
   getAdvertisedEndpoints,
   getServerExposureState,
@@ -82,6 +83,7 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
 
   yield* ipc.handle(getClientSettings);
   yield* ipc.handle(setClientSettings);
+  yield* ipc.handle(playSystemSound);
   yield* ipc.handle(getMicrophoneStatus);
   yield* ipc.handle(requestMicrophone);
   yield* ipc.handle(listListeningLibraries);

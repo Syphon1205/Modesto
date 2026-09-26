@@ -603,6 +603,60 @@ it.layer(Layer.mergeAll(NodeServices.layer, ServerSettingsModule.layerTest(), Te
         ]);
       });
 
+      it("drops a deleted custom-endpoint model even for a retain-by-default driver like Codex", () => {
+        // Codex is not OpenCode, so it normally retains models missing from a
+        // refresh (the "preserves previously discovered provider models"
+        // case above). Custom-endpoint models must be the exception: they're
+        // synchronously derived from current `customModelEndpoints` settings
+        // on every snapshot, so a slug missing from the refresh means the
+        // user deleted or renamed that endpoint - not a probe blip. Retaining
+        // it would resurrect a model the picker offers but `CodexAdapter`
+        // always rejects.
+        const previousProvider = {
+          instanceId: ProviderInstanceId.make("codex"),
+          driver: ProviderDriverKind.make("codex"),
+          status: "ready",
+          enabled: true,
+          installed: true,
+          auth: { status: "authenticated" },
+          checkedAt: "2026-07-17T00:00:00.000Z",
+          version: "1.0.0",
+          models: [
+            {
+              slug: "gpt-5.6-sol",
+              name: "GPT-5.6-Sol",
+              isCustom: false,
+              capabilities: null,
+            },
+            {
+              slug: "router:vllm:qwen38-nvfp4",
+              name: "qwen38-nvfp4",
+              subProvider: "vLLM",
+              isCustom: true,
+              capabilities: null,
+            },
+          ],
+          slashCommands: [],
+          skills: [],
+        } as const satisfies ServerProvider;
+        const refreshedProvider = {
+          ...previousProvider,
+          checkedAt: "2026-07-17T00:01:00.000Z",
+          models: [
+            {
+              slug: "gpt-5.6-sol",
+              name: "GPT-5.6-Sol",
+              isCustom: false,
+              capabilities: null,
+            },
+          ],
+        } satisfies ServerProvider;
+
+        assert.deepStrictEqual(mergeProviderSnapshot(previousProvider, refreshedProvider).models, [
+          ...refreshedProvider.models,
+        ]);
+      });
+
       it("drops stale OpenCode models missing from a successful refresh", () => {
         const previousProvider = {
           instanceId: ProviderInstanceId.make("opencode"),

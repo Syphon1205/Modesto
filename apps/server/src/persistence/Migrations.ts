@@ -58,6 +58,7 @@ import Migration0042 from "./Migrations/042_Automations.ts";
 import Migration0043 from "./Migrations/043_ProjectionThreadsConversationMode.ts";
 import Migration0044 from "./Migrations/044_ProjectionThreadsParentThreadId.ts";
 import Migration0045 from "./Migrations/045_AutomationWebhooks.ts";
+import Migration0046 from "./Migrations/046_ProjectionProjectKind.ts";
 
 /**
  * Migration loader with all migrations defined inline.
@@ -115,6 +116,7 @@ export const migrationEntries = [
   [43, "ProjectionThreadsConversationMode", Migration0043],
   [44, "ProjectionThreadsParentThreadId", Migration0044],
   [45, "AutomationWebhooks", Migration0045],
+  [46, "ProjectionProjectKind", Migration0046],
 ] as const;
 
 export const migrationManifest = migrationEntries.map(([id, name]) => [id, name] as const);

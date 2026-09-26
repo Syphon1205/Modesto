@@ -213,6 +213,26 @@ it("appends each declared custom-endpoint model with a router:<endpointId>:<mode
   );
 });
 
+it("skips known hosted endpoints that have no Responses route", () => {
+  const models = appendCustomModelEndpointModels(
+    [],
+    [
+      endpoint({
+        id: "nvidia-nim",
+        label: "NVIDIA NIM",
+        baseUrl: "https://integrate.api.nvidia.com/v1",
+        models: ["meta/llama-3.3-70b-instruct"],
+      }),
+      endpoint({ models: ["mixtral-8x7b"] }),
+    ],
+  );
+
+  assert.deepStrictEqual(
+    models.map((model) => model.slug),
+    ["router:openrouter:mixtral-8x7b"],
+  );
+});
+
 it("falls back to the endpoint's own label as a single model when none were declared", () => {
   const models = appendCustomModelEndpointModels([], [endpoint({ models: [] })]);
 

@@ -8,10 +8,16 @@
 // which most sessions never leave - loads none of it.
 
 import type * as MonacoApi from "monaco-editor";
+import {
+  activateInstalledVsCodeExtensions,
+  installedVsCodeLanguageForPath,
+  subscribeToVsCodeExtensionChanges,
+} from "../vscodeExtensionRuntime";
 
 export type Monaco = typeof MonacoApi;
 
 let monacoPromise: Promise<Monaco> | null = null;
+let stopExtensionSync: (() => void) | null = null;
 
 /**
  * Maps a path to a Monaco language id.
@@ -64,7 +70,7 @@ export function monacoLanguageForPath(path: string): string | undefined {
     case "toml":
       return "ini";
     default:
-      return undefined;
+      return installedVsCodeLanguageForPath(path);
   }
 }
 
@@ -127,8 +133,21 @@ export function loadMonaco(): Promise<Monaco> {
       defaults.setDiagnosticsOptions({ noSemanticValidation: true, noSyntaxValidation: false });
     }
 
+    activateInstalledVsCodeExtensions(monaco);
+    stopExtensionSync ??= subscribeToVsCodeExtensionChanges(() => {
+      activateInstalledVsCodeExtensions(monaco);
+    });
+
     return monaco;
-  })();
+  })().catch((cause: unknown) => {
+    // A stale deploy can leave an old page pointing at a removed hashed chunk.
+    // Do not cache that rejection forever: the editor's retry action should
+    // perform a completely fresh module load after a reload or reconnect.
+    monacoPromise = null;
+    throw new Error("The editor modules could not be loaded. Reload the app or try again.", {
+      cause,
+    });
+  });
 
   return monacoPromise;
 }

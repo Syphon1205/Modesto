@@ -85,7 +85,7 @@ export function buildGeminiAcpSpawnInput(
     command: geminiSettings?.binaryPath || "gemini",
     args: ["--acp"],
     cwd,
-    ...(environment ? { env: environment } : {}),
+    env: environment ?? {},
   };
 }
 

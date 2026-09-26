@@ -26,13 +26,13 @@ export interface SettingsSearchItem {
  */
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/general": "General",
+  "/settings/keybindings": "Keyboard shortcuts",
   "/settings/appearance": "Appearance",
-  "/settings/keybindings": "Keybindings",
   "/settings/providers": "Providers",
-  "/settings/integrations": "Integrations",
-  "/settings/source-control": "Source Control",
-  "/settings/connections": "Connections",
-  "/settings/archived": "Archive",
+  "/settings/integrations": "Browser & tools",
+  "/settings/connections": "Apps & connections",
+  "/settings/source-control": "Git & pull requests",
+  "/settings/archived": "Archived chats",
 };
 
 /**
@@ -42,6 +42,11 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
  * here once instead of separately in the panel and the index.
  */
 export const SETTINGS_SEARCH_ITEMS = [
+  {
+    id: "interface-style",
+    title: "Interface style",
+    to: "/settings/appearance",
+  },
   {
     id: "color-scheme",
     title: "Color scheme",
@@ -56,6 +61,11 @@ export const SETTINGS_SEARCH_ITEMS = [
     // Theme cards live directly under the scheme tiles; the section is the
     // stable scroll destination for both.
     targetId: "appearance",
+  },
+  {
+    id: "file-icons",
+    title: "File icons",
+    to: "/settings/appearance",
   },
   {
     // Prefixed because the slider control already owns the `appearance-contrast` id.
@@ -73,8 +83,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "environment-identification",
     title: "Environment identification",
     to: "/settings/appearance",
-    // The setting is stage-dependent, so its parent section is the stable destination.
-    targetId: "appearance",
   },
   {
     id: "interface-font",
@@ -194,11 +202,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/general",
   },
   {
-    id: "legacy-sidebar",
-    title: "Sidebar (legacy)",
-    to: "/settings/general",
-  },
-  {
     id: "chat-tabs",
     title: "Chat tabs",
     to: "/settings/appearance",
@@ -235,6 +238,11 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Thinking sound",
     to: "/settings/integrations",
     targetId: "voice",
+  },
+  {
+    id: "notification-sounds",
+    title: "Notification sounds, session complete, needs input, errors and volume",
+    to: "/settings/general",
   },
   {
     id: "appshots",

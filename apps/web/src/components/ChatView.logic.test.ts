@@ -1,4 +1,5 @@
 import {
+  CheckpointRef,
   EnvironmentId,
   MessageId,
   ProjectId,
@@ -9,6 +10,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import type { Thread, ThreadShell } from "../types";
+import type { TimelineEntry } from "../session-logic";
 import {
   MAX_HIDDEN_MOUNTED_PREVIEW_THREADS,
   MAX_HIDDEN_MOUNTED_TERMINAL_THREADS,
@@ -36,6 +38,7 @@ import {
   canSendWithoutActiveProject,
   isProjectSelectionRequired,
   resolveDraftThreadCreateProjectId,
+  resolveRevertTurnCountsByUserMessage,
   scheduleEnvironmentReconnectWarning,
   startNewThreadForProject,
   shouldDockDraftHeroForSubmission,
@@ -48,6 +51,91 @@ const environmentId = EnvironmentId.make("environment-local");
 const projectId = ProjectId.make("project-1");
 const threadId = ThreadId.make("thread-1");
 const now = "2026-03-29T00:00:00.000Z";
+
+function messageTimelineEntry(input: {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  turnId?: string;
+}): TimelineEntry {
+  const id = MessageId.make(input.id);
+  return {
+    id,
+    kind: "message",
+    createdAt: now,
+    message: {
+      id,
+      role: input.role,
+      text: input.text,
+      turnId: input.turnId ? TurnId.make(input.turnId) : null,
+      streaming: false,
+      createdAt: now,
+      updatedAt: now,
+    },
+  };
+}
+
+describe("chat edit and undo turn boundaries", () => {
+  it("uses checkpoint identities when a completed turn has one", () => {
+    const userMessage = messageTimelineEntry({ id: "user-2", role: "user", text: "Change it" });
+    const assistantMessage = messageTimelineEntry({
+      id: "assistant-2",
+      role: "assistant",
+      text: "Done",
+      turnId: "turn-2",
+    });
+
+    const result = resolveRevertTurnCountsByUserMessage({
+      timelineEntries: [userMessage, assistantMessage],
+      turnDiffSummaries: [
+        {
+          turnId: TurnId.make("turn-2"),
+          checkpointTurnCount: 2,
+          checkpointRef: CheckpointRef.make("checkpoint-2"),
+          status: "ready",
+          files: [],
+          assistantMessageId: MessageId.make("assistant-2"),
+          completedAt: now,
+        },
+      ],
+      inferredCheckpointTurnCountByTurnId: {},
+      hasOlderTurns: true,
+    });
+
+    expect(result.get(MessageId.make("user-2"))).toBe(1);
+  });
+
+  it("falls back to loaded user-turn order for complete chat-only history", () => {
+    const result = resolveRevertTurnCountsByUserMessage({
+      timelineEntries: [
+        messageTimelineEntry({ id: "user-1", role: "user", text: "First" }),
+        messageTimelineEntry({ id: "assistant-1", role: "assistant", text: "One" }),
+        messageTimelineEntry({ id: "user-2", role: "user", text: "Second" }),
+        messageTimelineEntry({ id: "assistant-2", role: "assistant", text: "Two" }),
+      ],
+      turnDiffSummaries: [],
+      inferredCheckpointTurnCountByTurnId: {},
+      hasOlderTurns: false,
+    });
+
+    expect(result.get(MessageId.make("user-1"))).toBe(0);
+    expect(result.get(MessageId.make("user-2"))).toBe(1);
+  });
+
+  it("does not guess a turn count for a partial history window", () => {
+    const result = resolveRevertTurnCountsByUserMessage({
+      timelineEntries: [
+        messageTimelineEntry({ id: "user-latest", role: "user", text: "Latest" }),
+        messageTimelineEntry({ id: "assistant-latest", role: "assistant", text: "Done" }),
+      ],
+      turnDiffSummaries: [],
+      inferredCheckpointTurnCountByTurnId: {},
+      hasOlderTurns: true,
+    });
+
+    expect(result.has(MessageId.make("user-latest"))).toBe(false);
+  });
+});
 
 describe("draft hero submission transition", () => {
   it("does not dock the composer before a background submission", () => {
@@ -72,23 +160,26 @@ describe("draft hero submission transition", () => {
     ).toBe(true);
   });
 
-  it("shows Chat/Work only on the empty New Chat landing", () => {
+  it("keeps chat mode fixed while allowing an explicitly selectable work draft to switch", () => {
     expect(
       shouldShowDraftConversationModeToggle({
         isDraftHeroState: true,
         conversationModeSelectable: true,
-      }),
-    ).toBe(true);
-    expect(
-      shouldShowDraftConversationModeToggle({
-        isDraftHeroState: true,
-        conversationModeSelectable: false,
+        conversationMode: "chat",
       }),
     ).toBe(false);
     expect(
       shouldShowDraftConversationModeToggle({
+        isDraftHeroState: true,
+        conversationModeSelectable: true,
+        conversationMode: "code",
+      }),
+    ).toBe(true);
+    expect(
+      shouldShowDraftConversationModeToggle({
         isDraftHeroState: false,
         conversationModeSelectable: true,
+        conversationMode: "code",
       }),
     ).toBe(false);
   });

@@ -132,11 +132,12 @@ import * as ServerSelfUpdate from "./cloud/selfUpdate.ts";
 import * as ServerLifecycleEvents from "./serverLifecycleEvents.ts";
 import * as ServerRuntimeStartup from "./serverRuntimeStartup.ts";
 import * as ServerSettings from "./serverSettings.ts";
-import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as LocalVoice from "./voice/LocalVoice.ts";
 import * as ServerSecretStore from "./auth/ServerSecretStore.ts";
 import {
+  discoverCustomModelEndpointModels,
   customModelEndpointSecretName,
+  normalizeCustomModelEndpointBaseUrl,
   slugifyCustomModelEndpointId,
   uniqueCustomModelEndpointId,
 } from "./provider/customModelEndpoints.ts";
@@ -1211,8 +1212,10 @@ const makeWsRpcLayer = (
       const setCustomModelEndpoint = Effect.fn("setCustomModelEndpoint")(function* (
         input: ServerSetCustomModelEndpointInput,
       ) {
+        let normalizedBaseUrl: string;
         try {
-          const parsedBaseUrl = new URL(input.baseUrl);
+          normalizedBaseUrl = normalizeCustomModelEndpointBaseUrl(input.baseUrl);
+          const parsedBaseUrl = new URL(normalizedBaseUrl);
           if (parsedBaseUrl.protocol !== "http:" && parsedBaseUrl.protocol !== "https:") {
             throw new Error("unsupported protocol");
           }
@@ -1231,12 +1234,28 @@ const makeWsRpcLayer = (
           input.id ??
           uniqueCustomModelEndpointId(slugifyCustomModelEndpointId(input.label), existingIds);
 
+        const existingApiKey = yield* secretStore.get(customModelEndpointSecretName(id)).pipe(
+          Effect.map((bytes) =>
+            Option.isSome(bytes) ? new TextDecoder().decode(bytes.value) : undefined,
+          ),
+          Effect.orElseSucceed(() => undefined),
+        );
+        const apiKey = input.apiKey ?? existingApiKey;
+        const models =
+          input.models.length > 0
+            ? input.models
+            : yield* Effect.tryPromise(() =>
+                discoverCustomModelEndpointModels(normalizedBaseUrl, apiKey),
+              ).pipe(Effect.orElseSucceed(() => []));
+
         const nextEndpoint = {
           id,
           label: input.label,
-          baseUrl: input.baseUrl,
-          wireApi: input.wireApi,
-          models: [...input.models],
+          baseUrl: normalizedBaseUrl,
+          // Transport is provider-owned: OpenCode/Kilo use their documented
+          // OpenAI-compatible provider while Codex uses Responses.
+          wireApi: "chat" as const,
+          models: [...models],
           // Absent stays absent rather than persisting an empty string, so
           // "this endpoint does not transcribe" is representable.
         };
@@ -1256,6 +1275,31 @@ const makeWsRpcLayer = (
 
         return { customModelEndpoints: yield* listCustomModelEndpointStatuses };
       });
+
+      const discoverCustomModelEndpoint = Effect.fn("discoverCustomModelEndpoint")(
+        function* (input: { readonly baseUrl: string; readonly apiKey?: string }) {
+          try {
+            const parsedBaseUrl = new URL(input.baseUrl);
+            if (parsedBaseUrl.protocol !== "http:" && parsedBaseUrl.protocol !== "https:") {
+              throw new Error("unsupported protocol");
+            }
+          } catch {
+            return yield* new ServerCustomModelEndpointError({
+              reason: `"${input.baseUrl}" is not a valid URL.`,
+            });
+          }
+          const models = yield* Effect.tryPromise({
+            try: () => discoverCustomModelEndpointModels(input.baseUrl, input.apiKey),
+            catch: toCustomModelEndpointError,
+          });
+          if (models.length === 0) {
+            return yield* new ServerCustomModelEndpointError({
+              reason: "No models were returned by /models or /api/tags.",
+            });
+          }
+          return { models };
+        },
+      );
 
       const deleteCustomModelEndpoint = Effect.fn("deleteCustomModelEndpoint")(function* (
         input: ServerDeleteCustomModelEndpointInput,
@@ -2057,6 +2101,12 @@ const makeWsRpcLayer = (
           observeRpcEffect(WS_METHODS.serverSetCustomModelEndpoint, setCustomModelEndpoint(input), {
             "rpc.aggregate": "server",
           }),
+        [WS_METHODS.serverDiscoverCustomModelEndpoint]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.serverDiscoverCustomModelEndpoint,
+            discoverCustomModelEndpoint(input),
+            { "rpc.aggregate": "server" },
+          ),
         [WS_METHODS.serverDeleteCustomModelEndpoint]: (input) =>
           observeRpcEffect(
             WS_METHODS.serverDeleteCustomModelEndpoint,

@@ -34,6 +34,7 @@ import {
 } from "@modesto/contracts";
 import type * as EffectAcpSchema from "effect-acp/schema";
 import { causeErrorTag } from "@modesto/shared/observability";
+import * as Cause from "effect/Cause";
 import * as Crypto from "effect/Crypto";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
@@ -86,6 +87,31 @@ const GEMINI_BUILT_IN_MODELS: ReadonlyArray<ServerProviderModel> = [
   {
     slug: "auto-gemini-3",
     name: "Auto (Gemini 3)",
+    isCustom: false,
+    isDefault: true,
+    capabilities: EMPTY_CAPABILITIES,
+  },
+  {
+    slug: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    isCustom: false,
+    capabilities: EMPTY_CAPABILITIES,
+  },
+  {
+    slug: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    isCustom: false,
+    capabilities: EMPTY_CAPABILITIES,
+  },
+  {
+    slug: "gemini-3-pro",
+    name: "Gemini 3 Pro",
+    isCustom: false,
+    capabilities: EMPTY_CAPABILITIES,
+  },
+  {
+    slug: "gemini-3-flash",
+    name: "Gemini 3 Flash",
     isCustom: false,
     capabilities: EMPTY_CAPABILITIES,
   },
@@ -294,9 +320,20 @@ export const checkGeminiProviderStatus = Effect.fn("checkGeminiProviderStatus")(
     Effect.exit,
   );
   if (Exit.isFailure(discoveryExit)) {
-    yield* Effect.logWarning("Gemini ACP model discovery failed", {
+    const failureStr = Cause.pretty(discoveryExit.cause);
+    const isIneligibleOrAuthError =
+      failureStr.includes("IneligibleTierError") ||
+      failureStr.includes("UNSUPPORTED_CLIENT") ||
+      failureStr.includes("Authentication failed") ||
+      failureStr.includes("Error authenticating") ||
+      failureStr.includes("401 Unauthorized") ||
+      failureStr.includes("403 Forbidden");
+
+    yield* Effect.logWarning("Gemini ACP model discovery failed, using built-in models", {
       errorTag: causeErrorTag(discoveryExit.cause),
+      isIneligibleOrAuthError,
     });
+
     return buildServerProvider({
       presentation: GEMINI_PRESENTATION,
       enabled: geminiSettings.enabled,
@@ -305,15 +342,17 @@ export const checkGeminiProviderStatus = Effect.fn("checkGeminiProviderStatus")(
       probe: {
         installed: true,
         version,
-        status: "error",
-        auth: { status: "unknown" },
-        message: "Gemini CLI is installed but ACP startup failed. Check server logs for details.",
+        status: "warning",
+        auth: { status: isIneligibleOrAuthError ? "unauthenticated" : "unknown" },
+        message: isIneligibleOrAuthError
+          ? "Gemini CLI authentication required. Run `gemini` in your terminal to authenticate or configure your Gemini CLI login."
+          : "Gemini CLI is installed. ACP startup failed; using built-in models.",
       },
     });
   }
   if (Option.isNone(discoveryExit.value)) {
     yield* Effect.logWarning(
-      `Gemini ACP model discovery timed out after ${GEMINI_ACP_MODEL_DISCOVERY_TIMEOUT_MS}ms.`,
+      `Gemini ACP model discovery timed out after ${GEMINI_ACP_MODEL_DISCOVERY_TIMEOUT_MS}ms, using built-in models.`,
     );
     return buildServerProvider({
       presentation: GEMINI_PRESENTATION,
@@ -323,9 +362,9 @@ export const checkGeminiProviderStatus = Effect.fn("checkGeminiProviderStatus")(
       probe: {
         installed: true,
         version,
-        status: "error",
+        status: "ready",
         auth: { status: "unknown" },
-        message: `Gemini CLI is installed but ACP startup timed out after ${GEMINI_ACP_MODEL_DISCOVERY_TIMEOUT_MS}ms.`,
+        message: "Gemini CLI is installed. Model discovery timed out; using built-in models.",
       },
     });
   }
@@ -344,7 +383,7 @@ export const checkGeminiProviderStatus = Effect.fn("checkGeminiProviderStatus")(
       installed: true,
       version,
       status: "ready",
-      auth: { status: "unknown" },
+      auth: { status: "authenticated" },
     },
   });
 });

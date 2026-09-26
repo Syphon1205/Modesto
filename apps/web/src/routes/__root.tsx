@@ -1,3 +1,5 @@
+import { TerminalAppearanceSync } from "../components/settings/TerminalAppearanceSync";
+import { NotificationSoundCoordinator } from "../components/NotificationSoundCoordinator";
 import { type ServerLifecycleWelcomePayload } from "@modesto/contracts";
 import { scopedProjectKey, scopeProjectRef } from "@modesto/client-runtime/environment";
 import { squashAtomCommandFailure } from "@modesto/client-runtime/state/runtime";
@@ -35,7 +37,11 @@ import {
 import { resolveAndPersistPreferredEditor } from "../editorPreferences";
 import { applyAppearanceFontVariables } from "~/appearanceFonts";
 import { applyAppearanceContrast } from "~/appearanceContrast";
-import { useClientSettings } from "../hooks/useSettings";
+import {
+  useClientSettings,
+  useClientSettingsHydrated,
+  useInterfaceStyle,
+} from "../hooks/useSettings";
 import { PlanAgentSelectionHeal } from "../planAgentSelectionHeal";
 import {
   deriveLogicalProjectKeyFromSettings,
@@ -148,6 +154,9 @@ function RootRouteView() {
           <ContrastAppearanceSync />
           <GlassAppearanceSync />
           <FontAppearanceSync />
+          <TerminalAppearanceSync />
+          {primaryEnvironmentAuthenticated ? <NotificationSoundCoordinator /> : null}
+          <InterfaceStyleSync />
           {primaryEnvironmentAuthenticated ? <AuthenticatedTracingBootstrap /> : null}
           <RelayClientInstallDialog />
           <ConnectOnboardingDialog />
@@ -174,6 +183,19 @@ function RootRouteView() {
       </UpdatesToastProvider>
     </ToastProvider>
   );
+}
+
+function InterfaceStyleSync() {
+  const interfaceStyle = useInterfaceStyle();
+
+  useEffect(() => {
+    document.documentElement.dataset.interfaceStyle = interfaceStyle;
+    return () => {
+      delete document.documentElement.dataset.interfaceStyle;
+    };
+  }, [interfaceStyle]);
+
+  return null;
 }
 
 function ContrastAppearanceSync() {
@@ -318,10 +340,16 @@ function RootRouteErrorView({ error, reset }: ErrorComponentProps) {
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim().length > 0) {
+    if (/module script|dynamically imported module|chunkloaderror/i.test(error.message)) {
+      return "A newer app module is available, but this window still has an older page loaded. Reload Modesto to reconnect the interface.";
+    }
     return error.message;
   }
 
   if (typeof error === "string" && error.trim().length > 0) {
+    if (/module script|dynamically imported module|chunkloaderror/i.test(error)) {
+      return "A newer app module is available, but this window still has an older page loaded. Reload Modesto to reconnect the interface.";
+    }
     return error;
   }
 
@@ -356,6 +384,8 @@ function EventRouter() {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (loc) => loc.pathname });
   const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
+  const interfaceStyle = useInterfaceStyle();
+  const clientSettingsHydrated = useClientSettingsHydrated();
   const primaryEnvironment = usePrimaryEnvironment();
   const openInEditor = useAtomCommand(shellEnvironment.openInEditor, {
     reportFailure: false,
@@ -393,7 +423,7 @@ function EventRouter() {
         );
       useUiStateStore.getState().setProjectExpanded(bootstrapProjectKey, true);
 
-      if (readPathname() !== "/") {
+      if (readPathname() !== "/" || interfaceStyle === "opencode") {
         return;
       }
       if (handledBootstrapThreadIdRef.current === payload.bootstrapThreadId) {
@@ -479,8 +509,9 @@ function EventRouter() {
   }, [serverConfig]);
 
   useEffect(() => {
+    if (!clientSettingsHydrated) return;
     handleWelcome(serverWelcome);
-  }, [serverWelcome]);
+  }, [clientSettingsHydrated, serverWelcome]);
 
   useEffect(() => {
     if (serverConfigEvent === null || handledConfigEventRef.current === serverConfigEvent) {

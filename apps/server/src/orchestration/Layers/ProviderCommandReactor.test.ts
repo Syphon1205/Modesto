@@ -51,6 +51,7 @@ import { OrchestrationProjectionSnapshotQueryLive } from "./ProjectionSnapshotQu
 import * as ThreadBackgroundLiveness from "../ThreadBackgroundLiveness.ts";
 import * as ThreadPlanProgress from "../ThreadPlanProgress.ts";
 import {
+  effectiveThreadRuntimeMode,
   providerErrorLabel,
   providerErrorLabelFromInstanceHint,
   ProviderCommandReactorLive,
@@ -68,6 +69,17 @@ const asProjectId = (value: string): ProjectId => ProjectId.make(value);
 const asApprovalRequestId = (value: string): ApprovalRequestId => ApprovalRequestId.make(value);
 const asMessageId = (value: string): MessageId => MessageId.make(value);
 const asTurnId = (value: string): TurnId => TurnId.make(value);
+
+describe("effectiveThreadRuntimeMode", () => {
+  it("forces chat into the supervised read-only runtime", () => {
+    expect(
+      effectiveThreadRuntimeMode({ conversationMode: "chat", runtimeMode: "full-access" }),
+    ).toBe("approval-required");
+    expect(
+      effectiveThreadRuntimeMode({ conversationMode: "code", runtimeMode: "full-access" }),
+    ).toBe("full-access");
+  });
+});
 
 const deriveServerPathsSync = (baseDir: string, devUrl: URL | undefined) =>
   Effect.runSync(deriveServerPaths(baseDir, devUrl).pipe(Effect.provide(NodeServices.layer)));

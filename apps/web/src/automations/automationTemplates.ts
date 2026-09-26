@@ -37,7 +37,86 @@ export const AUTOMATION_TEMPLATE_CATEGORIES: ReadonlyArray<{
   { id: "environment", label: "Environment" },
 ];
 
+/** Recipes from the Copilot automation surface; used by the gallery and editor. */
+export const COPILOT_AUTOMATION_TEMPLATES: ReadonlyArray<AutomationTemplate> = [
+  {
+    id: "copilot-issue-triage",
+    name: "Issue triage",
+    description: "Review the latest GitHub issues and propose priorities and owners.",
+    cadence: "daily",
+    category: "triage",
+    icon: "inbox",
+  },
+  {
+    id: "copilot-changelog",
+    name: "Changelog draft",
+    description: "Summarize key merged PRs this week into a release-note draft.",
+    cadence: "weekly",
+    category: "review",
+    icon: "git",
+  },
+  {
+    id: "copilot-repo-audit",
+    name: "Repo audit",
+    description: "Audit open PRs and identify blockers or risky changes.",
+    cadence: "once",
+    category: "review",
+    icon: "search",
+  },
+  {
+    id: "copilot-telemetry",
+    name: "Telemetry review",
+    description:
+      "Review a PR for user-facing changes and suggest required telemetry events and properties.",
+    cadence: "once",
+    category: "review",
+    icon: "flask",
+  },
+  {
+    id: "copilot-performance",
+    name: "Performance improvements",
+    description:
+      "Identify 10 performance improvements, then open a PR for the highest-impact, lowest-effort one.",
+    cadence: "weekly",
+    category: "review",
+    icon: "zap",
+  },
+  {
+    id: "copilot-accessibility",
+    name: "Accessibility audit",
+    description: "Review PRs merged yesterday and summarize any accessibility issues.",
+    cadence: "daily",
+    category: "review",
+    icon: "search",
+  },
+  {
+    id: "copilot-cost",
+    name: "Cost tips",
+    description: "Get personalized tips to reduce token usage and cost.",
+    cadence: "weekly",
+    category: "research",
+    icon: "sun",
+  },
+].map((recipe) => ({
+  id: recipe.id,
+  name: recipe.name,
+  description: recipe.description,
+  instructions: `${recipe.description}\n\nUse the connected workspace and cite the files, issues, or pull requests that support your findings.`,
+  category: recipe.category as AutomationTemplateCategory,
+  icon: recipe.icon as AutomationTemplate["icon"],
+  schedule: {
+    kind: recipe.cadence as ScheduleFormValue["kind"],
+    time: "09:00",
+    daysOfWeek: [1],
+    at: "",
+  },
+  triggerLabel:
+    recipe.cadence === "daily" ? "Daily" : recipe.cadence === "weekly" ? "Weekly" : "Manual",
+  actionLabel: "Run agent",
+}));
+
 export const AUTOMATION_TEMPLATES: ReadonlyArray<AutomationTemplate> = [
+  ...COPILOT_AUTOMATION_TEMPLATES,
   {
     id: "morning-digest",
     category: "research",

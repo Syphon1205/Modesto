@@ -789,6 +789,14 @@ export function createServerEnvironmentAtoms<R, E>(
       scheduler: configScheduler,
       concurrency: configConcurrency,
     }),
+    discoverCustomModelEndpoint: createEnvironmentRpcCommand(runtime, {
+      label: "environment-data:server:discover-custom-model-endpoint",
+      tag: WS_METHODS.serverDiscoverCustomModelEndpoint,
+      concurrency: {
+        mode: "singleFlight",
+        key: ({ environmentId }) => environmentId,
+      },
+    }),
     deleteCustomModelEndpoint: createEnvironmentRpcCommand(runtime, {
       label: "environment-data:server:delete-custom-model-endpoint",
       tag: WS_METHODS.serverDeleteCustomModelEndpoint,

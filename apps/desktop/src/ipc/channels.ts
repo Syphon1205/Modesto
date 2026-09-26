@@ -22,6 +22,7 @@ export const GET_LOCAL_ENVIRONMENT_BEARER_TOKEN_CHANNEL =
   "desktop:get-local-environment-bearer-token";
 export const GET_CLIENT_SETTINGS_CHANNEL = "desktop:get-client-settings";
 export const SET_CLIENT_SETTINGS_CHANNEL = "desktop:set-client-settings";
+export const PLAY_SYSTEM_SOUND_CHANNEL = "desktop:play-system-sound";
 export const MICROPHONE_STATUS_CHANNEL = "desktop:microphone-status";
 export const REQUEST_MICROPHONE_CHANNEL = "desktop:request-microphone";
 export const LIST_LISTENING_LIBRARIES_CHANNEL = "desktop:list-listening-libraries";

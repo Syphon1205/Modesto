@@ -10,6 +10,16 @@ export type BuiltInComposerSlashCommand = {
 
 const ALWAYS_VISIBLE_SLASH_COMMANDS = [
   {
+    command: "code",
+    label: "/code",
+    description: "Use coding-agent mode (default)",
+  },
+  {
+    command: "chat",
+    label: "/chat",
+    description: "Use conversation-only mode for this new session",
+  },
+  {
     command: "model",
     label: "/model",
     description: "Switch response model for this thread",
@@ -38,6 +48,7 @@ const ALWAYS_VISIBLE_SLASH_COMMANDS = [
     command: "side",
     label: "/side",
     description: "Start a sidechat in this conversation",
+    aliases: ["sidechat"],
   },
   {
     command: "multiagent",

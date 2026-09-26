@@ -1,0 +1,460 @@
+/*
+ * Claude, Codex, and Cursor interface styles.
+ *
+ * Geometry and type scale are measured from the vendors' own product
+ * screenshots: Claude Code desktop (Code tab), the Codex app, and the Cursor 3
+ * agents window. Colors always come from the active theme tokens; each style
+ * ships a matching palette in themes/providerPalettes.ts, so switching themes
+ * keeps the layout and swaps only the paint.
+ *
+ * Structure (which controls exist and where) lives in the components:
+ * ProviderLayoutSidebar, ChatHeader's `layout` prop, ProviderComposerFooter,
+ * and ChatView's provider branches. These rules only size and paint them.
+ */
+
+html[data-interface-style="claude"] {
+  --workspace-topbar-height: 44px;
+  --provider-row-height: 28px;
+  --provider-text: 13px;
+}
+
+html[data-interface-style="codex"] {
+  --workspace-topbar-height: 46px;
+  --provider-row-height: 30px;
+  --provider-text: 13px;
+}
+
+html[data-interface-style="cursor"] {
+  --workspace-topbar-height: 40px;
+  --provider-row-height: 28px;
+  --provider-text: 13px;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────── */
+
+html:is(
+    [data-interface-style="claude"],
+    [data-interface-style="codex"],
+    [data-interface-style="cursor"]
+  )
+  [data-app-sidebar] {
+  border-right-color: var(--sidebar-border);
+}
+
+[data-provider-sidebar-content] {
+  font-size: var(--provider-text);
+  line-height: 1.35;
+  scrollbar-width: thin;
+}
+
+[data-provider-sidebar-content] [data-provider-nav-row],
+[data-provider-sidebar-content] [data-provider-thread-row] {
+  min-height: var(--provider-row-height);
+}
+
+[data-provider-sidebar-content] [data-provider-section-heading] {
+  min-height: var(--provider-row-height);
+  font-size: 12px;
+}
+
+[data-provider-sidebar-content] [data-provider-show-more] {
+  min-height: var(--provider-row-height);
+}
+
+/* Codex: section labels read at body size, rows breathe a little more. */
+html[data-interface-style="codex"] [data-provider-sidebar-content] [data-provider-section-heading] {
+  font-size: 13px;
+}
+
+html[data-interface-style="codex"] [data-provider-thread-row] > span:last-child {
+  font-size: 12px;
+}
+
+/* The active row is a flat fill in all three apps, never an outline. */
+[data-provider-sidebar-content] [data-active] {
+  color: var(--sidebar-foreground);
+}
+
+[data-provider-sidebar-footer] {
+  font-size: var(--provider-text);
+}
+
+[data-provider-sidebar-footer] [data-provider-nav-row] {
+  min-height: var(--provider-row-height);
+}
+
+/* The account row doubles as Claude's "name · plan" footer and Cursor's
+   avatar footer; neither app has a feedback shortcut there. */
+html:is([data-interface-style="claude"], [data-interface-style="cursor"])
+  [data-provider-sidebar-footer]
+  button[aria-label="Share feedback"] {
+  display: none;
+}
+
+html:is([data-interface-style="claude"], [data-interface-style="cursor"])
+  [data-provider-sidebar-footer]
+  :is(button, [role="button"]) {
+  height: 36px;
+}
+
+html[data-interface-style="claude"] [data-provider-sidebar-footer] img {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+html:is(
+    [data-interface-style="claude"],
+    [data-interface-style="codex"],
+    [data-interface-style="cursor"]
+  )
+  :is([data-chat-header], [data-workspace-page-header]) {
+  border-bottom-color: transparent;
+  background: var(--background);
+}
+
+[data-provider-layout] [data-chat-header] {
+  position: relative;
+  font-size: 13px;
+}
+
+[data-provider-chat-title] h2 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+html[data-interface-style="claude"] [data-provider-chat-title] h2 {
+  font-size: 14px;
+}
+
+html[data-interface-style="cursor"] [data-provider-chat-title] h2 {
+  font-weight: 500;
+}
+
+html[data-interface-style="codex"] [data-provider-project-chip="codex"] {
+  font-size: 13px;
+}
+
+/* Codex's Chat / Work switch: a pill track centered in the title bar. */
+[data-provider-header-center] [data-conversation-mode-toggle] {
+  height: 30px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+[data-provider-header-center] [data-conversation-mode-toggle] > * {
+  height: 26px;
+  padding-inline: 1rem;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+[data-provider-header-center] [data-conversation-mode-toggle] > [data-pressed] {
+  box-shadow: inset 0 0 0 0.5px var(--border);
+}
+
+/* ── Timeline ─────────────────────────────────────────────────────────── */
+
+[data-provider-layout] [data-timeline-root="true"] {
+  font-size: 14px;
+}
+
+html[data-interface-style="codex"] [data-timeline-root="true"] {
+  max-width: 46rem;
+  font-size: 13.5px;
+}
+
+[data-provider-layout] .chat-user-message-bubble {
+  border-color: transparent;
+  background: var(--secondary);
+  box-shadow: none;
+  font-size: inherit;
+}
+
+html[data-interface-style="claude"] .chat-user-message-bubble {
+  max-width: 85%;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+html[data-interface-style="codex"] .chat-user-message-bubble {
+  max-width: 78%;
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+/* Cursor pins the prompt as a full-width card at the top of the turn. */
+html[data-interface-style="cursor"] [data-message-role="user"] .group\/user-message {
+  align-items: stretch;
+}
+
+html[data-interface-style="cursor"] .chat-user-message-bubble {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 9px 14px;
+}
+
+/* ── Composer: shared resets ──────────────────────────────────────────── */
+
+[data-provider-layout] .chat-composer-glass-shell::before,
+[data-provider-layout] .chat-composer-glass-host::after,
+[data-provider-layout] [data-chat-composer-main-surface="true"]::after {
+  display: none;
+}
+
+[data-provider-layout] .chat-composer-glass-host {
+  box-shadow: none;
+}
+
+[data-provider-layout] [data-chat-composer-main-surface="true"],
+[data-provider-layout] [data-chat-composer-surface="true"] {
+  padding: 0;
+  box-shadow: none;
+}
+
+[data-provider-layout] [data-chat-composer-form="true"] :is(textarea, [contenteditable="true"]) {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+[data-provider-layout] [data-chat-composer-footer="true"] {
+  font-size: 13px;
+}
+
+/* Prompt height: Claude's box is a single line, Codex leaves room for two,
+   and Cursor's new-agent prompt opens tall. */
+[data-provider-layout="claude"] [data-testid="composer-editor"] {
+  min-height: 1.5rem;
+}
+
+[data-provider-layout="codex"] [data-testid="composer-editor"] {
+  min-height: 2.75rem;
+}
+
+[data-provider-layout="cursor"] [data-testid="composer-editor"] {
+  min-height: 1.5rem;
+}
+
+[data-provider-layout="cursor"][data-provider-route="draft"] [data-testid="composer-editor"] {
+  min-height: 3rem;
+}
+
+[data-provider-layout] [data-chat-composer-footer="true"] [data-composer-send] {
+  width: 28px;
+  height: 28px;
+  box-shadow: none;
+}
+
+[data-provider-layout] .chat-composer-context-strip {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  font-size: 12px;
+}
+
+[data-provider-layout] .chat-composer-context-strip::before {
+  display: none;
+}
+
+/* ── Composer: Claude Code ────────────────────────────────────────────── */
+
+/* The prompt is a bordered box; its controls sit on a bare row under it and
+   send moves into the box's right edge. */
+[data-provider-layout="claude"] [data-chat-composer-main-surface="true"],
+[data-provider-layout="claude"] [data-chat-composer-surface="true"] {
+  position: relative;
+  border-radius: 0;
+  background: transparent;
+}
+
+[data-provider-layout="claude"] [data-chat-composer-input-region="true"] {
+  min-height: 48px;
+  padding: 12px 48px 12px 14px;
+  border: 1px solid var(--input);
+  border-radius: 12px;
+  background: var(--card);
+  transition: border-color var(--motion-fast) var(--ease-fluid);
+}
+
+[data-provider-layout="claude"] [data-chat-composer-input-region="true"]:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 28%, var(--input));
+}
+
+[data-provider-layout="claude"] [data-chat-composer-footer="true"] {
+  padding: 6px 2px 0;
+  color: var(--muted-foreground);
+}
+
+[data-provider-layout="claude"] [data-chat-composer-footer="true"] [data-composer-send] {
+  position: absolute;
+  right: 10px;
+  bottom: 48px;
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+[data-provider-layout="claude"] [data-chat-composer-footer="true"] [data-composer-send]:enabled {
+  color: var(--foreground);
+}
+
+[data-provider-layout="claude"]
+  [data-chat-composer-footer="true"]
+  [data-composer-send]:enabled:hover {
+  background: var(--accent);
+}
+
+/* Context chips (environment, folder, branch) ride above the box. */
+[data-provider-layout="claude"] .chat-composer-glass-shell-with-context {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+[data-provider-layout="claude"] .chat-composer-context-strip {
+  gap: 6px;
+  padding: 0;
+}
+
+[data-provider-layout="claude"] .chat-composer-context-strip :is(button, [role="combobox"]) {
+  height: 26px;
+  padding-inline: 8px;
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--foreground);
+  font-size: 12px;
+}
+
+[data-provider-layout="claude"]
+  .chat-composer-context-strip
+  [data-composer-context-control][data-orientation] {
+  display: none;
+}
+
+/* ── Composer: Codex ──────────────────────────────────────────────────── */
+
+html[data-interface-style="codex"] [data-chat-composer-form="true"],
+html[data-interface-style="codex"] .chat-composer-glass-shell {
+  max-width: 46rem;
+}
+
+[data-provider-layout="codex"] [data-chat-composer-main-surface="true"],
+[data-provider-layout="codex"] [data-chat-composer-surface="true"] {
+  border-radius: 20px;
+  background: var(--card);
+}
+
+[data-provider-layout="codex"] [data-chat-composer-input-region="true"] {
+  padding: 14px 16px 6px;
+}
+
+[data-provider-layout="codex"] [data-chat-composer-footer="true"] {
+  padding: 4px 10px 10px;
+  color: var(--muted-foreground);
+}
+
+/* The run-location tray is a darker, full-width continuation under the box. */
+[data-provider-layout="codex"] .chat-composer-glass-shell-with-context {
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--card) 55%, var(--background));
+}
+
+[data-provider-layout="codex"] .chat-composer-context-strip {
+  min-height: 44px;
+  gap: 4px;
+  padding: 6px 12px;
+}
+
+[data-provider-layout="codex"]
+  .chat-composer-context-strip
+  [data-composer-context-control][data-orientation] {
+  display: none;
+}
+
+[data-provider-layout="codex"] .chat-composer-context-strip > :last-child {
+  margin-left: 0;
+  flex: none;
+}
+
+[data-provider-layout="codex"] [data-landing-suggestion-list] {
+  margin-top: 4px;
+}
+
+/* ── Composer: Cursor ─────────────────────────────────────────────────── */
+
+[data-provider-layout="cursor"] [data-chat-composer-main-surface="true"],
+[data-provider-layout="cursor"] [data-chat-composer-surface="true"] {
+  border-radius: 12px;
+  background: var(--card);
+}
+
+[data-provider-layout="cursor"] [data-chat-composer-main-surface="true"] {
+  border: 1px solid var(--input);
+}
+
+[data-provider-layout="cursor"] [data-chat-composer-input-region="true"] {
+  padding: 12px 16px 4px;
+}
+
+[data-provider-layout="cursor"] [data-chat-composer-footer="true"] {
+  padding: 4px 10px 10px;
+  color: var(--muted-foreground);
+}
+
+/* Attach is a filled circle. The right edge holds one solid disc: the mic
+   while the prompt is empty, send once there is something to send. */
+[data-provider-layout="cursor"]
+  [data-chat-composer-footer="true"]
+  button[aria-label="Attach files"] {
+  width: 28px;
+  height: 28px;
+  background: var(--muted);
+}
+
+[data-provider-layout="cursor"] [data-chat-composer-footer="true"] button[aria-label^="Dictate"],
+[data-provider-layout="cursor"] [data-chat-composer-footer="true"] [data-composer-send] {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--foreground);
+  color: var(--background);
+}
+
+[data-provider-layout="cursor"] [data-chat-composer-footer="true"] [data-composer-send]:disabled {
+  display: none;
+}
+
+[data-provider-layout="cursor"]
+  [data-chat-composer-footer="true"]:has([data-composer-send]:enabled)
+  button[aria-label^="Dictate"] {
+  display: none;
+}
+
+/* Repository and run-location selectors ride above the prompt, branch on
+   the right. */
+[data-provider-layout="cursor"] .chat-composer-glass-shell-with-context {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+[data-provider-layout="cursor"] .chat-composer-context-strip {
+  padding: 0 4px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+[data-provider-layout="cursor"]
+  .chat-composer-context-strip
+  [data-composer-context-control][data-orientation] {
+  display: none;
+}
+
+[data-provider-layout="cursor"] [data-provider-project-chip="cursor"] {
+  font-size: 13px;
+}

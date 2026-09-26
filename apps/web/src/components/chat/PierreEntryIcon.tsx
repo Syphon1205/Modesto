@@ -1,7 +1,11 @@
 import { FileIcon, FolderIcon } from "lucide-react";
-import { memo, useInsertionEffect, useMemo } from "react";
+import { memo, useEffect, useInsertionEffect, useMemo, useState } from "react";
 
-import { ensurePierreIconSprite, resolvePierreIconForEntry } from "../../pierre-icons";
+import {
+  ensurePierreIconSprite,
+  getActivePierreIcons,
+  resolvePierreIconForEntry,
+} from "../../pierre-icons";
 import { cn } from "~/lib/utils";
 
 const ICON_COLORS: Record<string, readonly [light: string, dark: string]> = {
@@ -65,11 +69,19 @@ export const PierreEntryIcon = memo(function PierreEntryIcon(props: {
   theme: "light" | "dark";
   className?: string;
 }) {
+  const [iconThemeVersion, setIconThemeVersion] = useState(0);
   useInsertionEffect(ensurePierreIconSprite, []);
+  useEffect(() => {
+    const refreshIcon = () => setIconThemeVersion((version) => version + 1);
+    window.addEventListener("modesto:file-icon-theme-changed", refreshIcon);
+    return () => window.removeEventListener("modesto:file-icon-theme-changed", refreshIcon);
+  }, []);
   const icon = useMemo(
     () => resolvePierreIconForEntry(props.pathValue, props.kind),
-    [props.kind, props.pathValue],
+    [iconThemeVersion, props.kind, props.pathValue],
   );
+  const iconConfig = getActivePierreIcons();
+  const useSemanticColor = typeof iconConfig === "string" || iconConfig.colored !== false;
 
   if (!icon) {
     return props.kind === "directory" ? (
@@ -85,8 +97,8 @@ export const PierreEntryIcon = memo(function PierreEntryIcon(props: {
       aria-hidden="true"
       data-pierre-icon={icon.name}
       data-icon-token={icon.token}
-      className={cn("size-4 shrink-0", props.className)}
-      style={{ color: colors?.[props.theme === "light" ? 0 : 1] }}
+      className={cn("size-4 shrink-0", !useSemanticColor && "text-icon-muted", props.className)}
+      style={useSemanticColor ? { color: colors?.[props.theme === "light" ? 0 : 1] } : undefined}
       viewBox="0 0 16 16"
     >
       <use href={`#${icon.name}`} />

@@ -38,6 +38,7 @@ function ChatRouteGlobalShortcuts() {
   } = useHandleNewThread();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const chatTabsEnabled = useClientSettings((settings) => settings.chatTabsEnabled);
+  const interfaceStyle = useClientSettings((settings) => settings.interfaceStyle);
   const terminalOpen = useTerminalUiStateStore((state) =>
     routeThreadRef
       ? selectThreadTerminalUiState(state.terminalUiStateByThreadKey, routeThreadRef).terminalOpen
@@ -98,7 +99,7 @@ function ChatRouteGlobalShortcuts() {
             unscopedChatProjectRef,
             handleNewThread,
           },
-          { conversationMode: "chat" },
+          interfaceStyle === "opencode" ? undefined : { conversationMode: "chat" },
         );
         return;
       }
@@ -193,6 +194,7 @@ function ChatRouteGlobalShortcuts() {
     selectedThreadKeysSize,
     chatTabNavigation,
     chatTabsEnabled,
+    interfaceStyle,
     navigate,
     terminalOpen,
   ]);

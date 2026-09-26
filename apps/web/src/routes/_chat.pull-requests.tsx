@@ -13,6 +13,7 @@ import type {
 } from "@modesto/contracts";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
+  InboxIcon,
   ChevronDownIcon,
   EyeIcon,
   MonitorIcon,
@@ -104,6 +105,8 @@ import {
 } from "../components/WorkspaceBreadcrumb";
 import { WorkspacePageContainer } from "../components/WorkspacePageContainer";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
+import { openCommandPalette } from "../commandPaletteBus";
+import { useInterfaceStyle } from "../hooks/useSettings";
 import { isElectron } from "../env";
 import { PanelLayoutControls } from "../components/chat/PanelLayoutControls";
 import { Button } from "../components/ui/button";
@@ -268,6 +271,7 @@ export const Route = createFileRoute("/_chat/pull-requests")({
 });
 
 function PullRequestsRouteView() {
+  const interfaceStyle = useInterfaceStyle();
   const search = Route.useSearch();
   const inboxTray = search.tray ?? "inbox";
   const inboxSort = search.sort ?? "newest";
@@ -328,7 +332,10 @@ function PullRequestsRouteView() {
   // Only the projects the page can actually read: one on an environment that cannot list pull
   // requests could neither be listed nor acted on.
   const projects = useMemo(
-    () => allProjects.filter((project) => environmentIds.includes(project.environmentId)),
+    () =>
+      allProjects.filter(
+        (project) => project.kind !== "chat" && environmentIds.includes(project.environmentId),
+      ),
     [allProjects, environmentIds],
   );
   const environmentLabels = useMemo(
@@ -1743,6 +1750,44 @@ function PullRequestsRouteView() {
     selectSurfaceInUrl(null);
   };
 
+  if (
+    interfaceStyle === "github" &&
+    projectsKnown &&
+    !firstLoad &&
+    listQuery.error === null &&
+    typedQuery.length === 0 &&
+    entries.length === 0
+  ) {
+    return (
+      <SidebarInset className="h-dvh min-h-0 bg-background">
+        <WorkspacePageHeader electron={isElectron}>
+          <h1 className="flex-1 text-[13px] font-medium">My work</h1>
+          <Button
+            size="xs"
+            className="copilot-primary-button"
+            render={<a href="https://github.com/issues" target="_blank" rel="noreferrer" />}
+          >
+            New issue
+          </Button>
+        </WorkspacePageHeader>
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 pb-10 text-center">
+          <InboxIcon className="size-6 text-muted-foreground" />
+          <h2 className="text-base font-semibold">No GitHub repositories yet</h2>
+          <p className="text-[13px] text-muted-foreground">
+            Add a GitHub repository to see pull requests here.
+          </p>
+          <Button
+            size="sm"
+            className="copilot-primary-button"
+            onClick={() => openCommandPalette({ open: "clone-project" })}
+          >
+            Add GitHub repository
+          </Button>
+        </div>
+      </SidebarInset>
+    );
+  }
+
   return (
     <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
       <div className="relative flex min-h-0 flex-1">
@@ -1808,7 +1853,6 @@ function PullRequestsRouteView() {
             onAddDiff={() => undefined}
             onAddFiles={() => undefined}
             onAddPullRequest={() => undefined}
-            onAddAgents={() => undefined}
             onAddContext={() => undefined}
             onAddArtifacts={() => undefined}
             onAddMusic={() => undefined}
@@ -2019,6 +2063,7 @@ function PullRequestsColumn({
   rightPanelOpen: boolean;
   listBody: ReactNode;
 }) {
+  const interfaceStyle = useInterfaceStyle();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const markerRef = useRef<HTMLDivElement | null>(null);
   const [condensed, setCondensed] = useState(false);
@@ -2088,7 +2133,9 @@ function PullRequestsColumn({
                 its compact scope, grouped as the second crumb rather than pretending each menu
                 is a separate page in the hierarchy. */}
             <WorkspaceBreadcrumbItem current>
-              <h1 className="truncate">Pull Requests</h1>
+              <h1 className="truncate">
+                {interfaceStyle === "github" ? "My work" : "Pull Requests"}
+              </h1>
             </WorkspaceBreadcrumbItem>
             <WorkspaceBreadcrumbSeparator />
             <WorkspaceBreadcrumbItem className="gap-1.5 overflow-hidden">
@@ -2117,7 +2164,9 @@ function PullRequestsColumn({
         ) : (
           <WorkspaceBreadcrumb ariaLabel="Pull requests breadcrumb">
             <WorkspaceBreadcrumbItem current>
-              <h1 className="truncate">Pull Requests</h1>
+              <h1 className="truncate">
+                {interfaceStyle === "github" ? "My work" : "Pull Requests"}
+              </h1>
             </WorkspaceBreadcrumbItem>
           </WorkspaceBreadcrumb>
         )}

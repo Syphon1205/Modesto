@@ -691,6 +691,19 @@ export const ServerSetCustomModelEndpointInput = Schema.Struct({
 });
 export type ServerSetCustomModelEndpointInput = typeof ServerSetCustomModelEndpointInput.Type;
 
+export const ServerDiscoverCustomModelEndpointInput = Schema.Struct({
+  baseUrl: TrimmedNonEmptyString.check(Schema.isMaxLength(2048)),
+  apiKey: Schema.optional(TrimmedNonEmptyString.check(Schema.isMaxLength(4_096))),
+});
+export type ServerDiscoverCustomModelEndpointInput =
+  typeof ServerDiscoverCustomModelEndpointInput.Type;
+
+export const ServerDiscoverCustomModelEndpointResult = Schema.Struct({
+  models: Schema.Array(Schema.String.check(Schema.isMaxLength(256))),
+});
+export type ServerDiscoverCustomModelEndpointResult =
+  typeof ServerDiscoverCustomModelEndpointResult.Type;
+
 export const ServerDeleteCustomModelEndpointInput = Schema.Struct({
   id: CustomModelEndpointId,
 });

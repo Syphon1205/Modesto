@@ -12,9 +12,11 @@
 // state, and conflict confirmation behave identically in both surfaces rather
 // than growing a second persistence path.
 
+import { RotateCcwIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { loadMonaco, type Monaco, monacoLanguageForPath } from "../../lib/monacoSetup";
+import { Button } from "../ui/button";
 
 export function MonacoFileEditor({
   relativePath,
@@ -40,6 +42,7 @@ export function MonacoFileEditor({
   const themeRef = useRef(resolvedTheme);
   themeRef.current = resolvedTheme;
   const [failed, setFailed] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   // Created once per file. Contents are pushed into the existing model below
   // rather than recreating the editor, which would throw away undo history and
@@ -88,7 +91,7 @@ export function MonacoFileEditor({
     // Deliberately not keyed on `contents`: the editor is created once per
     // file. Keying on contents would tear the editor down and rebuild it on
     // every keystroke, losing undo history, cursor, folds and scroll position.
-  }, [readOnly, relativePath]);
+  }, [loadAttempt, readOnly, relativePath]);
 
   // Contents arriving from outside - a reload, or an agent editing the file
   // while it is open. Applied only when they differ from what is on screen, so
@@ -104,15 +107,38 @@ export function MonacoFileEditor({
 
   // Theme changes without a reload; the editor is not recreated for them.
   useEffect(() => {
-    void loadMonaco().then((monaco) => {
-      monaco.editor.setTheme(resolvedTheme === "dark" ? "vs-dark" : "vs");
-    });
+    void loadMonaco()
+      .then((monaco) => {
+        monaco.editor.setTheme(resolvedTheme === "dark" ? "vs-dark" : "vs");
+      })
+      .catch(() => {
+        // The editor creation effect owns the visible recovery state.
+      });
   }, [resolvedTheme]);
 
   if (failed !== null) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-center text-sm text-muted-foreground">
-        {failed}
+      <div className="flex min-h-0 flex-1 items-center justify-center p-6 text-center">
+        <div className="max-w-sm rounded-xl border border-border/70 bg-muted/25 p-5">
+          <p className="text-sm font-medium text-foreground">Editor unavailable</p>
+          <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{failed}</p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setFailed(null);
+                setLoadAttempt((attempt) => attempt + 1);
+              }}
+            >
+              <RotateCcwIcon />
+              Try again
+            </Button>
+            <Button size="sm" onClick={() => window.location.reload()}>
+              Reload app
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }

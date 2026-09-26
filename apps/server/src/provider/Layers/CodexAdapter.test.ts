@@ -324,7 +324,9 @@ const customEndpointLayer = it.layer(
           {
             id: "test-router",
             label: "Test Router",
-            baseUrl: "http://localhost:8000/v1",
+            // Legacy/user-pasted operation URLs are normalized before Codex
+            // appends its own `/responses` route.
+            baseUrl: "http://localhost:8000/v1/models",
             wireApi: "chat",
             models: ["llama-3.3-70b"],
           },
@@ -374,7 +376,9 @@ customEndpointLayer("CodexAdapterLive custom model endpoints", (it) => {
           "-c",
           'model_providers.test-router.env_key="MODESTO_CUSTOM_ENDPOINT_TEST_ROUTER_API_KEY"',
           "-c",
-          'model_providers.test-router.wire_api="chat"',
+          "model_providers.test-router.requires_openai_auth=false",
+          "-c",
+          'model_providers.test-router.wire_api="responses"',
           "-c",
           'model_provider="test-router"',
         ]);
@@ -400,6 +404,35 @@ customEndpointLayer("CodexAdapterLive custom model endpoints", (it) => {
       const callArgs = customEndpointRuntimeFactory.factory.mock.calls[0]?.[0];
       NodeAssert.equal(callArgs?.model, "gpt-5.6-sol");
       NodeAssert.equal(callArgs?.appServerArgs, undefined);
+    }),
+  );
+
+  it.effect("does not declare an env_key for an auth-less local endpoint", () =>
+    Effect.gen(function* () {
+      customEndpointRuntimeFactory.factory.mockClear();
+      const secretStore = yield* ServerSecretStore.ServerSecretStore;
+      yield* secretStore.remove(customModelEndpointSecretName("test-router"));
+      const adapter = yield* CodexAdapter;
+
+      yield* adapter.startSession({
+        provider: ProviderDriverKind.make("codex"),
+        threadId: asThreadId("thread-local-no-key"),
+        modelSelection: createModelSelection(
+          ProviderInstanceId.make("codex"),
+          "router:test-router:llama-3.3-70b",
+        ),
+        runtimeMode: "full-access",
+      });
+
+      const callArgs = customEndpointRuntimeFactory.factory.mock.calls[0]?.[0];
+      NodeAssert.equal(
+        callArgs?.appServerArgs?.some((argument) => argument.includes(".env_key=")),
+        false,
+      );
+      NodeAssert.equal(
+        callArgs?.environment?.MODESTO_CUSTOM_ENDPOINT_TEST_ROUTER_API_KEY,
+        undefined,
+      );
     }),
   );
 });

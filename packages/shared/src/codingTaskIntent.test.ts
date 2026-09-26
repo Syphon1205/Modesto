@@ -37,6 +37,13 @@ describe("detectCodingTaskIntent", () => {
     );
   });
 
+  it("matches direct requests to modify code", () => {
+    expect(task("fix the login bug")).toBe("fix the login bug");
+    expect(task("can you update the auth component")).toBe("can you update the auth component");
+    expect(task("refactor this TypeScript module")).toBe("refactor this TypeScript module");
+    expect(task("add a backend endpoint for billing")).toBe("add a backend endpoint for billing");
+  });
+
   it("does not match questions, explanations, or incidental prose", () => {
     expect(task("what project should I start")).toBeNull();
     expect(task("explain this function")).toBeNull();
@@ -45,6 +52,8 @@ describe("detectCodingTaskIntent", () => {
     expect(task("start a conversation about architecture")).toBeNull();
     expect(task("don't start a project")).toBeNull();
     expect(task("start a task: write a poem about the moon")).toBeNull();
+    expect(task("write a poem about the moon")).toBeNull();
+    expect(task("change my travel plans")).toBeNull();
   });
 
   it("ignores slash commands and tiny prompts", () => {

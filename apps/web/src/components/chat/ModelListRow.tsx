@@ -1,6 +1,6 @@
 import { type ProviderDriverKind, type ProviderInstanceId } from "@modesto/contracts";
 import { memo } from "react";
-import { StarIcon } from "lucide-react";
+import { CheckIcon, StarIcon } from "lucide-react";
 import {
   getDisplayModelName,
   getTriggerDisplayModelLabel,
@@ -49,17 +49,22 @@ export const ModelListRow = memo(function ModelListRow(props: {
       index={props.index}
       value={modelPickerModelKey(props.instanceId, props.model.slug)}
       disabled={Boolean(props.disabledReason)}
-      contentClassName="flex w-full items-center gap-3"
+      contentClassName="flex w-full items-center gap-2.5"
       className={cn(
-        "group relative w-full !min-w-0 max-w-full cursor-pointer rounded-md px-2 py-2 transition-[background-color,box-shadow,color]",
+        "group relative w-full !min-w-0 max-w-full cursor-pointer rounded-lg px-2.5 py-2 transition-[background-color,box-shadow,color] duration-150 ease-[var(--ease-fluid)] motion-reduce:transition-none",
         "hover:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] data-highlighted:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] data-selected:bg-foreground/[0.08] data-selected:text-foreground data-selected:ring-0 [&[data-highlighted][data-selected]]:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))]",
         props.disabledReason &&
           "data-disabled:pointer-events-auto data-disabled:cursor-not-allowed data-disabled:hover:bg-transparent",
       )}
     >
+      {ProviderIcon ? (
+        <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+          <ProviderIcon className="size-4" />
+        </span>
+      ) : null}
       <div className="min-w-0 flex-1 text-left">
         <div className="flex min-w-0 items-center gap-2">
-          <div className="min-w-0 truncate text-xs font-medium leading-snug">
+          <div className="min-w-0 truncate text-[13px] font-medium leading-snug">
             {props.useTriggerLabel
               ? getTriggerDisplayModelLabel(props.model)
               : getDisplayModelName(
@@ -69,7 +74,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
           </div>
           {props.showNewBadge ? (
             <span
-              className="shrink-0 rounded border border-update/35 bg-update/15 px-0.5 py-px text-[10px] font-bold uppercase leading-none tracking-wide text-update-foreground"
+              className="shrink-0 rounded-full bg-foreground/[0.05] px-1.5 py-0.5 text-[9px] font-medium leading-none text-muted-foreground"
               aria-label="New model"
             >
               New
@@ -78,8 +83,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
         </div>
         {props.showProvider && (
           <div className="mt-1 flex items-center gap-1.5">
-            {ProviderIcon ? <ProviderIcon className="size-3 shrink-0" /> : null}
-            <span className="truncate text-xs font-normal leading-snug text-muted-foreground/70">
+            <span className="truncate text-[11px] font-normal leading-snug text-muted-foreground/70">
               {providerLabel}
             </span>
           </div>
@@ -87,6 +91,9 @@ export const ModelListRow = memo(function ModelListRow(props: {
       </div>
 
       <div className="flex shrink-0 items-center gap-1.5">
+        {props.isSelected ? (
+          <CheckIcon className="size-3.5 text-foreground" aria-label="Selected model" />
+        ) : null}
         {props.jumpLabel ? (
           <Kbd className="h-4 min-w-0 rounded-sm px-1.5 text-[10px]">{props.jumpLabel}</Kbd>
         ) : null}
@@ -97,7 +104,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
                 size="icon-xs"
                 variant="ghost"
                 className={cn(
-                  "-mr-1 shrink-0 text-muted-foreground/70 opacity-64 transition-[color,opacity] hover:text-foreground hover:opacity-100 group-hover:opacity-100",
+                  "-mr-1 shrink-0 text-muted-foreground/70 opacity-0 transition-[color,opacity] hover:text-foreground hover:opacity-100 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100",
                   props.isFavorite && "text-foreground opacity-100",
                 )}
                 onClick={(event) => {
@@ -113,7 +120,7 @@ export const ModelListRow = memo(function ModelListRow(props: {
                 <StarIcon
                   className={cn(
                     "size-3.5 sm:size-3",
-                    props.isFavorite && "fill-current text-yellow-500",
+                    props.isFavorite && "fill-current text-foreground/70",
                   )}
                 />
               </Button>

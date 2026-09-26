@@ -6,6 +6,7 @@ import { useAtomValue } from "@effect/atom-react";
 import type { AutomationSummary } from "@modesto/contracts";
 import { useNavigate } from "@tanstack/react-router";
 import {
+  CalendarSyncIcon,
   BugIcon,
   FlaskConicalIcon,
   GitPullRequestIcon,
@@ -17,8 +18,11 @@ import {
 } from "lucide-react";
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 
+import { useInterfaceStyle } from "~/hooks/useSettings";
+import { WorkspacePageHeader } from "~/components/WorkspacePageHeader";
+import { isElectron } from "~/env";
+import { CopilotAutomationSkills } from "./CopilotAutomationSkills";
 import { APP_BASE_NAME } from "~/branding";
-import { GridDistortion } from "~/components/GridDistortion";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
@@ -31,6 +35,7 @@ import { useAtomCommand } from "~/state/use-atom-command";
 import { describeNextRun, describeSchedule } from "./automationSchedule";
 import { WebhookPanel } from "./WebhookPanel";
 import {
+  COPILOT_AUTOMATION_TEMPLATES,
   AUTOMATION_TEMPLATE_CATEGORIES,
   FEATURED_CAPABILITIES,
   templatesForCategory,
@@ -145,7 +150,7 @@ function FeaturedHero({
     <section className="space-y-3">
       <h2 className="text-sm font-medium text-muted-foreground">From {APP_BASE_NAME}</h2>
       <div className="relative overflow-hidden rounded-2xl border border-border/70">
-        <GridDistortion className="absolute inset-0" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
         <div className="relative z-10 flex min-h-[18rem] flex-col justify-between gap-5 bg-gradient-to-r from-background/88 via-background/70 to-background/35 p-5 sm:p-6 md:min-h-[20rem] md:max-w-[28rem]">
           <div>
             <h3 className="text-xl font-semibold tracking-tight text-foreground">
@@ -238,6 +243,7 @@ function EmptyMine({ onCreate }: { readonly onCreate: () => void }) {
 }
 
 export function AutomationsPage() {
+  const interfaceStyle = useInterfaceStyle();
   const navigate = useNavigate();
   const environmentId = useAtomValue(primaryEnvironmentIdAtom);
   const list = useEnvironmentQuery(
@@ -297,6 +303,87 @@ export function AutomationsPage() {
     [automations],
   );
   const now = Date.now();
+
+  if (interfaceStyle === "github") {
+    return (
+      <div
+        className="flex h-full min-h-0 flex-1 flex-col bg-background"
+        data-copilot-automations=""
+      >
+        <WorkspacePageHeader electron={isElectron}>
+          <h1 className="flex-1 text-[13px] font-medium">Automations</h1>
+          <Button size="xs" className="copilot-primary-button" onClick={() => openCreate()}>
+            New automation
+          </Button>
+        </WorkspacePageHeader>
+        <div className="min-h-0 flex-1 overflow-auto px-6">
+          <div className="mx-auto w-full max-w-[848px] pb-12">
+            <section className="flex flex-col items-center pb-[90px] pt-[90px] text-center">
+              <CalendarSyncIcon className="mb-4 size-6 text-muted-foreground" />
+              <h2 className="text-base font-semibold">Set up automations</h2>
+              <p className="mt-2 max-w-[650px] text-[13px] leading-5 text-muted-foreground">
+                Use agents to handle recurring work on a cadence you choose or triggered by events.
+                You can start from scratch or turn an existing agent skill into an automation.
+              </p>
+              <Button
+                className="copilot-primary-button mt-4"
+                size="sm"
+                onClick={() => openCreate()}
+              >
+                Start automating
+              </Button>
+            </section>
+            {automations.length > 0 ? (
+              <section className="mb-10 space-y-3">
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.currentTarget.value)}
+                  placeholder="Search automations…"
+                  aria-label="Search automations"
+                />
+                <ul className="space-y-2">
+                  {filtered.map((automation) => (
+                    <AutomationRow
+                      key={automation.id}
+                      automation={automation}
+                      now={now}
+                      busy={togglingId === automation.id}
+                      onToggle={(state) => void handleToggle(automation.id, state)}
+                    />
+                  ))}
+                </ul>
+                {filtered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No matching automations.</p>
+                ) : null}
+                <WebhookPanel environmentId={environmentId} automations={automations} />
+              </section>
+            ) : null}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {COPILOT_AUTOMATION_TEMPLATES.map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={() => openCreate(template.id)}
+                  className="rounded-xl border border-border bg-background p-3 text-left hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="flex items-center justify-between gap-2 text-[13px] font-medium">
+                    {template.name}
+                    <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+                      {template.triggerLabel}
+                    </span>
+                  </span>
+                  <span className="mt-1 block line-clamp-2 text-[12px] leading-[18px] text-muted-foreground">
+                    {template.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <CopilotAutomationSkills />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-background">

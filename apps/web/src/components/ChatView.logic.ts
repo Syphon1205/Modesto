@@ -12,7 +12,13 @@ import {
   type ThreadId,
   type TurnId,
 } from "@modesto/contracts";
-import { type ChatMessage, type SessionPhase, type Thread, type ThreadShell } from "../types";
+import {
+  type ChatMessage,
+  type SessionPhase,
+  type Thread,
+  type ThreadShell,
+  type TurnDiffSummary,
+} from "../types";
 import { type ComposerImageAttachment, type DraftThreadState } from "../composerDraftStore";
 import * as Schema from "effect/Schema";
 import { appAtomRegistry } from "../rpc/atomRegistry";
@@ -32,6 +38,60 @@ export const MAX_HIDDEN_MOUNTED_PREVIEW_THREADS = 3;
 export const ENVIRONMENT_RECONNECT_WARNING_GRACE_MS = 2_000;
 
 export const LastInvokedScriptByProjectSchema = Schema.Record(ProjectId, Schema.String);
+
+export function resolveRevertTurnCountsByUserMessage(input: {
+  timelineEntries: ReadonlyArray<TimelineEntry>;
+  turnDiffSummaries: ReadonlyArray<TurnDiffSummary>;
+  inferredCheckpointTurnCountByTurnId: Readonly<Record<string, number>>;
+  hasOlderTurns: boolean;
+}): Map<MessageId, number> {
+  const checkpointCountByAssistantMessageId = new Map<MessageId, number>();
+  const checkpointCountByTurnId = new Map<TurnId, number>();
+
+  for (const summary of input.turnDiffSummaries) {
+    const checkpointTurnCount =
+      summary.checkpointTurnCount ?? input.inferredCheckpointTurnCountByTurnId[summary.turnId];
+    if (typeof checkpointTurnCount !== "number") continue;
+    checkpointCountByTurnId.set(summary.turnId, checkpointTurnCount);
+    if (summary.assistantMessageId) {
+      checkpointCountByAssistantMessageId.set(summary.assistantMessageId, checkpointTurnCount);
+    }
+  }
+
+  const result = new Map<MessageId, number>();
+  let loadedUserTurnIndex = 0;
+
+  for (let index = 0; index < input.timelineEntries.length; index += 1) {
+    const entry = input.timelineEntries[index];
+    if (!entry || entry.kind !== "message" || entry.message.role !== "user") continue;
+
+    let exactCheckpointTurnCount: number | undefined;
+    for (let nextIndex = index + 1; nextIndex < input.timelineEntries.length; nextIndex += 1) {
+      const nextEntry = input.timelineEntries[nextIndex];
+      if (!nextEntry || nextEntry.kind !== "message") continue;
+      if (nextEntry.message.role === "user") break;
+      if (nextEntry.message.role !== "assistant") continue;
+
+      exactCheckpointTurnCount = checkpointCountByAssistantMessageId.get(nextEntry.message.id);
+      if (exactCheckpointTurnCount === undefined && nextEntry.message.turnId !== null) {
+        exactCheckpointTurnCount = checkpointCountByTurnId.get(nextEntry.message.turnId);
+      }
+      if (exactCheckpointTurnCount !== undefined) break;
+    }
+
+    if (exactCheckpointTurnCount !== undefined) {
+      result.set(entry.message.id, Math.max(0, exactCheckpointTurnCount - 1));
+    } else if (!input.hasOlderTurns) {
+      // Imported and chat-only threads may predate checkpoint summaries. Once
+      // the complete history is loaded, each user prompt still gives us a
+      // stable provider turn boundary for edit/undo.
+      result.set(entry.message.id, loadedUserTurnIndex);
+    }
+    loadedUserTurnIndex += 1;
+  }
+
+  return result;
+}
 
 export function shouldDockDraftHeroForSubmission(input: {
   isDraftHeroState: boolean;
@@ -92,8 +152,11 @@ export function resolveDraftHeroState(input: {
 export function shouldShowDraftConversationModeToggle(input: {
   isDraftHeroState: boolean;
   conversationModeSelectable: boolean;
+  conversationMode: ConversationMode;
 }): boolean {
-  return input.isDraftHeroState && input.conversationModeSelectable;
+  return (
+    input.isDraftHeroState && input.conversationModeSelectable && input.conversationMode !== "chat"
+  );
 }
 
 /** Chat never needs a live project to type. Work drafts still do. */

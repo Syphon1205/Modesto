@@ -5,6 +5,7 @@ import { Toggle } from "../ui/toggle";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
 interface PanelLayoutControlsProps {
+  summaryControl?: ReactNode;
   showTerminalControl?: boolean;
   terminalAvailable: boolean;
   terminalOpen: boolean;
@@ -22,9 +23,10 @@ interface PanelLayoutControlsProps {
 }
 
 /** Header padding so Git actions stay clear of usage / terminal / panel toggles. */
-export const PANEL_LAYOUT_CONTROLS_HEADER_INSET_CLASS = "pr-32";
+export const PANEL_LAYOUT_CONTROLS_HEADER_INSET_CLASS = "pr-40";
 
 export const PanelLayoutControls = memo(function PanelLayoutControls({
+  summaryControl,
   showTerminalControl = true,
   terminalAvailable,
   terminalOpen,
@@ -43,6 +45,7 @@ export const PanelLayoutControls = memo(function PanelLayoutControls({
       className="flex h-full shrink-0 items-center gap-1 [-webkit-app-region:no-drag]"
       data-panel-layout-controls
     >
+      {summaryControl}
       {usageClock ? (
         <>
           <div className="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden />

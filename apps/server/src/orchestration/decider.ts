@@ -348,9 +348,10 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
     }
 
     case "thread.create": {
+      const isChat = (command.conversationMode ?? "code") === "chat";
       // Chats are independent of projects: they can be created without a live
       // project, and they stay when the originating project is removed.
-      if ((command.conversationMode ?? "code") !== "chat") {
+      if (!isChat) {
         yield* requireProject({
           readModel,
           command,
@@ -375,8 +376,8 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
           projectId: command.projectId,
           title: command.title,
           modelSelection: command.modelSelection,
-          runtimeMode: command.runtimeMode,
-          interactionMode: command.interactionMode,
+          runtimeMode: isChat ? "approval-required" : command.runtimeMode,
+          interactionMode: isChat ? "default" : command.interactionMode,
           conversationMode: command.conversationMode ?? "code",
           parentThreadId: command.parentThreadId ?? null,
           branch: command.branch,
@@ -885,7 +886,7 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
     }
 
     case "thread.runtime-mode.set": {
-      yield* requireThread({
+      const thread = yield* requireThread({
         readModel,
         command,
         threadId: command.threadId,
@@ -901,14 +902,15 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
         type: "thread.runtime-mode-set",
         payload: {
           threadId: command.threadId,
-          runtimeMode: command.runtimeMode,
+          runtimeMode:
+            thread.conversationMode === "chat" ? "approval-required" : command.runtimeMode,
           updatedAt: occurredAt,
         },
       };
     }
 
     case "thread.interaction-mode.set": {
-      yield* requireThread({
+      const thread = yield* requireThread({
         readModel,
         command,
         threadId: command.threadId,
@@ -924,7 +926,7 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
         type: "thread.interaction-mode-set",
         payload: {
           threadId: command.threadId,
-          interactionMode: command.interactionMode,
+          interactionMode: thread.conversationMode === "chat" ? "default" : command.interactionMode,
           updatedAt: occurredAt,
         },
       };
@@ -996,8 +998,12 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
             ? { modelSelection: command.modelSelection }
             : {}),
           ...(command.titleSeed !== undefined ? { titleSeed: command.titleSeed } : {}),
-          runtimeMode: targetThread.runtimeMode,
-          interactionMode: targetThread.interactionMode,
+          runtimeMode:
+            targetThread.conversationMode === "chat"
+              ? "approval-required"
+              : targetThread.runtimeMode,
+          interactionMode:
+            targetThread.conversationMode === "chat" ? "default" : targetThread.interactionMode,
           ...(sourceProposedPlan !== undefined ? { sourceProposedPlan } : {}),
           createdAt: command.createdAt,
         },
@@ -1066,7 +1072,7 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
     }
 
     case "thread.approval.respond": {
-      yield* requireThread({
+      const thread = yield* requireThread({
         readModel,
         command,
         threadId: command.threadId,
@@ -1085,7 +1091,11 @@ export const decideOrchestrationCommand = Effect.fn("decideOrchestrationCommand"
         payload: {
           threadId: command.threadId,
           requestId: command.requestId,
-          decision: command.decision,
+          decision:
+            thread.conversationMode === "chat" &&
+            (command.decision === "accept" || command.decision === "acceptForSession")
+              ? "decline"
+              : command.decision,
           createdAt: command.createdAt,
         },
       };

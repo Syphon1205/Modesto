@@ -1899,6 +1899,17 @@ function ChatMarkdown({
             language={language}
             title={fenceTitle}
             isStreaming={isStreaming}
+            onOpenInPanel={
+              threadRef
+                ? ({ title, document }) => {
+                    useRightPanelStore.getState().openVisual(threadRef, {
+                      id: fnv1a32(`${language}\u0000${codeBlock.code}`).toString(36),
+                      title,
+                      document,
+                    });
+                  }
+                : undefined
+            }
           >
             {renderedCode}
           </InlineVisual>

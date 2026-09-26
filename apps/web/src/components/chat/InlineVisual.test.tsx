@@ -28,8 +28,25 @@ describe("inline chat visuals", () => {
     expect(markup).not.toContain("allow-same-origin");
     expect(markup).toContain('referrerPolicy="no-referrer"');
     expect(markup).toContain("Restart preview");
+    expect(markup).toContain("Open visual in browser");
+    expect(markup).toContain("Zoom in");
+    expect(markup).toContain("Zoom out");
+    expect(markup).toContain("100%");
     expect(markup).toContain("Source");
     expect(markup).toContain("onclick");
+  });
+  it("offers the side panel when the conversation provides a panel target", () => {
+    const markup = renderToStaticMarkup(
+      <InlineVisual
+        source="<main>Large chart</main>"
+        language="html"
+        isStreaming={false}
+        onOpenInPanel={() => undefined}
+      >
+        <pre>source</pre>
+      </InlineVisual>,
+    );
+    expect(markup).toContain("Open visual beside conversation");
   });
   it("leaves regular programming languages alone", () => {
     expect(inlineVisualKind("typescript")).toBeNull();

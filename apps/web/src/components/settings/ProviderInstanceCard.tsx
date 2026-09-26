@@ -599,7 +599,7 @@ export function ProviderInstanceCard({
   ) : null;
 
   return (
-    <div className="rounded-xl transition-colors hover:bg-muted/20">
+    <div data-provider-instance-card="" className="rounded-xl transition-colors hover:bg-muted/20">
       <div className="px-3 py-3 sm:px-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1">

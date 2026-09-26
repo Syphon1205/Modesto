@@ -1,32 +1,28 @@
 // FILE: WelcomeSetupScreen.tsx
-// Purpose: The first-run setup experience — a full-screen takeover, not a
-//          dialog: on first launch the app behind it is empty anyway, and the
-//          first thing a new user sees should be Modesto introducing itself.
-//          Opens once per setup revision (`WELCOME_SETUP_VERSION`) and is
-//          re-launchable any time from Settings → General.
+// Purpose: The optional setup tour. It is re-launchable from Settings →
+//          General and uses the same compact, two-pane dialog language as the
+//          current app shell.
 
 import { useAtomValue } from "@effect/atom-react";
-import { useNavigate } from "@tanstack/react-router";
 import {
   ArrowRightIcon,
   CheckIcon,
-  DicesIcon,
+  CpuIcon,
   FolderPlusIcon,
   MonitorIcon,
   MoonIcon,
+  PaletteIcon,
+  RocketIcon,
   SunIcon,
   TerminalIcon,
+  XIcon,
 } from "lucide-react";
-import { generateAvatarSpec, randomAvatarSeed } from "~/agents/avatar/agentAvatarRandom";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { APP_BASE_NAME } from "~/branding";
 import { openCommandPalette } from "~/commandPaletteBus";
-import {
-  useClientSettings,
-  useClientSettingsHydrated,
-  useUpdateClientSettings,
-} from "~/hooks/useSettings";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
+import { useClientSettings, useUpdateClientSettings } from "~/hooks/useSettings";
 import { useTheme } from "~/hooks/useTheme";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { cn } from "~/lib/utils";
@@ -34,26 +30,14 @@ import { useProjects } from "~/state/entities";
 import { primaryServerKeybindingsAtom, primaryServerProvidersAtom } from "~/state/server";
 import { getDriverOption } from "~/components/settings/providerDriverMeta";
 import { ModestoLogo } from "~/components/ModestoLogo";
-import { AvatarLab } from "~/agents/AvatarLab";
-import { useAgentBotStore } from "~/agents/agentBotStore";
-import { Input } from "~/components/ui/input";
-import { WelcomeHeroCluster } from "./WelcomeBrandArtwork";
-import { WelcomeProjectFolder } from "./WelcomeProjectFolder";
-import { WelcomeProviderRing } from "./WelcomeProviderRing";
 import { WelcomeThemeGallery } from "./WelcomeThemeGallery";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogDescription,
-  DialogFullScreenPopup,
-  DialogTitle,
-} from "~/components/ui/dialog";
+import { Dialog, DialogDescription, DialogPopup, DialogTitle } from "~/components/ui/dialog";
 import {
   advanceWelcomeSetupStep,
   isFinalWelcomeSetupStep,
   resolveWelcomeThemeSelection,
   selectWelcomeAgentProviders,
-  shouldOpenWelcomeSetup,
   summarizeWelcomeAgent,
   summarizeWelcomeAgentRoster,
   WELCOME_SETUP_STEP_LABELS,
@@ -63,26 +47,24 @@ import {
   type WelcomeAgentReadiness,
   type WelcomeSetupStepId,
 } from "./welcomeSetup";
-import { openWelcomeSetup, useWelcomeSetupStore } from "./welcomeSetupStore";
+import { useWelcomeSetupStore } from "./welcomeSetupStore";
 import "./welcomeHero.css";
 
 export function WelcomeSetupScreen() {
-  const hydrated = useClientSettingsHydrated();
   const completedVersion = useClientSettings((settings) => settings.welcomeSetupCompletedVersion);
   const updateClientSettings = useUpdateClientSettings();
   const session = useWelcomeSetupStore((store) => store.session);
   const closeWelcomeSetup = useWelcomeSetupStore((store) => store.closeWelcomeSetup);
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
-  // Once per mount: a user who dismisses the tour and whose settings write
-  // fails should not be re-prompted in a loop for the rest of the session.
-  const autoOpenedRef = useRef(false);
+  // Older hot-reloaded clients can still have a first-run session in the
+  // Zustand store. Close it so upgrading to this behavior immediately returns
+  // control of the visible sidebar to the user.
   useEffect(() => {
-    if (autoOpenedRef.current) return;
-    if (!shouldOpenWelcomeSetup({ hydrated, completedVersion })) return;
-    autoOpenedRef.current = true;
-    openWelcomeSetup({ trigger: "first-run" });
-  }, [completedVersion, hydrated]);
+    if (session?.trigger === "first-run") {
+      closeWelcomeSetup();
+    }
+  }, [closeWelcomeSetup, session?.trigger]);
 
   const [step, setStep] = useState<WelcomeSetupStepId>(WELCOME_SETUP_STEPS[0] ?? "welcome");
   const sessionId = session?.id ?? null;
@@ -125,58 +107,83 @@ export function WelcomeSetupScreen() {
         if (!open) complete();
       }}
     >
-      <DialogFullScreenPopup
+      <DialogPopup
         aria-label={`Welcome to ${APP_BASE_NAME}`}
-        className="bg-[var(--background)]"
+        showCloseButton={false}
+        bottomStickOnMobile={false}
+        data-welcome-setup=""
+        data-interface-shell="github"
+        className="flex h-[min(680px,calc(100dvh-48px))] w-[min(920px,calc(100vw-48px))] max-w-[920px] flex-row overflow-hidden rounded-xl border border-border bg-background p-0 shadow-[0_24px_60px_-18px_rgb(0_0_0/26%),0_4px_12px_rgb(0_0_0/8%)] max-sm:h-[calc(100dvh-24px)] max-sm:w-[calc(100vw-24px)] max-sm:flex-col"
       >
-        <header className="relative flex shrink-0 items-center justify-between gap-4 px-6 py-4 sm:px-10">
-          <div className="flex items-center gap-2.5">
-            <ModestoLogo aria-hidden className="size-5" />
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              {APP_BASE_NAME}
-            </span>
+        <aside className="flex w-[220px] shrink-0 flex-col border-r border-border bg-muted/20 p-3 max-sm:w-full max-sm:border-r-0 max-sm:border-b">
+          <div className="flex h-9 items-center gap-2 px-2">
+            <ModestoLogo aria-hidden className="size-4" />
+            <span className="text-[13px] font-semibold text-foreground">{APP_BASE_NAME}</span>
           </div>
-          <Button variant="ghost" size="sm" onClick={complete}>
-            {isFinalStep ? "Close" : "Skip setup"}
-          </Button>
-        </header>
-
-        <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 sm:px-10">
-          {/* Keyed on the step so each one plays its own entrance instead of
-            swapping content inside a container that never re-mounts. */}
-          <div
-            key={step}
-            className="welcome-rise m-auto flex w-full min-w-0 max-w-[1180px] items-center py-6 sm:py-8"
-          >
-            {step === "welcome" ? <WelcomeStep /> : null}
-            {step === "appearance" ? <AppearanceStep /> : null}
-            {step === "agents" ? (
-              <AgentsStep onOpenAgentSettings={completeAndOpenProviderSettings} />
-            ) : null}
-            {step === "avatar" ? <AvatarStep /> : null}
-            {step === "ready" ? <ReadyStep onAddProject={completeAndOpenAddProject} /> : null}
-          </div>
-        </main>
-
-        <footer className="relative flex shrink-0 items-center justify-between gap-4 px-6 py-4 sm:px-10">
           <WelcomeSetupProgress currentStep={step} onStepSelect={setStep} />
-          <div className="flex items-center gap-2">
-            {stepIndex > 0 ? (
-              <Button variant="outline" onClick={() => setStep(advanceWelcomeSetupStep(step, -1))}>
-                Back
-              </Button>
-            ) : null}
-            {isFinalStep ? (
-              <Button onClick={complete}>Start building</Button>
-            ) : (
-              <Button onClick={() => setStep(advanceWelcomeSetupStep(step, 1))}>
-                Continue
-                <ArrowRightIcon />
-              </Button>
-            )}
-          </div>
-        </footer>
-      </DialogFullScreenPopup>
+          <p className="mt-auto px-2 pb-1 text-[11px] leading-4 text-muted-foreground max-sm:hidden">
+            You can revisit setup any time from Settings.
+          </p>
+        </aside>
+
+        <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-border/70 px-5">
+            <p className="text-xs text-muted-foreground">
+              Step {stepIndex + 1} of {WELCOME_SETUP_STEPS.length}
+            </p>
+            <Button size="icon-xs" variant="ghost" aria-label="Close setup" onClick={complete}>
+              <XIcon />
+            </Button>
+          </header>
+
+          <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 sm:px-8">
+            {/* Keyed on the step so each one plays its own entrance instead of
+              swapping content inside a container that never re-mounts. */}
+            <div
+              key={step}
+              className="welcome-rise mx-auto flex w-full max-w-[640px] flex-1 items-center py-8"
+            >
+              {step === "welcome" ? <WelcomeStep /> : null}
+              {step === "appearance" ? <AppearanceStep /> : null}
+              {step === "agents" ? (
+                <AgentsStep onOpenAgentSettings={completeAndOpenProviderSettings} />
+              ) : null}
+              {step === "ready" ? <ReadyStep onAddProject={completeAndOpenAddProject} /> : null}
+            </div>
+          </main>
+
+          <footer className="flex min-h-[60px] shrink-0 items-center justify-between gap-4 border-t border-border/70 px-5 py-3">
+            <Button variant="ghost" size="sm" onClick={complete}>
+              {isFinalStep ? "Close" : "Skip setup"}
+            </Button>
+            <div className="flex items-center gap-2">
+              {stepIndex > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setStep(advanceWelcomeSetupStep(step, -1))}
+                >
+                  Back
+                </Button>
+              ) : null}
+              {isFinalStep ? (
+                <Button size="sm" className="copilot-primary-button" onClick={complete}>
+                  Start building
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  className="copilot-primary-button"
+                  onClick={() => setStep(advanceWelcomeSetupStep(step, 1))}
+                >
+                  Continue
+                  <ArrowRightIcon />
+                </Button>
+              )}
+            </div>
+          </footer>
+        </section>
+      </DialogPopup>
     </Dialog>
   );
 }
@@ -187,17 +194,11 @@ export function WelcomeSetupScreen() {
  * 10px over a tinted backdrop, which is below what this needs to be readable.
  */
 function StepEyebrow({ children }: { readonly children: ReactNode }) {
-  return (
-    <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-foreground/70 uppercase">
-      {children}
-    </p>
-  );
+  return <p className="text-xs font-medium text-muted-foreground">{children}</p>;
 }
 
 /**
- * Step dots. Deliberately small and out of the way in the footer: on a
- * full-screen surface the content is the wayfinding, and a heavy stepper
- * across the top would compete with the headline.
+ * Compact step navigation shared by desktop and mobile layouts.
  */
 function WelcomeSetupProgress({
   currentStep,
@@ -208,29 +209,32 @@ function WelcomeSetupProgress({
 }) {
   const currentIndex = welcomeSetupStepIndex(currentStep);
   return (
-    <ol className="flex items-center gap-1.5" role="list">
+    <ol className="mt-4 grid gap-1 max-sm:grid-cols-4" role="list">
       {WELCOME_SETUP_STEPS.map((step, index) => {
         const isCurrent = index === currentIndex;
+        const Icon = WELCOME_STEP_ICONS[step];
         return (
           <li key={step}>
             <button
               type="button"
               aria-current={isCurrent ? "step" : undefined}
               aria-label={`${WELCOME_SETUP_STEP_LABELS[step]}, step ${index + 1} of ${WELCOME_SETUP_STEPS.length}`}
-              className="group flex cursor-pointer items-center gap-2 rounded-full px-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className={cn(
+                "flex min-h-8 w-full cursor-pointer items-center gap-2 rounded-md px-2 text-left text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring max-sm:justify-center max-sm:px-1",
+                isCurrent
+                  ? "bg-foreground/[0.07] font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
+              )}
               onClick={() => onStepSelect(step)}
             >
-              <span
-                aria-hidden
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-200 ease-out",
-                  isCurrent
-                    ? "w-6 bg-primary"
-                    : index < currentIndex
-                      ? "w-1.5 bg-primary/50 group-hover:bg-primary/70"
-                      : "w-1.5 bg-muted-foreground/25 group-hover:bg-muted-foreground/45",
+              <span className="grid size-5 shrink-0 place-items-center" aria-hidden>
+                {index < currentIndex ? (
+                  <CheckIcon className="size-3.5" />
+                ) : (
+                  <Icon className="size-3.5" />
                 )}
-              />
+              </span>
+              <span className="max-sm:sr-only">{WELCOME_SETUP_STEP_LABELS[step]}</span>
             </button>
           </li>
         );
@@ -238,6 +242,13 @@ function WelcomeSetupProgress({
     </ol>
   );
 }
+
+const WELCOME_STEP_ICONS: Record<WelcomeSetupStepId, typeof RocketIcon> = {
+  welcome: RocketIcon,
+  appearance: PaletteIcon,
+  agents: CpuIcon,
+  ready: FolderPlusIcon,
+};
 
 const WELCOME_NOTES: ReadonlyArray<{ title: string; body: string }> = [
   {
@@ -256,125 +267,28 @@ const WELCOME_NOTES: ReadonlyArray<{ title: string; body: string }> = [
 
 function WelcomeStep() {
   return (
-    <div className="grid w-full items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
-      <div className="max-w-xl">
-        <StepEyebrow>First launch</StepEyebrow>
-        <DialogTitle className="mt-5 font-heading text-[clamp(2.75rem,6.2vw,5.1rem)] leading-[0.92] font-semibold tracking-[-0.04em]">
-          Welcome to {APP_BASE_NAME}
-        </DialogTitle>
-        <p className="mt-5 font-heading text-[clamp(1.45rem,2.6vw,2.15rem)] leading-[1.05] font-semibold tracking-[-0.03em] text-foreground">
-          Every agent.{" "}
-          <span className="text-[color-mix(in_oklab,var(--primary)_38%,var(--foreground))]">
-            One workspace.
-          </span>
-        </p>
-        <DialogDescription className="mt-4 max-w-[46ch] text-base leading-relaxed sm:text-[17px]">
-          This is the desk for the coding agents you already run. Pick one, hand the thread to
-          another, and keep the plan when you switch.
-        </DialogDescription>
-        <ul className="mt-8 grid gap-5 border-t border-border/50 pt-6">
-          {WELCOME_NOTES.map((note) => (
-            <li key={note.title} className="grid gap-1">
-              <p className="text-sm font-semibold tracking-tight text-foreground">{note.title}</p>
-              <p className="max-w-[48ch] text-sm leading-relaxed text-muted-foreground">
-                {note.body}
-              </p>
-            </li>
-          ))}
-        </ul>
+    <div className="w-full">
+      <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-muted/30">
+        <ModestoLogo aria-hidden className="size-5" />
       </div>
-      <WelcomeHeroCluster />
-    </div>
-  );
-}
-
-/**
- * Create the first agent, face and all.
- *
- * The tour's one piece of creation rather than configuration, and the reason
- * it exists: a roster of characters only means anything if the user made one
- * themselves. It saves as soon as the name is filled in and the step is left
- * — asking a brand-new user to press "Create" inside a tour that already has
- * a Continue button is one button too many — and skipping the step simply
- * creates nothing.
- */
-function AvatarStep() {
-  const bots = useAgentBotStore((state) => state.bots);
-  const addBot = useAgentBotStore((state) => state.addBot);
-  const updateBot = useAgentBotStore((state) => state.updateBot);
-
-  const existing = bots[0];
-  const [name, setName] = useState(existing?.name ?? "");
-  const [tagline, setTagline] = useState(existing?.tagline ?? "");
-  const [avatar, setAvatar] = useState(
-    () => existing?.avatar ?? generateAvatarSpec(randomAvatarSeed()),
-  );
-  const createdIdRef = useRef<string | null>(existing?.id ?? null);
-
-  // Persist on change rather than on a button: the footer's Continue is the
-  // only affordance here, and losing a character the user just built because
-  // they pressed it would be the worst possible first impression.
-  useEffect(() => {
-    const trimmed = name.trim();
-    if (trimmed === "") return;
-    const draft = {
-      name: trimmed,
-      tagline,
-      persona: "",
-      avatar,
-      model: null,
-      homeProjectKey: null,
-    };
-    const existingId = createdIdRef.current;
-    if (existingId === null) {
-      createdIdRef.current = addBot(draft).id;
-      return;
-    }
-    updateBot(existingId, draft);
-  }, [name, tagline, avatar, addBot, updateBot]);
-
-  return (
-    <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14">
-      <div className="max-w-xl">
-        <StepEyebrow>Your first agent</StepEyebrow>
-        <DialogTitle className="mt-5 font-heading text-[clamp(2.1rem,4.4vw,3.4rem)] leading-[0.95] font-semibold tracking-[-0.04em]">
-          Give it a face
-        </DialogTitle>
-        <DialogDescription className="mt-4 max-w-[46ch] text-base leading-relaxed">
-          Agents are teammates you keep — a name, a look, and a job. You will recognise this one in
-          the roster and in the presence overlay long before you read its name.
-        </DialogDescription>
-
-        <div className="mt-7 grid gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground">Name</span>
-            <Input
-              value={name}
-              maxLength={60}
-              placeholder="Scout"
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground">What it does</span>
-            <Input
-              value={tagline}
-              maxLength={120}
-              placeholder="Triages failing tests"
-              onChange={(event) => setTagline(event.currentTarget.value)}
-            />
-          </label>
-        </div>
-
-        <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground/70">
-          <DicesIcon className="size-3.5 shrink-0" aria-hidden />
-          Skip this step and no agent is created — you can build one any time from Agents.
-        </p>
+      <div className="mt-5">
+        <StepEyebrow>Welcome</StepEyebrow>
       </div>
-
-      <div className="min-w-0 rounded-2xl border border-border/60 bg-card/30 p-5">
-        <AvatarLab value={avatar} onChange={setAvatar} />
-      </div>
+      <DialogTitle className="mt-2 text-2xl leading-tight tracking-tight">
+        Set up {APP_BASE_NAME}
+      </DialogTitle>
+      <DialogDescription className="mt-2 max-w-[58ch] text-sm leading-6">
+        This is the desk for the coding agents you already run. Pick one, hand the thread to
+        another, and keep the plan when you switch.
+      </DialogDescription>
+      <ul className="mt-7 grid gap-3 sm:grid-cols-3">
+        {WELCOME_NOTES.map((note) => (
+          <li key={note.title} className="rounded-lg border border-border bg-muted/15 p-4">
+            <p className="text-[13px] font-semibold text-foreground">{note.title}</p>
+            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{note.body}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -393,19 +307,22 @@ function AppearanceStep() {
   const activeThemeId = themeHalves?.[resolvedTheme] ?? theme;
 
   return (
-    <div className="grid w-full min-w-0 gap-8">
+    <div className="grid w-full min-w-0 gap-6">
       <div className="max-w-2xl">
         <StepEyebrow>Appearance</StepEyebrow>
-        <DialogTitle className="mt-4 font-heading text-3xl leading-tight tracking-tight sm:text-4xl">
+        <DialogTitle className="mt-2 text-2xl leading-tight tracking-tight">
           Choose a look
         </DialogTitle>
-        <DialogDescription className="mt-3 max-w-[52ch] text-base leading-relaxed">
-          Each theme is a full palette — canvas, chrome, and one accent. Click a card and the
-          workspace washes into it. You can change this any time in Settings.
+        <DialogDescription className="mt-2 max-w-[58ch] text-sm leading-6">
+          Choose an appearance and palette. You can change both any time in Settings.
         </DialogDescription>
       </div>
 
-      <div aria-label="Appearance mode" className="flex flex-wrap gap-2" role="group">
+      <div
+        aria-label="Appearance mode"
+        className="flex w-fit rounded-lg bg-muted/60 p-1"
+        role="group"
+      >
         {APPEARANCE_MODES.map(({ mode, label, Icon }) => {
           const isActive = appearanceMode === mode;
           return (
@@ -415,12 +332,11 @@ function AppearanceStep() {
               aria-pressed={isActive}
               aria-label={mode === "system" ? "Follow the system appearance" : `Use ${mode} mode`}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                "flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-3 py-1.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 isActive
-                  ? "border-transparent bg-accent/40 text-foreground"
-                  : "border-border bg-card text-foreground/80 hover:bg-accent/20 hover:text-foreground",
+                  ? "bg-background text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
               )}
-              style={isActive ? { boxShadow: "inset 0 0 0 1px var(--ring)" } : undefined}
               onClick={() => setAppearanceMode(mode)}
             >
               <Icon className="size-3.5 shrink-0" aria-hidden />
@@ -430,10 +346,7 @@ function AppearanceStep() {
         })}
       </div>
 
-      {/* Full-bleed: the fan is the subject of this step, and boxing it inside
-        the text column made it read as a small widget rather than a shelf of
-        physical cards. The negative margins undo the takeover's own padding. */}
-      <div className="-mx-6 min-w-0 sm:-mx-10">
+      <div className="min-w-0">
         <WelcomeThemeGallery
           selectedId={activeThemeId}
           appearance={resolvedTheme}
@@ -456,71 +369,75 @@ function AgentsStep({ onOpenAgentSettings }: { readonly onOpenAgentSettings: () 
   const serverProviders = useAtomValue(primaryServerProvidersAtom);
   const providers = useMemo(() => selectWelcomeAgentProviders(serverProviders), [serverProviders]);
   const roster = useMemo(() => summarizeWelcomeAgentRoster(serverProviders), [serverProviders]);
+  const displayedProviders = useMemo(
+    () =>
+      roster.installedCount > 0
+        ? providers.filter((provider) => provider.installed)
+        : providers.slice(0, 6),
+    [providers, roster.installedCount],
+  );
 
   return (
-    <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
-      <div className="max-w-xl">
-        <StepEyebrow>Agents</StepEyebrow>
-        <DialogTitle className="mt-4 font-heading text-3xl leading-tight tracking-tight sm:text-4xl">
+    <div className="w-full">
+      <div className="max-w-2xl">
+        <StepEyebrow>Providers</StepEyebrow>
+        <DialogTitle className="mt-2 text-2xl leading-tight tracking-tight">
           {roster.detectedLabel ?? roster.headline}
         </DialogTitle>
-        <DialogDescription className="mt-3 max-w-[48ch] text-base leading-relaxed">
-          {APP_BASE_NAME} drives the agent CLIs installed on this machine. Install one or sign in
-          and it appears here — no restart needed.
+        <DialogDescription className="mt-2 max-w-[58ch] text-sm leading-6">
+          {APP_BASE_NAME} drives the coding provider CLIs installed on this machine. Install one or
+          sign in and it appears here — no restart needed.
         </DialogDescription>
-        {providers.length > 0 ? (
-          <ul className="mt-8 grid gap-2">
-            {providers
-              .filter((provider) => summarizeWelcomeAgent(provider).readiness !== "missing")
-              .slice(0, 6)
-              .map((provider) => {
-                const driver = getDriverOption(provider.driver);
-                const summary = summarizeWelcomeAgent(provider);
-                return (
-                  <li
-                    key={provider.instanceId}
-                    className="flex items-center justify-between gap-3 text-sm"
-                  >
-                    <span className="truncate font-medium text-foreground">
-                      {provider.displayName ?? driver?.label ?? provider.instanceId}
-                    </span>
-                    <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/70">
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "size-1.5 rounded-full",
-                          AGENT_READINESS_DOT[summary.readiness],
-                        )}
-                      />
-                      {summary.detail}
-                    </span>
-                  </li>
-                );
-              })}
-          </ul>
-        ) : null}
-        <Button className="mt-8" variant="outline" onClick={onOpenAgentSettings}>
-          Open agent settings
-        </Button>
       </div>
 
-      {providers.length === 0 ? (
-        <div className="rounded-2xl border border-border/70 bg-card/60 px-4 py-16 text-center">
-          <TerminalIcon className="mx-auto size-6 text-muted-foreground" aria-hidden />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Waiting for this environment to report which agents it can run.
-          </p>
-        </div>
-      ) : (
-        <WelcomeProviderRing
-          providers={
-            roster.installedCount > 0
-              ? providers.filter((provider) => provider.installed)
-              : providers
-          }
-          installedCount={roster.installedCount}
-        />
-      )}
+      <div className="mt-6 overflow-hidden rounded-lg border border-border">
+        {providers.length === 0 ? (
+          <div className="px-5 py-10 text-center">
+            <TerminalIcon className="mx-auto size-5 text-muted-foreground" aria-hidden />
+            <p className="mt-2 text-xs text-muted-foreground">
+              Waiting for this environment to report which providers it can run.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {displayedProviders.map((provider) => {
+              const driver = getDriverOption(provider.driver);
+              const summary = summarizeWelcomeAgent(provider);
+              const Icon = driver?.icon;
+              return (
+                <li
+                  key={provider.instanceId}
+                  className="flex min-h-11 items-center gap-3 px-4 text-sm"
+                >
+                  <span className="grid size-7 shrink-0 place-items-center rounded-md bg-muted/60">
+                    {Icon ? (
+                      <Icon className="size-4" aria-hidden />
+                    ) : (
+                      <TerminalIcon className="size-4" aria-hidden />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground">
+                    {provider.displayName ?? driver?.label ?? provider.instanceId}
+                  </span>
+                  <span className="flex shrink-0 items-center gap-1.5 text-xs text-foreground/70">
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "size-1.5 rounded-full",
+                        AGENT_READINESS_DOT[summary.readiness],
+                      )}
+                    />
+                    {summary.detail}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+      <Button className="mt-4" size="sm" variant="outline" onClick={onOpenAgentSettings}>
+        Open provider settings
+      </Button>
     </div>
   );
 }
@@ -532,18 +449,18 @@ function ReadyStep({ onAddProject }: { readonly onAddProject: () => void }) {
   const hasProjects = projects.length > 0;
 
   return (
-    <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
-      <div className="max-w-xl">
+    <div className="w-full">
+      <div className="max-w-2xl">
         <StepEyebrow>Your workspace</StepEyebrow>
-        <DialogTitle className="mt-4 font-heading text-3xl leading-tight tracking-tight sm:text-4xl">
+        <DialogTitle className="mt-2 text-2xl leading-tight tracking-tight">
           {hasProjects ? "You're set up" : "Start a project"}
         </DialogTitle>
-        <DialogDescription className="mt-3 max-w-[48ch] text-base leading-relaxed">
+        <DialogDescription className="mt-2 max-w-[58ch] text-sm leading-6">
           {hasProjects
             ? `${projects.length === 1 ? "1 project is" : `${projects.length} projects are`} already connected. Pick one in the sidebar and start a thread.`
             : `A project is just a folder on this machine. ${APP_BASE_NAME} keeps every thread, diff and pull request about it together.`}
         </DialogDescription>
-        <ul className="mt-8 grid gap-3">
+        <ul className="mt-6 grid gap-3">
           <ReadyTip
             text={
               paletteShortcut
@@ -555,25 +472,23 @@ function ReadyStep({ onAddProject }: { readonly onAddProject: () => void }) {
           <ReadyTip text="This tour lives in Settings → General if you want it again." />
         </ul>
       </div>
-
-      <div className="grid gap-5">
-        <WelcomeProjectFolder />
+      <div className="mt-7 grid gap-3">
         <button
           type="button"
           onClick={onAddProject}
-          className="welcome-project-card flex w-full cursor-pointer items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="welcome-project-card flex w-full cursor-pointer items-center gap-4 rounded-lg border border-border bg-background px-4 py-4 text-left outline-none hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <span
             aria-hidden
-            className="welcome-project-mark grid size-11 shrink-0 place-items-center rounded-xl bg-[color-mix(in_oklab,var(--primary)_18%,var(--background))] text-[color-mix(in_oklab,var(--primary)_55%,var(--foreground))]"
+            className="welcome-project-mark grid size-9 shrink-0 place-items-center rounded-md bg-muted text-foreground"
           >
             <FolderPlusIcon className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold tracking-tight text-foreground">
+            <span className="block text-[13px] font-semibold text-foreground">
               {hasProjects ? "Add another project" : "Add your first project"}
             </span>
-            <span className="mt-0.5 block text-sm text-muted-foreground">
+            <span className="mt-0.5 block text-xs text-muted-foreground">
               Choose a folder, or clone a repository from GitHub.
             </span>
           </span>

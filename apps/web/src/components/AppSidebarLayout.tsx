@@ -1,3 +1,5 @@
+import { SettingsDialog } from "./settings/SettingsDialog";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { useAtomValue } from "@effect/atom-react";
 import * as Schema from "effect/Schema";
 import {
@@ -7,7 +9,8 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
+import { Grid2X2Icon, SettingsIcon } from "lucide-react";
 
 import { isElectron } from "../env";
 import { useCompactChatChrome } from "../lib/floatingChatChrome";
@@ -15,7 +18,12 @@ import { getLocalStorageItem, removeLocalStorageItem } from "../hooks/useLocalSt
 import { resolveShortcutCommand, shortcutLabelForCommand } from "../keybindings";
 import { cn, isMacPlatform } from "../lib/utils";
 import { primaryServerKeybindingsAtom } from "../state/server";
-import { useEnvironmentIdentificationMode, useLegacySidebarEnabled } from "../hooks/useSettings";
+import {
+  useEnvironmentIdentificationMode,
+  useInterfaceStyle,
+  useLegacySidebarEnabled,
+} from "../hooks/useSettings";
+import { PROVIDER_LAYOUT_SPECS, providerLayoutOf } from "../providerLayouts";
 import LegacyThreadSidebar from "./LegacySidebar";
 import ThreadSidebar from "./Sidebar";
 import { SettingsSidebarNav } from "./settings/SettingsSidebarNav";
@@ -41,6 +49,10 @@ import {
   useSidebarVisibility,
 } from "./ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
+import { ChatTabStrip } from "./chat/ChatTabStrip";
+import { useChatTabNavigation } from "../hooks/useChatTabNavigation";
+import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { startNewThreadFromContext } from "../lib/chatThreadActions";
 
 const MACOS_TRAFFIC_LIGHTS_LEFT_INSET = "90px";
 
@@ -53,15 +65,18 @@ function readViewportWidth(): number {
   return window.innerWidth;
 }
 
-function readInitialThreadSidebarWidth(): number {
+function readInitialThreadSidebarWidth(
+  storageKey = THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
+  defaultWidth?: number,
+): number {
   try {
     return resolveInitialThreadSidebarWidth(
-      getLocalStorageItem(THREAD_SIDEBAR_WIDTH_STORAGE_KEY, Schema.Finite),
+      getLocalStorageItem(storageKey, Schema.Finite) ?? defaultWidth ?? null,
       window.innerWidth,
     );
   } catch (error) {
     console.error("Could not read persisted thread sidebar width.", error);
-    return resolveInitialThreadSidebarWidth(null, window.innerWidth);
+    return resolveInitialThreadSidebarWidth(defaultWidth ?? null, window.innerWidth);
   }
 }
 
@@ -137,16 +152,70 @@ function ProjectProjectionRetention() {
   return null;
 }
 
+function OpenCodeTitlebar() {
+  const navigate = useAppNavigate();
+  const chatTabNavigation = useChatTabNavigation();
+  const newThreadContext = useHandleNewThread();
+  const openNewSession = () => {
+    void startNewThreadFromContext({
+      activeDraftThread: newThreadContext.activeDraftThread,
+      activeThread: newThreadContext.activeThread ?? undefined,
+      defaultProjectRef: newThreadContext.defaultProjectRef,
+      handleNewThread: newThreadContext.handleNewThread,
+    });
+  };
+
+  return (
+    <header data-opencode-titlebar="" aria-label="OpenCode workspace controls">
+      <button type="button" aria-label="Home" onClick={() => void navigate({ to: "/" })}>
+        <Grid2X2Icon />
+      </button>
+      <ChatTabStrip
+        onActivate={chatTabNavigation.activateTab}
+        onNewTab={openNewSession}
+        onClose={chatTabNavigation.closeTab}
+      />
+      <div data-opencode-titlebar-drag="" />
+      <button
+        type="button"
+        aria-label="Settings"
+        onClick={() => void navigate({ to: "/settings/general" })}
+      >
+        <SettingsIcon />
+      </button>
+    </header>
+  );
+}
+
 export function AppSidebarLayout({ children }: { children: ReactNode }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const compactChrome = useCompactChatChrome();
+  const interfaceStyle = useInterfaceStyle();
   const legacySidebarEnabled = useLegacySidebarEnabled();
   // Settings routes show the settings nav in place of whichever thread
   // sidebar is active.
   const pathname = useLocation({ select: (location) => location.pathname });
   const isOnSettings = pathname === "/settings" || pathname.startsWith("/settings/");
   const isMacosDesktop = isElectron && isMacPlatform(navigator.platform);
-  const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);
+  const providerLayout = providerLayoutOf(interfaceStyle);
+  const sidebarStorageKey =
+    interfaceStyle === "github"
+      ? "copilot_sidebar_width"
+      : providerLayout !== null
+        ? `provider_sidebar_width_${providerLayout}`
+        : THREAD_SIDEBAR_WIDTH_STORAGE_KEY;
+  const defaultSidebarWidth =
+    interfaceStyle === "github"
+      ? 280
+      : providerLayout !== null
+        ? PROVIDER_LAYOUT_SPECS[providerLayout].sidebarWidth
+        : undefined;
+  const [sidebarWidth, setSidebarWidth] = useState(() =>
+    readInitialThreadSidebarWidth(sidebarStorageKey, defaultSidebarWidth),
+  );
+  useEffect(() => {
+    setSidebarWidth(readInitialThreadSidebarWidth(sidebarStorageKey, defaultSidebarWidth));
+  }, [sidebarStorageKey, defaultSidebarWidth]);
   // Subscribed rather than read once: the clamp must track live window size,
   // and a clamped drag ends with an unchanged width, which skips the re-render
   // that would otherwise refresh a render-time snapshot.
@@ -154,11 +223,11 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   const sidebarMaximumWidth = resolveThreadSidebarMaximumWidth(viewportWidth);
   const resetSidebarWidth = () => {
     try {
-      removeLocalStorageItem(THREAD_SIDEBAR_WIDTH_STORAGE_KEY);
+      removeLocalStorageItem(sidebarStorageKey);
     } catch (error) {
       console.error("Could not clear persisted thread sidebar width.", error);
     }
-    setSidebarWidth(resolveInitialThreadSidebarWidth(null, viewportWidth));
+    setSidebarWidth(resolveInitialThreadSidebarWidth(defaultSidebarWidth ?? null, viewportWidth));
   };
   const [isWindowFullscreen, setIsWindowFullscreen] = useState(() => {
     const getWindowFullscreenState = window.desktopBridge?.getWindowFullscreenState;
@@ -211,25 +280,38 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   }, [navigate, pathname]);
 
   return (
-    <SidebarProvider className="h-dvh! min-h-0!" defaultOpen style={sidebarProviderStyle}>
+    <SidebarProvider
+      className="h-dvh! min-h-0!"
+      defaultOpen
+      style={sidebarProviderStyle}
+      data-interface-shell={interfaceStyle}
+      data-opencode-settings={interfaceStyle === "opencode" && isOnSettings ? "" : undefined}
+    >
       <ProjectProjectionRetention />
-      {compactChrome ? null : (
+      {interfaceStyle === "opencode" && !compactChrome ? <OpenCodeTitlebar /> : null}
+      {compactChrome || (interfaceStyle === "opencode" && !isOnSettings) ? null : (
         <Sidebar
           side="left"
+          variant="sidebar"
           collapsible="offcanvas"
+          data-interface-sidebar={interfaceStyle}
           data-app-sidebar=""
           className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
-          resizable={{
-            maxWidth: sidebarMaximumWidth,
-            minWidth: THREAD_SIDEBAR_MIN_WIDTH,
-            shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
-              nextWidth <= currentWidth ||
-              wrapper.clientWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
-            storageKey: THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
-            onResize: setSidebarWidth,
-          }}
+          resizable={
+            interfaceStyle === "opencode"
+              ? false
+              : {
+                  maxWidth: sidebarMaximumWidth,
+                  minWidth: THREAD_SIDEBAR_MIN_WIDTH,
+                  shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
+                    nextWidth <= currentWidth ||
+                    wrapper.clientWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
+                  storageKey: sidebarStorageKey,
+                  onResize: setSidebarWidth,
+                }
+          }
         >
-          {isOnSettings ? (
+          {isOnSettings && interfaceStyle !== "github" ? (
             <>
               <SidebarChromeHeader isElectron={isElectron} />
               <SettingsSidebarNav pathname={pathname} />
@@ -239,11 +321,14 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
           ) : (
             <ThreadSidebar />
           )}
-          <SidebarRail onDoubleClick={resetSidebarWidth} />
+          {interfaceStyle === "opencode" ? null : <SidebarRail onDoubleClick={resetSidebarWidth} />}
         </Sidebar>
       )}
       {children}
-      {compactChrome ? null : <SidebarControl />}
+      <SettingsDialog />
+      {compactChrome || interfaceStyle === "opencode" || providerLayout !== null ? null : (
+        <SidebarControl />
+      )}
     </SidebarProvider>
   );
 }

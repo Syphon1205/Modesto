@@ -1,3 +1,4 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { autoAnimate } from "@formkit/auto-animate";
 import { useAtomValue } from "@effect/atom-react";
 import * as Schema from "effect/Schema";
@@ -35,17 +36,21 @@ import type { TimestampFormat } from "@modesto/contracts/settings";
 import {
   AlarmClockIcon,
   AlarmClockOffIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
   BotIcon,
   CheckIcon,
   ChevronDownIcon,
   CircleAlertIcon,
   CircleCheckIcon,
+  CircleHelpIcon,
   ClockIcon,
   EllipsisIcon,
   FolderPlusIcon,
   GitBranchIcon,
   GitPullRequestIcon,
-  KanbanIcon,
+  HouseIcon,
+  ListChecksIcon,
   type LucideIcon,
   MessageSquareIcon,
   PinIcon,
@@ -54,6 +59,7 @@ import {
   PuzzleIcon,
   SearchIcon,
   ServerIcon,
+  SettingsIcon,
   SquarePenIcon,
   TerminalIcon,
   Trash2Icon,
@@ -71,7 +77,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { useLocation, useNavigate, useParams, useRouter } from "@tanstack/react-router";
+import { useLocation, useParams, useRouter } from "@tanstack/react-router";
 
 import {
   isAtomCommandInterrupted,
@@ -113,7 +119,7 @@ import { useHandleNewThread } from "../hooks/useHandleNewThread";
 import { useStartNestedThread } from "../hooks/useStartNestedThread";
 import { openCommandPalette } from "../commandPaletteBus";
 import { startNewThreadFromContext } from "../lib/chatThreadActions";
-import { useClientSettings } from "../hooks/useSettings";
+import { useClientSettings, useInterfaceStyle } from "../hooks/useSettings";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useNowMinute } from "../hooks/useNowMinute";
@@ -134,7 +140,11 @@ import {
 import { formatRelativeTimeLabel, parseTimestampDate } from "../timestampFormat";
 import type { SidebarThreadSummary } from "../types";
 import { cn } from "~/lib/utils";
-import { spawnedThreadKind } from "./agents/spawnedThreads";
+import {
+  selectActiveSpawnedThreads,
+  spawnedThreadKind,
+  spawnedThreadRoleLabel,
+} from "./agents/spawnedThreads";
 import { buildThreadActionMenuItems } from "./threadActionMenu.logic";
 import {
   animatePinnedLayoutChanges,
@@ -199,13 +209,18 @@ import { Menu, MenuItem, MenuPopup, MenuTrigger } from "./ui/menu";
 import {
   SidebarContent,
   SidebarGroup,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "./ui/sidebar";
 import { Kbd, KbdGroup } from "./ui/kbd";
+import { CopilotSessionTree } from "./sidebar/CopilotSessionTree";
+import { ProviderLayoutSidebar } from "./sidebar/ProviderLayoutSidebar";
+import { providerLayoutOf } from "../providerLayouts";
 import { SidebarChromeFooter, SidebarChromeHeader } from "./sidebar/SidebarChrome";
 import { Popover, PopoverPopup, PopoverTrigger } from "./ui/popover";
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
@@ -1896,7 +1911,7 @@ const SidebarCompactThreadRow = memo(function SidebarCompactThreadRow(props: {
 
   if (variant === "chat") {
     return (
-      <SidebarMenuItem>
+      <SidebarMenuItem onContextMenu={handleContextMenu}>
         <SidebarMenuButton
           size="sm"
           isActive={props.isActive}
@@ -1905,7 +1920,6 @@ const SidebarCompactThreadRow = memo(function SidebarCompactThreadRow(props: {
           className={onStartThread ? "pe-14" : undefined}
           onClick={handleActivate}
           onDoubleClick={handleDoubleClick}
-          onContextMenu={handleContextMenu}
         >
           <MessageSquareIcon className="size-3.5 shrink-0 text-sidebar-muted-foreground" />
           {title}
@@ -1943,14 +1957,13 @@ const SidebarCompactThreadRow = memo(function SidebarCompactThreadRow(props: {
     thread.parentThreadId != null &&
     spawnedThreadKind(thread) === "multiagent";
   return (
-    <li className="group/preview-thread relative">
+    <li className="group/preview-thread relative" onContextMenu={handleContextMenu}>
       <button
         type="button"
         data-testid="sidebar-project-thread-row"
         title={statusPill ? `${thread.title} (${statusPill.label})` : thread.title}
         onClick={handleActivate}
         onDoubleClick={handleDoubleClick}
-        onContextMenu={handleContextMenu}
         className={cn(
           "flex w-full items-center gap-1 rounded-sm px-2 py-1 pe-7 text-left text-[12.5px] text-sidebar-muted-foreground hover:bg-sidebar-control-surface hover:text-sidebar-foreground",
           props.isActive && "bg-sidebar-control-surface text-sidebar-foreground",
@@ -1972,8 +1985,8 @@ const SidebarCompactThreadRow = memo(function SidebarCompactThreadRow(props: {
   );
 });
 
-// The sidebar's top-level nav row (New Chat/Search/Pull Requests/Agents/Tasks/
-// Automations/Plugins) - every entry is one of these, so active state,
+// The sidebar's top-level navigation rows. Keep the interaction and density
+// consistent across Start, Workspace, and Customize sections.
 // shortcut-hint rendering, and hover styling stay identical across them.
 function SidebarPrimaryAction({
   icon: Icon,
@@ -2015,34 +2028,60 @@ function SidebarPrimaryAction({
 
 export default function Sidebar() {
   const projects = useProjects();
+  const interfaceStyle = useInterfaceStyle();
+  const simpleMenu = interfaceStyle === "opencode";
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const threads = useThreadShells();
+  // Older installs stored conversational work as projects with `kind: chat`,
+  // before individual thread shells gained a conversationMode. Those shells
+  // retain the old `code` default after migration, so the project kind is the
+  // authoritative fallback. Without it, a whole chat history renders as a
+  // fake Projects tree and the Chats section appears empty.
+  const chatProjectKeys = useMemo(
+    () =>
+      new Set(
+        projects
+          .filter((project) => project.kind === "chat")
+          .map((project) => `${project.environmentId}:${project.id}`),
+      ),
+    [projects],
+  );
+  const isChatThread = useCallback(
+    (thread: Pick<EnvironmentThreadShell, "conversationMode" | "environmentId" | "projectId">) =>
+      thread.conversationMode === "chat" ||
+      chatProjectKeys.has(`${thread.environmentId}:${thread.projectId}`),
+    [chatProjectKeys],
+  );
   const chatThreads = useMemo(
     () =>
       sortThreadsForSidebar(
         threads.filter(
           (thread) =>
-            thread.conversationMode === "chat" &&
-            thread.archivedAt === null &&
-            thread.parentThreadId == null,
+            isChatThread(thread) && thread.archivedAt === null && thread.parentThreadId == null,
         ),
       ),
-    [threads],
+    [isChatThread, threads],
   );
   const nestedThreadsByParentId = useMemo(() => groupChildThreadsByParentId(threads), [threads]);
+  const activeAgentSessions = useMemo(() => selectActiveSpawnedThreads(threads), [threads]);
   const attachedSidechats = useMemo(
     () =>
       threads.filter(
         (thread) =>
-          thread.conversationMode === "chat" &&
-          thread.archivedAt === null &&
-          thread.parentThreadId != null,
+          isChatThread(thread) && thread.archivedAt === null && thread.parentThreadId != null,
       ),
-    [threads],
+    [isChatThread, threads],
   );
-  const nestedCodeThreads = useMemo(() => selectNestedCodeThreads(threads), [threads]);
-  const codeThreads = useMemo(() => selectTopLevelCodeThreads(threads), [threads]);
+  const nestedCodeThreads = useMemo(
+    () => selectNestedCodeThreads(threads).filter((thread) => !isChatThread(thread)),
+    [isChatThread, threads],
+  );
+  const codeThreads = useMemo(
+    () => selectTopLevelCodeThreads(threads).filter((thread) => !isChatThread(thread)),
+    [isChatThread, threads],
+  );
   const router = useRouter();
+  const navigate = useAppNavigate();
   const { isMobile, setOpenMobile } = useSidebar();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
   const autoSettleAfterDays = useClientSettings((s) => s.sidebarAutoSettleAfterDays);
@@ -2258,7 +2297,9 @@ export default function Sidebar() {
   const unsortedProjectGroups = useMemo(
     () =>
       buildSidebarProjectSnapshots({
-        projects: sidebarProjectSortOrder === "manual" ? orderedProjects : projects,
+        projects: (sidebarProjectSortOrder === "manual" ? orderedProjects : projects).filter(
+          (project) => project.kind !== "chat",
+        ),
         settings: projectGroupingSettings,
         primaryEnvironmentId,
         resolveEnvironmentLabel: (environmentId) => environmentLabelById.get(environmentId) ?? null,
@@ -2588,6 +2629,45 @@ export default function Sidebar() {
     }
     return map;
   }, [activeThreads, pinnedThreads, projectKeyByMemberRef, showFlatProjectPreviewMode]);
+  const routedOpenCodeProjectKey = useMemo(() => {
+    if (routeThreadRef === null) return null;
+    const routedThread = threads.find(
+      (thread) =>
+        thread.environmentId === routeThreadRef.environmentId &&
+        thread.id === routeThreadRef.threadId,
+    );
+    return routedThread
+      ? (projectKeyByMemberRef.get(`${routedThread.environmentId}:${routedThread.projectId}`) ??
+          null)
+      : null;
+  }, [projectKeyByMemberRef, routeThreadRef, threads]);
+  const [openCodeProjectKey, setOpenCodeProjectKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (routedOpenCodeProjectKey !== null) {
+      setOpenCodeProjectKey(routedOpenCodeProjectKey);
+      return;
+    }
+    if (
+      openCodeProjectKey !== "__chats__" &&
+      !projectGroups.some((project) => project.projectKey === openCodeProjectKey)
+    ) {
+      setOpenCodeProjectKey(projectGroups[0]?.projectKey ?? "__chats__");
+    }
+  }, [openCodeProjectKey, projectGroups, routedOpenCodeProjectKey]);
+  const openCodeProject =
+    projectGroups.find((project) => project.projectKey === openCodeProjectKey) ?? null;
+  const openCodeThreads = useMemo(() => {
+    if (openCodeProjectKey === "__chats__") return chatThreads;
+    if (openCodeProjectKey === null) return [];
+    return sortThreadsForSidebar(
+      codeThreads.filter(
+        (thread) =>
+          thread.archivedAt === null &&
+          projectKeyByMemberRef.get(`${thread.environmentId}:${thread.projectId}`) ===
+            openCodeProjectKey,
+      ),
+    );
+  }, [chatThreads, codeThreads, openCodeProjectKey, projectKeyByMemberRef]);
 
   const threadSearchInputRef = useRef<HTMLInputElement>(null);
   const [threadSearchQuery, setThreadSearchQuery] = useState("");
@@ -3694,7 +3774,7 @@ export default function Sidebar() {
             copyThreadIdToClipboard(thread.id, { threadId: thread.id });
             return;
           case "archive": {
-            const noun = thread.conversationMode === "chat" ? "chat" : "thread";
+            const noun = isChatThread(thread) ? "chat" : "thread";
             if (confirmThreadArchive) {
               const confirmed = await settlePromise(() =>
                 api.dialogs.confirm(`Archive ${noun} "${thread.title}"?`),
@@ -3723,7 +3803,7 @@ export default function Sidebar() {
             return;
           }
           case "delete": {
-            const noun = thread.conversationMode === "chat" ? "chat" : "thread";
+            const noun = isChatThread(thread) ? "chat" : "session";
             if (confirmThreadDelete) {
               const confirmed = await settlePromise(() =>
                 api.dialogs.confirm(
@@ -3742,7 +3822,7 @@ export default function Sidebar() {
               toastManager.add(
                 stackedThreadToast({
                   type: "error",
-                  title: "Failed to delete thread",
+                  title: `Failed to delete ${noun}`,
                   description: error instanceof Error ? error.message : "An error occurred.",
                 }),
               );
@@ -3896,6 +3976,11 @@ export default function Sidebar() {
     });
   }, [isMobile, newThreadContext, router, setOpenMobile]);
 
+  const handleHomeClick = useCallback(() => {
+    if (isMobile) setOpenMobile(false);
+    void navigate({ to: "/" });
+  }, [isMobile, navigate, setOpenMobile]);
+
   const handleStartThreadInChat = useCallback(
     (threadRef: ScopedThreadRef) => {
       const thread = threadByKeyRef.current.get(scopedThreadKey(threadRef));
@@ -3911,15 +3996,16 @@ export default function Sidebar() {
     shortcutLabelForCommand(keybindings, "chat.new") ??
     (projectGroups.length <= 1 ? shortcutLabelForCommand(keybindings, "chat.newLocal") : undefined);
   const newThreadInProjectShortcutLabel = shortcutLabelForCommand(keybindings, "chat.newLocal");
-  const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
   const isOnPullRequests = pathname.startsWith("/pull-requests");
   const isOnAgents = pathname.startsWith("/agents");
-  const isOnKanban = pathname.startsWith("/kanban");
   const isOnAutomations = pathname.startsWith("/automations");
   const isOnConnections = pathname.startsWith("/connections");
   const isOnPlugins = pathname.startsWith("/plugins");
-  const renderNestedChildThreads = (parentThread: EnvironmentThreadShell) => {
+  const renderNestedChildThreads = (
+    parentThread: EnvironmentThreadShell,
+    ancestors: ReadonlySet<ThreadId> = new Set([parentThread.id]),
+  ): ReactNode => {
     const childThreads = nestedThreadsByParentId.get(parentThread.id) ?? [];
     if (childThreads.length === 0) return null;
     return (
@@ -3929,8 +4015,11 @@ export default function Sidebar() {
         className="flex flex-col gap-px ms-[calc(var(--sidebar-row-content-inset)+0.6rem)] border-s border-sidebar-border/50 ps-2 group-data-[collapsible=icon]:hidden"
       >
         {childThreads.map((child) => {
+          if (ancestors.has(child.id)) return null;
           const childKey = scopedThreadKey(scopeThreadRef(child.environmentId, child.id));
-          const isChildChat = child.conversationMode === "chat";
+          const isChildChat = isChatThread(child);
+          const nextAncestors = new Set(ancestors);
+          nextAncestors.add(child.id);
           return (
             <SidebarCompactThreadRow
               key={childKey}
@@ -3939,7 +4028,7 @@ export default function Sidebar() {
               isActive={routeThreadKey === childKey}
               isRenaming={renamingThreadKey === childKey}
               renamingTitle={renamingThreadKey === childKey ? renamingTitle : ""}
-              deleteLabel={isChildChat ? "Delete chat" : "Delete thread"}
+              deleteLabel={isChildChat ? "Delete chat" : "Delete session"}
               onActivate={navigateToThread}
               onContextMenu={handleThreadContextMenu}
               onStartRename={startThreadRename}
@@ -3947,12 +4036,501 @@ export default function Sidebar() {
               onCommitRename={commitThreadRename}
               onCancelRename={cancelThreadRename}
               onDelete={attemptDeleteFromRow}
+              nestedContent={renderNestedChildThreads(child, nextAncestors)}
             />
           );
         })}
       </ul>
     );
   };
+
+  const renderActiveAgentSessions = (className?: string) =>
+    activeAgentSessions.length > 0 ? (
+      <SidebarGroup className={cn("relative z-[1] gap-1", className)}>
+        <div className="flex items-center justify-between px-2">
+          <span className="text-xs font-medium text-sidebar-muted-foreground/70">
+            Active agents
+          </span>
+          <span className="rounded-full bg-info/15 px-1.5 font-mono text-[10px] text-info-foreground">
+            {activeAgentSessions.length}
+          </span>
+        </div>
+        <SidebarMenu className="gap-px" aria-label="Active agent sessions">
+          {activeAgentSessions.map((thread) => {
+            const threadKey = scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id));
+            return (
+              <SidebarCompactThreadRow
+                key={`active-agent:${threadKey}`}
+                thread={thread}
+                variant={isChatThread(thread) ? "chat" : "project"}
+                isActive={routeThreadKey === threadKey}
+                isRenaming={false}
+                renamingTitle=""
+                deleteLabel={isChatThread(thread) ? "Delete sidechat" : "Delete agent session"}
+                onActivate={navigateToThread}
+                onContextMenu={handleThreadContextMenu}
+                onStartRename={startThreadRename}
+                onRenameTitleChange={setRenamingTitle}
+                onCommitRename={commitThreadRename}
+                onCancelRename={cancelThreadRename}
+                onDelete={attemptDeleteFromRow}
+              />
+            );
+          })}
+        </SidebarMenu>
+        <span className="sr-only">
+          {activeAgentSessions
+            .map((thread) => spawnedThreadRoleLabel(spawnedThreadKind(thread)))
+            .join(", ")}
+        </span>
+      </SidebarGroup>
+    ) : null;
+
+  const providerLayout = providerLayoutOf(interfaceStyle);
+  if (providerLayout !== null) {
+    return (
+      <>
+        <ProviderLayoutSidebar
+          layout={providerLayout}
+          isElectron={isElectron}
+          projects={projectGroups}
+          codeThreads={sortThreadsForSidebar(
+            codeThreads.filter((thread) => thread.archivedAt === null),
+          )}
+          chatThreads={chatThreads}
+          pinnedThreads={pinnedThreads}
+          routeThreadKey={routeThreadKey}
+          newThreadActive={pathname === "/" || pathname.startsWith("/draft/")}
+          automationsActive={isOnAutomations}
+          pluginsActive={isOnPlugins || isOnConnections || isOnAgents}
+          newThreadShortcutLabel={newThreadShortcutLabel}
+          search={{
+            open: searchBarOpen,
+            query: threadSearchQuery,
+            results: threadSearchResults,
+            activeIndex: activeSearchResultIndex,
+            inputRef: threadSearchInputRef,
+            onOpen: () => {
+              setSearchBarOpen(true);
+              requestAnimationFrame(() => threadSearchInputRef.current?.focus());
+            },
+            onClose: closeSearchBar,
+            onQueryChange: (query) => {
+              setThreadSearchQuery(query);
+              setActiveSearchResultIndex(0);
+            },
+            onKeyDown: handleThreadSearchKeyDown,
+          }}
+          rename={{
+            threadKey: renamingThreadKey,
+            title: renamingTitle,
+            onStart: startThreadRename,
+            onChange: setRenamingTitle,
+            onCommit: commitThreadRename,
+            onCancel: cancelThreadRename,
+          }}
+          onNewThread={handleNewThreadClick}
+          onNewThreadInProject={(project) => {
+            if (isMobile) setOpenMobile(false);
+            void newThreadContext.handleNewThread(
+              scopeProjectRef(project.environmentId, project.id),
+            );
+          }}
+          onNewProject={openCreateProjectDialog}
+          onActivateThread={navigateToThread}
+          onThreadContextMenu={handleThreadContextMenu}
+        />
+        <CreateProjectDialog
+          open={createProjectDialogOpen}
+          onOpenChange={setCreateProjectDialogOpen}
+          onContinue={continueCreateProject}
+          onPickLocalFolder={pickLocalProjectFolder}
+          onCreateLocal={createLocalProject}
+          remoteAvailable={remoteProjectAvailable}
+        />
+      </>
+    );
+  }
+
+  if (interfaceStyle === "github") {
+    const allTopLevelThreads = sortThreadsForSidebar(
+      [...chatThreads, ...codeThreads].filter((thread) => thread.archivedAt === null),
+    );
+
+    return (
+      <>
+        <SidebarHeader data-github-sidebar-header="" className={isElectron ? "drag-region" : ""}>
+          <div className="min-w-0 truncate text-sm font-semibold" />
+          <button type="button" aria-label="Back" onClick={() => window.history.back()}>
+            <ArrowLeftIcon />
+          </button>
+          <button type="button" aria-label="Forward" onClick={() => window.history.forward()}>
+            <ArrowRightIcon />
+          </button>
+        </SidebarHeader>
+        <SidebarContent data-github-sidebar-content="" className="gap-0 overflow-x-hidden">
+          <SidebarGroup className="px-2 pb-2 pt-1">
+            <nav aria-label="Quick links">
+              <SidebarMenu className="gap-px">
+                <SidebarPrimaryAction
+                  icon={HouseIcon}
+                  label="Home"
+                  active={!searchBarOpen && (pathname === "/" || pathname.startsWith("/draft/"))}
+                  onClick={handleHomeClick}
+                />
+                <SidebarPrimaryAction
+                  icon={ListChecksIcon}
+                  label="My work"
+                  active={isOnPullRequests}
+                  onClick={() =>
+                    void navigate({
+                      to: "/pull-requests",
+                      search: { involvement: "all", state: "open" },
+                    })
+                  }
+                />
+                <SidebarPrimaryAction
+                  icon={ClockIcon}
+                  label="Automations"
+                  active={isOnAutomations}
+                  onClick={() => void navigate({ to: "/automations" })}
+                />
+                <SidebarPrimaryAction
+                  icon={PuzzleIcon}
+                  label="Customize"
+                  active={isOnPlugins || isOnConnections || isOnAgents}
+                  onClick={() => void navigate({ to: "/plugins" })}
+                />
+                <SidebarPrimaryAction
+                  icon={SearchIcon}
+                  label="Search"
+                  active={searchBarOpen}
+                  onClick={() => {
+                    setSearchBarOpen(true);
+                    requestAnimationFrame(() => threadSearchInputRef.current?.focus());
+                  }}
+                />
+              </SidebarMenu>
+            </nav>
+          </SidebarGroup>
+
+          <div className={disclosureShellClassName(searchBarOpen)}>
+            <div className={DISCLOSURE_INNER_CLASS}>
+              <div className={disclosureContentClassName(searchBarOpen)}>
+                <SidebarGroup className="px-2 pb-2 pt-0">
+                  <div data-github-sidebar-search="">
+                    <SearchIcon />
+                    <Input
+                      ref={threadSearchInputRef}
+                      nativeInput
+                      unstyled
+                      type="search"
+                      value={threadSearchQuery}
+                      onChange={(event) => {
+                        setThreadSearchQuery(event.currentTarget.value);
+                        setActiveSearchResultIndex(0);
+                      }}
+                      onKeyDown={handleThreadSearchKeyDown}
+                      placeholder="Search sessions"
+                      aria-label="Search sessions"
+                    />
+                    <button type="button" aria-label="Close search" onClick={closeSearchBar}>
+                      <XIcon />
+                    </button>
+                  </div>
+                </SidebarGroup>
+              </div>
+            </div>
+          </div>
+
+          {renderActiveAgentSessions("px-2 pb-2 pt-1")}
+
+          <SidebarGroup className="min-h-0 flex-1 px-2 pb-2 pt-3">
+            <CopilotSessionTree
+              headingLabel="Sessions"
+              projects={projectGroups}
+              chats={(isSearchingThreads ? threadSearchResults : allTopLevelThreads).filter(
+                isChatThread,
+              )}
+              threads={(isSearchingThreads ? threadSearchResults : allTopLevelThreads).filter(
+                (thread) => !isChatThread(thread),
+              )}
+              onNewChat={handleNewThreadClick}
+              onMarkAllRead={() => {
+                const visitedAt = new Date().toISOString();
+                for (const thread of allTopLevelThreads) {
+                  markThreadVisited(
+                    scopedThreadKey(scopeThreadRef(thread.environmentId, thread.id)),
+                    visitedAt,
+                  );
+                }
+              }}
+              onNewProject={openCreateProjectDialog}
+              onNewSession={(project) => {
+                if (isMobile) setOpenMobile(false);
+                void newThreadContext.handleNewThread(
+                  scopeProjectRef(project.environmentId, project.id),
+                );
+              }}
+              onProjectSettings={(project) => {
+                if (isMobile) setOpenMobile(false);
+                void router.navigate({
+                  to: "/projects/$projectKey",
+                  params: { projectKey: project.projectKey },
+                });
+              }}
+              onDeleteProject={(project) => {
+                void handleDeleteProject(project);
+              }}
+              renderThread={(thread) => {
+                const threadRef = scopeThreadRef(thread.environmentId, thread.id);
+                const threadKey = scopedThreadKey(threadRef);
+                return (
+                  <SidebarCompactThreadRow
+                    key={threadKey}
+                    thread={thread}
+                    variant={isChatThread(thread) ? "chat" : "project"}
+                    isActive={routeThreadKey === threadKey}
+                    isRenaming={renamingThreadKey === threadKey}
+                    renamingTitle={renamingThreadKey === threadKey ? renamingTitle : ""}
+                    deleteLabel={isChatThread(thread) ? "Delete chat" : "Delete session"}
+                    onActivate={navigateToThread}
+                    onContextMenu={handleThreadContextMenu}
+                    onStartRename={startThreadRename}
+                    onRenameTitleChange={setRenamingTitle}
+                    onCommitRename={commitThreadRename}
+                    onCancelRename={cancelThreadRename}
+                    onDelete={attemptDeleteFromRow}
+                  />
+                );
+              }}
+            />
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarChromeFooter />
+        <CreateProjectDialog
+          open={createProjectDialogOpen}
+          onOpenChange={setCreateProjectDialogOpen}
+          onContinue={continueCreateProject}
+          onPickLocalFolder={pickLocalProjectFolder}
+          onCreateLocal={createLocalProject}
+          remoteAvailable={remoteProjectAvailable}
+        />
+      </>
+    );
+  }
+
+  if (simpleMenu) {
+    const activePanelTitle =
+      openCodeProjectKey === "__chats__" ? "Chats" : (openCodeProject?.displayName ?? "OpenCode");
+
+    return (
+      <>
+        <div data-opencode-sidebar="">
+          <div data-opencode-project-rail="">
+            <div data-opencode-projects="">
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      data-active={openCodeProjectKey === "__chats__" || undefined}
+                      aria-label="Chats"
+                      onClick={() => {
+                        setOpenCodeProjectKey("__chats__");
+                      }}
+                    />
+                  }
+                >
+                  <MessageSquareIcon />
+                </TooltipTrigger>
+                <TooltipPopup side="right">Chats</TooltipPopup>
+              </Tooltip>
+              {projectGroups.map((project) => (
+                <Tooltip key={project.projectKey}>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        data-active={openCodeProjectKey === project.projectKey || undefined}
+                        aria-label={project.displayName}
+                        onClick={() => {
+                          setOpenCodeProjectKey(project.projectKey);
+                        }}
+                      />
+                    }
+                  >
+                    <ProjectFavicon
+                      environmentId={project.environmentId}
+                      cwd={project.workspaceRoot}
+                      faviconPath={project.faviconPath}
+                    />
+                  </TooltipTrigger>
+                  <TooltipPopup side="right">{project.displayName}</TooltipPopup>
+                </Tooltip>
+              ))}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label="Open project"
+                      onClick={openCreateProjectDialog}
+                    />
+                  }
+                >
+                  <PlusIcon />
+                </TooltipTrigger>
+                <TooltipPopup side="right">Open project</TooltipPopup>
+              </Tooltip>
+            </div>
+            <div data-opencode-rail-footer="">
+              <Menu>
+                <MenuTrigger render={<button type="button" aria-label="More tools" />}>
+                  <EllipsisIcon />
+                </MenuTrigger>
+                <MenuPopup align="start" side="right">
+                  <MenuItem onClick={() => void navigate({ to: "/automations" })}>
+                    Automations
+                  </MenuItem>
+                  <MenuItem onClick={() => void navigate({ to: "/agents" })}>Agents</MenuItem>
+                  <MenuItem
+                    onClick={() =>
+                      void navigate({
+                        to: "/pull-requests",
+                        search: { involvement: "all", state: "open" },
+                      })
+                    }
+                  >
+                    Pull Requests
+                  </MenuItem>
+                  <MenuItem onClick={() => void navigate({ to: "/plugins" })}>Plugins</MenuItem>
+                  <MenuItem onClick={() => void navigate({ to: "/connections" })}>
+                    Connections
+                  </MenuItem>
+                  <MenuItem onClick={() => void navigate({ to: "/usage" })}>Usage</MenuItem>
+                </MenuPopup>
+              </Menu>
+              <button
+                type="button"
+                aria-label="Settings"
+                onClick={() => void navigate({ to: "/settings" })}
+              >
+                <SettingsIcon />
+              </button>
+              <a href="https://opencode.ai/docs" target="_blank" rel="noreferrer" aria-label="Help">
+                <CircleHelpIcon />
+              </a>
+            </div>
+          </div>
+
+          <section data-opencode-session-panel="" aria-label={`${activePanelTitle} sessions`}>
+            <div data-opencode-session-heading="">
+              <strong title={activePanelTitle}>{activePanelTitle}</strong>
+              <button
+                type="button"
+                aria-label="Search sessions"
+                onClick={() => setSearchBarOpen(true)}
+              >
+                <SearchIcon />
+              </button>
+            </div>
+            <div className={disclosureShellClassName(searchBarOpen)}>
+              <div className={DISCLOSURE_INNER_CLASS}>
+                <div className={disclosureContentClassName(searchBarOpen)}>
+                  <div data-opencode-search="">
+                    <SearchIcon />
+                    <Input
+                      ref={threadSearchInputRef}
+                      nativeInput
+                      unstyled
+                      type="search"
+                      value={threadSearchQuery}
+                      onChange={(event) => {
+                        setThreadSearchQuery(event.currentTarget.value);
+                        setActiveSearchResultIndex(0);
+                      }}
+                      onKeyDown={handleThreadSearchKeyDown}
+                      placeholder="Search sessions"
+                      aria-label="Search sessions"
+                    />
+                    <button type="button" aria-label="Close search" onClick={closeSearchBar}>
+                      <XIcon />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button data-opencode-new-session="" type="button" onClick={handleNewThreadClick}>
+              <PlusIcon />
+              <span>New Session</span>
+              {newThreadShortcutLabel ? <kbd>{newThreadShortcutLabel}</kbd> : null}
+            </button>
+            {activeAgentSessions.length > 0 ? (
+              <>
+                <div data-opencode-session-label="">Active agents</div>
+                <div data-opencode-session-list="" aria-label="Active agent sessions">
+                  {activeAgentSessions.map((thread) => {
+                    const threadRef = scopeThreadRef(thread.environmentId, thread.id);
+                    const threadKey = scopedThreadKey(threadRef);
+                    return (
+                      <button
+                        key={`active-agent:${threadKey}`}
+                        type="button"
+                        data-active={routeThreadKey === threadKey || undefined}
+                        onClick={() => navigateToThread(threadRef)}
+                        onContextMenu={(event) => {
+                          event.preventDefault();
+                          handleThreadContextMenu(threadRef, {
+                            x: event.clientX,
+                            y: event.clientY,
+                          });
+                        }}
+                      >
+                        <ThreadActivityIndicator thread={thread} />
+                        <span>{thread.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : null}
+            <div data-opencode-session-label="">Sessions</div>
+            <div data-opencode-session-list="">
+              {(isSearchingThreads ? threadSearchResults : openCodeThreads).map((thread) => {
+                const threadRef = scopeThreadRef(thread.environmentId, thread.id);
+                const threadKey = scopedThreadKey(threadRef);
+                return (
+                  <button
+                    key={threadKey}
+                    type="button"
+                    data-active={routeThreadKey === threadKey || undefined}
+                    onClick={() => navigateToThread(threadRef)}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      handleThreadContextMenu(threadRef, { x: event.clientX, y: event.clientY });
+                    }}
+                  >
+                    <ThreadActivityIndicator thread={thread} />
+                    <span>{thread.title}</span>
+                  </button>
+                );
+              })}
+              {!isSearchingThreads && openCodeThreads.length === 0 ? <p>No sessions yet</p> : null}
+            </div>
+          </section>
+        </div>
+        <CreateProjectDialog
+          open={createProjectDialogOpen}
+          onOpenChange={setCreateProjectDialogOpen}
+          onContinue={continueCreateProject}
+          onPickLocalFolder={pickLocalProjectFolder}
+          onCreateLocal={createLocalProject}
+          remoteAvailable={remoteProjectAvailable}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -3964,76 +4542,151 @@ export default function Sidebar() {
           // header and would otherwise paint across the search row's outline.
           <>
             <SidebarGroup className="px-[var(--sidebar-content-inset)] pt-1 pb-1.5">
-              <SidebarMenu className="gap-0.5">
-                <SidebarPrimaryAction
-                  icon={SquarePenIcon}
-                  label="New Chat"
-                  shortcutLabel={newThreadShortcutLabel}
-                  onClick={() => handleNewThreadClick()}
-                />
-                <SidebarPrimaryAction
-                  icon={SearchIcon}
-                  label="Search"
-                  active={searchBarOpen}
-                  onClick={() => {
-                    setSearchBarOpen(true);
-                    // The row mounts this render; focus needs the input to
-                    // exist first.
-                    requestAnimationFrame(() => threadSearchInputRef.current?.focus());
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={GitPullRequestIcon}
-                  label="Pull Requests"
-                  active={isOnPullRequests}
-                  onClick={() => {
-                    void navigate({
-                      to: "/pull-requests",
-                      search: { involvement: "all", state: "open" },
-                    });
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={BotIcon}
-                  label="Agents"
-                  active={isOnAgents}
-                  onClick={() => {
-                    void navigate({ to: "/agents" });
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={KanbanIcon}
-                  label="Tasks"
-                  active={isOnKanban}
-                  onClick={() => {
-                    void navigate({ to: "/kanban" });
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={ClockIcon}
-                  label="Automations"
-                  active={isOnAutomations}
-                  onClick={() => {
-                    void navigate({ to: "/automations" });
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={PlugZapIcon}
-                  label="Connections"
-                  active={isOnConnections}
-                  onClick={() => {
-                    void navigate({ to: "/connections" });
-                  }}
-                />
-                <SidebarPrimaryAction
-                  icon={PuzzleIcon}
-                  label="Plugins"
-                  active={isOnPlugins}
-                  onClick={() => {
-                    void navigate({ to: "/plugins" });
-                  }}
-                />
-              </SidebarMenu>
+              <nav aria-label="Workspace navigation" className="space-y-2">
+                <SidebarMenu className="gap-0.5">
+                  <SidebarPrimaryAction
+                    icon={SquarePenIcon}
+                    label="New Chat"
+                    active={!searchBarOpen && (pathname === "/" || pathname.startsWith("/draft/"))}
+                    shortcutLabel={newThreadShortcutLabel}
+                    onClick={() => handleNewThreadClick()}
+                  />
+                  <SidebarPrimaryAction
+                    icon={SearchIcon}
+                    label="Search"
+                    active={searchBarOpen}
+                    onClick={() => {
+                      setSearchBarOpen(true);
+                      // The row mounts this render; focus needs the input to
+                      // exist first.
+                      requestAnimationFrame(() => threadSearchInputRef.current?.focus());
+                    }}
+                  />
+                </SidebarMenu>
+
+                {simpleMenu ? (
+                  <div>
+                    <p className="px-2 pb-1 text-[11px] font-medium text-sidebar-muted-foreground/65">
+                      Menu
+                    </p>
+                    <SidebarMenu className="gap-0.5">
+                      <SidebarPrimaryAction
+                        icon={ClockIcon}
+                        label="Automations"
+                        active={isOnAutomations}
+                        onClick={() => void navigate({ to: "/automations" })}
+                      />
+                      <SidebarPrimaryAction
+                        icon={BotIcon}
+                        label="Agents"
+                        active={isOnAgents}
+                        onClick={() => void navigate({ to: "/agents" })}
+                      />
+                      <SidebarMenuItem>
+                        <Menu>
+                          <MenuTrigger
+                            render={
+                              <SidebarMenuButton
+                                size="sm"
+                                isActive={isOnPullRequests || isOnPlugins || isOnConnections}
+                                aria-label="More tools"
+                              />
+                            }
+                          >
+                            <EllipsisIcon className="size-4 shrink-0" />
+                            <span>More</span>
+                          </MenuTrigger>
+                          <MenuPopup align="start" side="right">
+                            <MenuItem
+                              onClick={() =>
+                                void navigate({
+                                  to: "/pull-requests",
+                                  search: { involvement: "all", state: "open" },
+                                })
+                              }
+                            >
+                              Pull Requests
+                            </MenuItem>
+                            <MenuItem onClick={() => void navigate({ to: "/plugins" })}>
+                              Plugins
+                            </MenuItem>
+                            <MenuItem onClick={() => void navigate({ to: "/connections" })}>
+                              Connections
+                            </MenuItem>
+                            <MenuItem onClick={() => void navigate({ to: "/usage" })}>
+                              Usage
+                            </MenuItem>
+                            <MenuItem onClick={() => void navigate({ to: "/settings" })}>
+                              Settings
+                            </MenuItem>
+                          </MenuPopup>
+                        </Menu>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <p className="px-2 pb-1 text-[11px] font-medium text-sidebar-muted-foreground/65">
+                        Workspace
+                      </p>
+                      <SidebarMenu className="gap-0.5">
+                        <SidebarPrimaryAction
+                          icon={ClockIcon}
+                          label="Automations"
+                          active={isOnAutomations}
+                          onClick={() => {
+                            void navigate({ to: "/automations" });
+                          }}
+                        />
+                        <SidebarPrimaryAction
+                          icon={GitPullRequestIcon}
+                          label="Pull Requests"
+                          active={isOnPullRequests}
+                          onClick={() => {
+                            void navigate({
+                              to: "/pull-requests",
+                              search: { involvement: "all", state: "open" },
+                            });
+                          }}
+                        />
+                      </SidebarMenu>
+                    </div>
+
+                    <div>
+                      <p className="px-2 pb-1 text-[11px] font-medium text-sidebar-muted-foreground/65">
+                        Customize
+                      </p>
+                      <SidebarMenu className="gap-0.5">
+                        <SidebarPrimaryAction
+                          icon={BotIcon}
+                          label="Agents"
+                          active={isOnAgents}
+                          onClick={() => {
+                            void navigate({ to: "/agents" });
+                          }}
+                        />
+                        <SidebarPrimaryAction
+                          icon={PuzzleIcon}
+                          label="Plugins"
+                          active={isOnPlugins}
+                          onClick={() => {
+                            void navigate({ to: "/plugins" });
+                          }}
+                        />
+                        <SidebarPrimaryAction
+                          icon={PlugZapIcon}
+                          label="Connections"
+                          active={isOnConnections}
+                          onClick={() => {
+                            void navigate({ to: "/connections" });
+                          }}
+                        />
+                      </SidebarMenu>
+                    </div>
+                  </>
+                )}
+              </nav>
             </SidebarGroup>
             <div className={disclosureShellClassName(searchBarOpen)}>
               <div className={DISCLOSURE_INNER_CLASS}>
@@ -4094,18 +4747,17 @@ export default function Sidebar() {
                 </div>
               </div>
             </div>
+            {renderActiveAgentSessions("p-[var(--sidebar-content-inset)] pt-0")}
             <SidebarGroup className="relative z-[1] gap-1 p-[var(--sidebar-content-inset)] pt-0">
               <div className="mb-1 mt-2 flex items-center justify-between px-2">
-                <span className="text-[11px] font-medium uppercase tracking-wide text-sidebar-muted-foreground/70">
-                  Chats
-                </span>
+                <span className="text-xs font-medium text-sidebar-muted-foreground/70">Chats</span>
                 <Tooltip>
                   <TooltipTrigger
                     render={
                       <SidebarMenuButton
                         size="icon"
                         className="relative size-6 shrink-0 focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
-                        onClick={() => handleNewThreadClick()}
+                        onClick={handleNewThreadClick}
                         type="button"
                         aria-label="New chat"
                       />
@@ -4130,7 +4782,6 @@ export default function Sidebar() {
                   const threadKey = scopedThreadKey(
                     scopeThreadRef(thread.environmentId, thread.id),
                   );
-                  const childThreads = nestedThreadsByParentId.get(thread.id) ?? [];
                   return (
                     <SidebarCompactThreadRow
                       key={threadKey}
@@ -4148,42 +4799,7 @@ export default function Sidebar() {
                       onCancelRename={cancelThreadRename}
                       onDelete={attemptDeleteFromRow}
                       onStartThread={handleStartThreadInChat}
-                      nestedContent={
-                        childThreads.length > 0 ? (
-                          <ul
-                            role="list"
-                            aria-label={`Threads in ${thread.title}`}
-                            className="flex flex-col gap-px ms-[calc(var(--sidebar-row-content-inset)+0.6rem)] border-s border-sidebar-border/50 ps-2 group-data-[collapsible=icon]:hidden"
-                          >
-                            {childThreads.map((child) => {
-                              const childKey = scopedThreadKey(
-                                scopeThreadRef(child.environmentId, child.id),
-                              );
-                              const isChildChat = child.conversationMode === "chat";
-                              return (
-                                <SidebarCompactThreadRow
-                                  key={childKey}
-                                  thread={child}
-                                  variant={isChildChat ? "chat" : "project"}
-                                  isActive={routeThreadKey === childKey}
-                                  isRenaming={renamingThreadKey === childKey}
-                                  renamingTitle={
-                                    renamingThreadKey === childKey ? renamingTitle : ""
-                                  }
-                                  deleteLabel={isChildChat ? "Delete chat" : "Delete thread"}
-                                  onActivate={navigateToThread}
-                                  onContextMenu={handleThreadContextMenu}
-                                  onStartRename={startThreadRename}
-                                  onRenameTitleChange={setRenamingTitle}
-                                  onCommitRename={commitThreadRename}
-                                  onCancelRename={cancelThreadRename}
-                                  onDelete={attemptDeleteFromRow}
-                                />
-                              );
-                            })}
-                          </ul>
-                        ) : null
-                      }
+                      nestedContent={renderNestedChildThreads(thread)}
                     />
                   );
                 })}
@@ -4193,7 +4809,7 @@ export default function Sidebar() {
               {projectGroups.length > 0 ? (
                 <>
                   <div className="mb-1 mt-2 flex items-center justify-between px-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-sidebar-muted-foreground/70">
+                    <span className="text-xs font-medium text-sidebar-muted-foreground/70">
                       Projects
                     </span>
                     <Tooltip>
@@ -4360,7 +4976,7 @@ export default function Sidebar() {
                                             renamingTitle={
                                               renamingThreadKey === threadKey ? renamingTitle : ""
                                             }
-                                            deleteLabel="Delete thread"
+                                            deleteLabel="Delete session"
                                             onActivate={navigateToThread}
                                             onContextMenu={handleThreadContextMenu}
                                             onStartRename={startThreadRename}

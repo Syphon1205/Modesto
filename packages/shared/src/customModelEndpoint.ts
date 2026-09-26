@@ -18,3 +18,10 @@ export const CUSTOM_MODEL_ENDPOINT_MODEL_SLUG_PREFIX = "router:";
 export function isCustomModelEndpointModelSlug(slug: string): boolean {
   return slug.startsWith(CUSTOM_MODEL_ENDPOINT_MODEL_SLUG_PREFIX);
 }
+
+export function customModelEndpointIdFromModelSlug(slug: string): string | null {
+  if (!isCustomModelEndpointModelSlug(slug)) return null;
+  const remainder = slug.slice(CUSTOM_MODEL_ENDPOINT_MODEL_SLUG_PREFIX.length);
+  const separatorIndex = remainder.indexOf(":");
+  return separatorIndex > 0 ? remainder.slice(0, separatorIndex) : null;
+}

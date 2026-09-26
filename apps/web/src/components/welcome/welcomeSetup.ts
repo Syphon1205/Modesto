@@ -14,21 +14,19 @@ import { isProviderAvailable, type ServerProvider } from "@modesto/contracts";
  */
 export const WELCOME_SETUP_VERSION = "0.5.0";
 
-export type WelcomeSetupStepId = "welcome" | "appearance" | "agents" | "avatar" | "ready";
+export type WelcomeSetupStepId = "welcome" | "appearance" | "agents" | "ready";
 
 export const WELCOME_SETUP_STEPS: ReadonlyArray<WelcomeSetupStepId> = [
   "welcome",
   "appearance",
   "agents",
-  "avatar",
   "ready",
 ];
 
 export const WELCOME_SETUP_STEP_LABELS: Record<WelcomeSetupStepId, string> = {
   welcome: "Welcome",
   appearance: "Appearance",
-  agents: "Agents",
-  avatar: "Your agent",
+  agents: "Providers",
   ready: "Ready",
 };
 

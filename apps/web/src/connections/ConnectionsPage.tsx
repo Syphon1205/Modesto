@@ -26,7 +26,6 @@ import { CheckIcon, CopyIcon, RefreshCwIcon, SearchIcon, XIcon } from "lucide-re
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nativeAppMentionLabel, type NativeApp } from "@modesto/shared/nativeApps";
 
-import { GridDistortion } from "~/components/GridDistortion";
 import { nativeAppBrandHex, nativeAppIcon } from "~/components/NativeAppIcons";
 import { webAppBrandHex, webAppIcon } from "~/components/WebAppIcons";
 import { Button } from "~/components/ui/button";
@@ -174,7 +173,7 @@ function ConnectionsHero({
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-border/50">
-      <GridDistortion className="opacity-[0.55] [mask-image:radial-gradient(120%_100%_at_18%_0%,#000,transparent_72%)] [mask-size:100%_100%] [mask-repeat:no-repeat]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),transparent)]" />
       <div className="relative z-10 grid items-center gap-2 md:grid-cols-[minmax(0,1fr)_20rem] lg:grid-cols-[minmax(0,1fr)_23rem]">
         <div className="px-6 py-8 sm:px-7">
           <p className="font-mono text-[10.5px] tracking-[0.16em] text-muted-foreground uppercase">

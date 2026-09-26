@@ -15,6 +15,7 @@ import * as SqlClient from "effect/unstable/sql/SqlClient";
 import * as SqlSchema from "effect/unstable/sql/SqlSchema";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
@@ -49,7 +50,7 @@ const AppendEventRequestSchema = Schema.Struct({
 const OrchestrationEventPersistedRowSchema = Schema.Struct({
   sequence: NonNegativeInt,
   eventId: EventId,
-  type: OrchestrationEventType,
+  type: Schema.String,
   aggregateKind: OrchestrationAggregateKind,
   aggregateId: Schema.Union([ProjectId, ThreadId]),
   occurredAt: IsoDateTime,
@@ -231,29 +232,46 @@ const makeEventStore = Effect.gen(function* () {
               "OrchestrationEventStore.readFromSequence:decodeRows",
             ),
           ),
-          Effect.flatMap((rows) =>
-            Effect.forEach(rows, (row) =>
+          Effect.flatMap((rows) => {
+            if (rows.length === 0) {
+              return Effect.succeed({
+                events: [] as Array<OrchestrationEvent>,
+                nextCursor: cursor,
+                hasMore: false,
+              });
+            }
+            const nextCursor = rows[rows.length - 1]!.sequence;
+            const hasMore = rows.length === Math.min(remaining, READ_PAGE_SIZE);
+            return Effect.forEach(rows, (row) =>
               decodeEvent(row).pipe(
+                Effect.map(Option.some),
+                Effect.catchTag("SchemaError", () =>
+                  Effect.logWarning("Skipping unrecognized orchestration event from persistence", {
+                    sequence: row.sequence,
+                    eventId: row.eventId,
+                    type: row.type,
+                  }).pipe(Effect.as(Option.none())),
+                ),
                 Effect.mapError(
                   toPersistenceDecodeError("OrchestrationEventStore.readFromSequence:rowToEvent"),
                 ),
               ),
-            ),
-          ),
+            ).pipe(
+              Effect.map((options) => ({
+                events: options.flatMap((opt) => (Option.isSome(opt) ? [opt.value] : [])),
+                nextCursor,
+                hasMore,
+              })),
+            );
+          }),
         ),
       ).pipe(
-        Stream.flatMap((events) => {
-          if (events.length === 0) {
-            return Stream.empty;
-          }
-          const nextRemaining = remaining - events.length;
-          if (nextRemaining <= 0) {
+        Stream.flatMap(({ events, nextCursor, hasMore }) => {
+          if (!hasMore || remaining <= events.length) {
             return Stream.fromIterable(events);
           }
-          return Stream.concat(
-            Stream.fromIterable(events),
-            readPage(events[events.length - 1]!.sequence, nextRemaining),
-          );
+          const nextRemaining = remaining - events.length;
+          return Stream.concat(Stream.fromIterable(events), readPage(nextCursor, nextRemaining));
         }),
       );
 

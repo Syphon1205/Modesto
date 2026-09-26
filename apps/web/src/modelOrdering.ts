@@ -32,6 +32,33 @@ function byTrueFirst<T>(predicate: (item: T) => boolean): Order.Order<T> {
   return Order.mapInput(Order.flip(Order.Boolean), predicate);
 }
 
+/**
+ * Extract numeric release markers from common model slugs. Providers do not
+ * expose a release timestamp, but their public slugs consistently carry the
+ * useful ordering information (for example gpt-5.6, claude-4-8, gemini-3.1).
+ * Unknown/custom names retain their provider order.
+ */
+function modelReleaseParts(slug: string): ReadonlyArray<number> {
+  const match = slug
+    .toLowerCase()
+    .match(
+      /(?:^|[-_])(?:gpt|claude|gemini|opus|sonnet|haiku|codex)?[-_]?([0-9]+(?:[._-][0-9]+){0,2})/,
+    );
+  return match?.[1]?.split(/[._-]/).map(Number) ?? [];
+}
+
+function compareModelRecency(a: ModelSlugItem, b: ModelSlugItem): number {
+  const aParts = modelReleaseParts(a.slug);
+  const bParts = modelReleaseParts(b.slug);
+  if (aParts.length === 0) return bParts.length === 0 ? 0 : 1;
+  if (bParts.length === 0) return -1;
+  for (let index = 0; index < Math.max(aParts.length, bParts.length); index += 1) {
+    const delta = (bParts[index] ?? 0) - (aParts[index] ?? 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+}
+
 export function sortModelsForProviderInstance<T extends ModelSlugItem>(
   models: ReadonlyArray<T>,
   options?: {
@@ -49,6 +76,7 @@ export function sortModelsForProviderInstance<T extends ModelSlugItem>(
       ? [byTrueFirst<T>((model) => favoriteModels.has(model.slug))]
       : []),
     byOptionalRank((model) => orderBySlug.get(model.slug)),
+    ...(modelOrder.length === 0 ? [Order.make(compareModelRecency)] : []),
     byOptionalRank((model) => originalOrder.get(model.slug)),
   ];
 

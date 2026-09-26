@@ -18,6 +18,37 @@ const decodeServerSettings = Schema.decodeUnknownSync(ServerSettings);
 const decodeServerSettingsPatch = Schema.decodeUnknownSync(ServerSettingsPatch);
 const encodeServerSettings = Schema.encodeSync(ServerSettings);
 
+describe("notification sound preferences", () => {
+  it("keeps audio opt-in for existing clients", () => {
+    expect(decodeClientSettings({})).toMatchObject({
+      notificationSoundsEnabled: false,
+      notificationSoundVolume: 50,
+      startSound: "modesto-start",
+      completionSound: "modesto-complete",
+      attentionSound: "modesto-attention",
+      interruptionSound: "modesto-interrupted",
+      errorSound: "modesto-error",
+    });
+  });
+  it("persists sound choices and rejects volume outside the supported range", () => {
+    expect(
+      decodeClientSettingsPatch({
+        startSound: "system-glass",
+        completionSound: "none",
+        interruptionSound: "modesto-soft",
+        notificationSoundVolume: 0,
+      }),
+    ).toMatchObject({
+      startSound: "system-glass",
+      completionSound: "none",
+      interruptionSound: "modesto-soft",
+      notificationSoundVolume: 0,
+    });
+    for (const volume of [-1, 101, Number.NaN])
+      expect(() => decodeClientSettingsPatch({ notificationSoundVolume: volume })).toThrow();
+  });
+});
+
 describe("ClientSettings word wrap", () => {
   it("defaults word wrap on", () => {
     expect(decodeClientSettings({}).wordWrap).toBe(true);
@@ -88,9 +119,23 @@ describe("ClientSettings environment identification", () => {
 describe("ClientSettings sidebar", () => {
   it("defaults to the current sidebar with automatic merge and inactivity settling", () => {
     const settings = decodeClientSettings({});
+    expect(settings.interfaceStyle).toBe("github");
     expect(settings.legacySidebarEnabled).toBe(false);
     expect(settings.sidebarAutoSettleAfterDays).toBe(3);
     expect(settings.sidebarAutoSettleOnMerge).toBe(true);
+  });
+
+  it.each(["modesto", "classic", "opencode", "claude", "codex", "cursor"] as const)(
+    "preserves the %s interface style",
+    (interfaceStyle) => {
+      expect(decodeClientSettings({ interfaceStyle }).interfaceStyle).toBe(interfaceStyle);
+      expect(decodeClientSettingsPatch({ interfaceStyle }).interfaceStyle).toBe(interfaceStyle);
+    },
+  );
+
+  it("rejects unsupported interface styles", () => {
+    expect(() => decodeClientSettings({ interfaceStyle: "simple" })).toThrow();
+    expect(() => decodeClientSettingsPatch({ interfaceStyle: "simple" })).toThrow();
   });
 
   it("drops the retired sidebar v2 beta keys, resetting everyone to the default", () => {

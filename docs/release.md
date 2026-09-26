@@ -16,10 +16,10 @@ This document covers build-only native validation and publishing desktop release
   - Windows `x64` NSIS installer
 - Publishes one versioned GitHub Release with all produced files.
   - Versions with a hidden development suffix (`-nightly.*`, `-dev.*`) are published as GitHub prereleases and never become Latest.
-  - Public staged versions (`1.0.0-alpha.1`, `1.0.0-beta.1`, `1.0.0-rc.1`) and stable `X.Y.Z` releases are GitHub Latest so older GitHub installs (0.3.x / 0.4.x) can update in-app.
+  - Public stable versions such as `0.4.0` are GitHub Latest so older GitHub installs can discover them.
   - Those public builds keep the production bundle ID and `Modesto-…` artifact names. Nightly/dev builds install alongside as `Modesto-Dev-…`.
 - Publishes default `latest*.yml` metadata plus byte-identical `modesto*.yml` aliases on every public Latest release, including staged alpha/beta/rc.
-- Historical 0.3.x / 0.4.x tags stay on GitHub; they are no longer the updater Latest feed.
+- Historical 0.3.x tags stay on GitHub; they are no longer the updater Latest feed.
 - Publishes the CLI package (`apps/server`, npm package `@modesto/cli`) with OIDC trusted publishing.
 - Public macOS releases require signing and notarization; publication fails before building if any Apple secret is missing. Build-only validation may still emit an ad-hoc-signed macOS artifact.
 - Public Windows releases require Azure Trusted Signing with the verified publisher `Modesto Team`. Build-only validation may produce an unsigned installer.
@@ -34,7 +34,7 @@ This document covers build-only native validation and publishing desktop release
 - Provider: GitHub Releases (`provider: github`) configured at build time.
 - Distribution repository: public `Syphon1205/Modesto`, containing the current release source snapshot, binaries, and release notes. The authenticated private-repository provider does not honor custom channel filenames.
 - Development repository: private. Release publication mirrors only the reviewed, Git-tracked current snapshot to the public distribution repository; local environment files, credentials, reference checkouts, and generated release/build output are excluded.
-- Runtime channel: `modesto`. Public releases (including `1.0.0-alpha.N`) publish `latest`, `modesto`, and legacy `modesto` metadata so 0.3/0.4 GitHub builds hop forward. Hidden development builds use `modesto-dev` and never replace Latest.
+- Runtime channel: `modesto`. Public releases such as `0.4.0` publish both default `latest*.yml` manifests for older clients and dedicated `modesto*.yml` manifests for new clients. The app reads the Modesto-owned generic feed directly instead of inheriting the foundation's GitHub provider behavior. Hidden development builds use `modesto-dev` and never replace Latest.
 - Repository slug source:
   - `MODESTO_DESKTOP_UPDATE_REPOSITORY` (format `owner/repo`), if set.
   - otherwise `GITHUB_REPOSITORY` from GitHub Actions.
@@ -46,7 +46,7 @@ This document covers build-only native validation and publishing desktop release
   - `*.blockmap` files, except the macOS update `.zip.blockmap` removed after zip repack
 - Enforced upgrade path:
   - Public Modesto releases (stable and staged alpha/beta/rc) are created with `make_latest=true` and carry default, Modesto, and legacy Modesto manifest filenames in the versioned release.
-  - GitHub's prerelease flag stays off for those builds: packaged 0.3/0.4 apps check Latest with prereleases disabled, so a GitHub prerelease would hide the hop.
+  - GitHub's prerelease flag stays off for those builds: packaged 0.3.x apps check Latest with prereleases disabled, so a GitHub prerelease would hide the hop.
   - Hidden development identifiers (`nightly`, `dev`) stay off Latest.
   - Clean-release publication fails closed if the required default, Modesto, or legacy Modesto aliases are missing.
 - Production desktop builds omit web/server/desktop source maps by default to keep update payloads small. Set `MODESTO_WEB_SOURCEMAP=1`, `MODESTO_SERVER_SOURCEMAP=1`, or `MODESTO_DESKTOP_SOURCEMAP=1` only for a diagnostic release that needs them.

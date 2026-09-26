@@ -21,6 +21,8 @@
 
 import { isSlideDeckPath } from "~/slides/slideDeck";
 import { isStudioDocumentPath } from "~/studio/studioKinds";
+import { fnv1a32 } from "~/lib/diffRendering";
+import { inlineVisualDocument, inlineVisualKind } from "~/studio/inlineVisuals";
 
 /** How an artifact should be presented once opened. */
 export type ArtifactPreviewKind =
@@ -44,6 +46,43 @@ export interface ArtifactTarget {
   readonly confidence: number;
   /** Why it was detected, for debugging a surprising chip. */
   readonly reason: string;
+}
+
+export interface GeneratedVisualArtifact {
+  readonly id: string;
+  readonly title: string;
+  readonly language: string;
+  readonly document: string;
+}
+
+const VISUAL_FENCE = /```([\w-]+)([^\n]*)\n([\s\S]*?)```/g;
+const VISUAL_TITLE = /(?:^|\s)(?:title|file(?:name)?)=(?:"([^"]+)"|'([^']+)'|(\S+))/i;
+
+/** Collects rendered diagrams and interactive previews embedded in assistant replies. */
+export function collectThreadVisualArtifacts(
+  messages: ReadonlyArray<{ readonly role: string; readonly text: string }>,
+): ReadonlyArray<GeneratedVisualArtifact> {
+  const visuals = new Map<string, GeneratedVisualArtifact>();
+  for (const message of messages) {
+    if (message.role !== "assistant") continue;
+    for (const match of message.text.matchAll(VISUAL_FENCE)) {
+      const language = match[1] ?? "";
+      const source = match[3] ?? "";
+      const kind = inlineVisualKind(language);
+      const document = inlineVisualDocument(language, source);
+      if (!kind || !document) continue;
+      const id = fnv1a32(`${language}\u0000${source}`).toString(36);
+      const titleMatch = VISUAL_TITLE.exec(match[2] ?? "");
+      const title =
+        titleMatch?.[1] ??
+        titleMatch?.[2] ??
+        titleMatch?.[3] ??
+        (kind === "diagram" ? "Diagram" : kind === "graphic" ? "Graphic" : "Interactive preview");
+      visuals.delete(id);
+      visuals.set(id, { id, title, language, document });
+    }
+  }
+  return [...visuals.values()].toReversed();
 }
 
 const PREVIEW_BY_EXTENSION: ReadonlyArray<readonly [ArtifactPreviewKind, ReadonlyArray<string>]> = [

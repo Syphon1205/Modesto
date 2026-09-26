@@ -118,8 +118,17 @@ const mergeProviderModels = (
     };
   });
   const nextSlugs = new Set(nextModels.map((model) => model.slug));
+  // Custom-endpoint models are synchronously derived from the current
+  // `customModelEndpoints` settings on every snapshot, never subject to the
+  // probe-blip races this retain-when-missing carryover exists for. Letting
+  // one survive a refresh where it's absent would resurrect a deleted/
+  // renamed endpoint's model forever - selectable in the picker, but always
+  // rejected by `CodexAdapter`'s router-slug lookup against live settings.
   return shouldRetainMissingModels
-    ? [...mergedModels, ...previousModels.filter((model) => !nextSlugs.has(model.slug))]
+    ? [
+        ...mergedModels,
+        ...previousModels.filter((model) => !nextSlugs.has(model.slug) && !model.isCustom),
+      ]
     : mergedModels;
 };
 

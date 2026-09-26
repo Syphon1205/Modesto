@@ -10,6 +10,9 @@ import {
   BookOpenIcon,
   BugIcon,
   ClipboardCheckIcon,
+  ClipboardListIcon,
+  Gamepad2Icon,
+  GlobeIcon,
   HammerIcon,
   LightbulbIcon,
   ListChecksIcon,
@@ -18,23 +21,17 @@ import {
   SearchIcon,
   TelescopeIcon,
 } from "lucide-react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 
 import { MOTION_FADE_CLASS, MOTION_SURFACE_CLASS } from "../../lib/motion";
 import { cn } from "../../lib/utils";
+import { useInterfaceStyle } from "../../hooks/useSettings";
 import {
-  LANDING_CATEGORY_ROTATION_MS,
   LANDING_SUGGESTION_CATEGORIES,
   matchLandingSuggestions,
   matchLandingSuggestionsForCategories,
-  resolveLandingCategoryCardDescription,
   type LandingSuggestionCategory,
 } from "./ChatLandingSuggestions.logic";
-
-// Border + shadow chrome for the raised card surface. A trimmed-down stand-in
-// for Modesto's RAISED_SURFACE_CHROME_CLASS_NAME (composerPickerStyles.ts),
-// which pulls in design tokens this tree doesn't have yet.
-const RAISED_SURFACE_CHROME_CLASS_NAME = "border border-border shadow-sm dark:border-white/[0.06]";
 
 const CATEGORY_ICON: Record<string, LucideIcon> = {
   explain: BookOpenIcon,
@@ -45,6 +42,9 @@ const CATEGORY_ICON: Record<string, LucideIcon> = {
   build: HammerIcon,
   review: ClipboardCheckIcon,
   fix: BugIcon,
+  website: GlobeIcon,
+  game: Gamepad2Icon,
+  app: ClipboardListIcon,
 };
 
 const CATEGORY_TONE: Record<string, string> = {
@@ -61,15 +61,13 @@ const CATEGORY_TONE: Record<string, string> = {
 function SuggestionCard({
   category,
   categoryIndex,
-  description,
-  descriptionKey,
   onSelect,
+  copilotStyle,
 }: {
   category: LandingSuggestionCategory;
   categoryIndex: number;
-  description: string;
-  descriptionKey: string;
   onSelect: (prompt: string) => void;
+  copilotStyle: boolean;
 }) {
   const Icon = CATEGORY_ICON[category.id] ?? SearchIcon;
   return (
@@ -80,19 +78,22 @@ function SuggestionCard({
       }}
       style={{ animationDelay: `${categoryIndex * 45}ms` }}
       className={cn(
-        "landing-suggestion-card group flex min-h-[6rem] flex-col gap-3 rounded-2xl bg-card/60 px-4 py-4 text-left",
+        "landing-suggestion-card group flex rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-left",
+        copilotStyle ? "min-h-[90px] flex-col items-start gap-3" : "min-h-10 items-center gap-2.5",
         MOTION_SURFACE_CLASS,
-        RAISED_SURFACE_CHROME_CLASS_NAME,
-        "hover:bg-card focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        "hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
       )}
     >
-      <Icon className={cn("size-4 shrink-0", CATEGORY_TONE[category.id])} aria-hidden />
-      <span className="min-h-8 text-[13px] leading-snug text-foreground/90">
-        <span className="font-medium">{category.label}</span>{" "}
-        <span key={descriptionKey} className="landing-suggestion-card-copy">
-          {description}
+      <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      {copilotStyle ? (
+        <span className="text-[13px] leading-[1.45] text-foreground/85">
+          {category.cardDescriptions[0]}
         </span>
-      </span>
+      ) : (
+        <span className="truncate text-[13px] font-medium text-foreground/90">
+          {category.label}
+        </span>
+      )}
     </button>
   );
 }
@@ -153,6 +154,8 @@ export interface ChatLandingSuggestionsProps {
   readonly onSelect: (prompt: string) => void;
   readonly className?: string | undefined;
   readonly categories?: readonly LandingSuggestionCategory[] | undefined;
+  /** `list` renders starters as full-width prompt rows (the Codex home). */
+  readonly variant?: "cards" | "list" | undefined;
 }
 
 export const ChatLandingSuggestions = memo(function ChatLandingSuggestions({
@@ -160,7 +163,9 @@ export const ChatLandingSuggestions = memo(function ChatLandingSuggestions({
   onSelect,
   className,
   categories = LANDING_SUGGESTION_CATEGORIES,
+  variant = "cards",
 }: ChatLandingSuggestionsProps) {
+  const copilotStyle = useInterfaceStyle() === "github";
   const matches = useMemo(
     () =>
       categories === LANDING_SUGGESTION_CATEGORIES
@@ -169,52 +174,61 @@ export const ChatLandingSuggestions = memo(function ChatLandingSuggestions({
     [categories, prompt],
   );
   const isEmpty = prompt.trim().length === 0;
-  const [rotationTick, setRotationTick] = useState(0);
-
-  useEffect(() => {
-    if (!isEmpty) {
-      return;
-    }
-    const reducedMotion =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setRotationTick((tick) => tick + 1);
-    }, LANDING_CATEGORY_ROTATION_MS);
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [isEmpty]);
-
   if (!isEmpty && matches.length === 0) {
     return null;
   }
 
   return (
-    <div className={cn("w-full", className)}>
-      {isEmpty ? (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+    <div data-github-suggestions={copilotStyle || undefined} className={cn("w-full", className)}>
+      {isEmpty && variant === "list" ? (
+        <div data-landing-suggestion-list="" className="flex flex-col">
           {categories.map((category, categoryIndex) => {
-            const description = resolveLandingCategoryCardDescription(
-              category,
-              rotationTick,
-              categoryIndex,
-            );
+            const Icon = CATEGORY_ICON[category.id] ?? SearchIcon;
+            const description = category.cardDescriptions[0];
+            const prompt = description ? `${category.label} ${description}` : category.label;
             return (
-              <SuggestionCard
+              <button
                 key={category.id}
-                category={category}
-                categoryIndex={categoryIndex}
-                description={description}
-                descriptionKey={`${category.id}:${description}:${rotationTick}`}
-                onSelect={onSelect}
-              />
+                type="button"
+                onClick={() => onSelect(category.cardPrompt ?? prompt)}
+                style={{ animationDelay: `${categoryIndex * 45}ms` }}
+                className={cn(
+                  "landing-suggestion-card flex h-11 items-center gap-2.5 border-b border-border/60 px-3 text-left text-[13px] text-muted-foreground last:border-b-0 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                  MOTION_FADE_CLASS,
+                )}
+              >
+                <Icon className="size-4 shrink-0" aria-hidden />
+                <span className="min-w-0 truncate">{prompt}</span>
+              </button>
             );
           })}
         </div>
+      ) : isEmpty ? (
+        <>
+          {copilotStyle ? (
+            <p className="mb-3 text-center text-xs text-muted-foreground/70">
+              Get started with one of these project ideas.
+            </p>
+          ) : null}
+          <div
+            className={cn(
+              "grid gap-2.5",
+              copilotStyle ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4",
+            )}
+          >
+            {categories.map((category, categoryIndex) => {
+              return (
+                <SuggestionCard
+                  key={category.id}
+                  category={category}
+                  categoryIndex={categoryIndex}
+                  onSelect={onSelect}
+                  copilotStyle={copilotStyle}
+                />
+              );
+            })}
+          </div>
+        </>
       ) : (
         <div className="flex flex-col gap-0.5 px-0.5" data-landing-suggestion-stack="">
           {matches.map((match, index) => (

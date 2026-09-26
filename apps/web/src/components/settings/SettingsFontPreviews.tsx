@@ -198,6 +198,12 @@ export function TerminalFontPreview({ family, size }: { family: string; size: nu
     const surface = surfaceRef.current;
     if (!mount || !surface) return;
     surface.setTheme(terminalThemeFromApp(mount));
+    const observer = new MutationObserver(() => surface.setTheme(terminalThemeFromApp(mount)));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+    return () => observer.disconnect();
   }, [theme, resolvedTheme]);
 
   useEffect(() => {

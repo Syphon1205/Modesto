@@ -149,6 +149,7 @@ interface TimelineRowSharedState {
   conversationMode: ConversationMode;
   activeThreadEnvironmentId: EnvironmentId;
   onRevertUserMessage: (messageId: MessageId) => void;
+  onEditUserMessage?: ((messageId: MessageId, text: string) => void) | undefined;
   onImageExpand: (preview: ExpandedImagePreview) => void;
   onOpenTurnDiff: (turnId: TurnId, filePath?: string) => void;
   onToggleTurnFold: (turnId: TurnId) => void;
@@ -226,6 +227,7 @@ interface MessagesTimelineProps {
   onOpenTurnDiff: (turnId: TurnId, filePath?: string) => void;
   revertTurnCountByUserMessageId: Map<MessageId, number>;
   onRevertUserMessage: (messageId: MessageId) => void;
+  onEditUserMessage?: ((messageId: MessageId, text: string) => void) | undefined;
   isRevertingCheckpoint: boolean;
   onImageExpand: (preview: ExpandedImagePreview) => void;
   activeThreadEnvironmentId: EnvironmentId;
@@ -272,6 +274,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   onOpenTurnDiff,
   revertTurnCountByUserMessageId,
   onRevertUserMessage,
+  onEditUserMessage,
   isRevertingCheckpoint,
   onImageExpand,
   activeThreadEnvironmentId,
@@ -533,6 +536,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       conversationMode,
       activeThreadEnvironmentId,
       onRevertUserMessage,
+      onEditUserMessage,
       onImageExpand,
       onOpenTurnDiff,
       onToggleTurnFold,
@@ -550,6 +554,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
       conversationMode,
       activeThreadEnvironmentId,
       onRevertUserMessage,
+      onEditUserMessage,
       onImageExpand,
       onOpenTurnDiff,
       onToggleTurnFold,
@@ -1022,8 +1027,8 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
   const canRevertAgentWork = typeof row.revertTurnCount === "number";
 
   return (
-    <div className="group flex flex-col items-end gap-1">
-      <div className="relative max-w-[80%] rounded-2xl bg-message p-3 text-message-foreground">
+    <div className="group/user-message flex flex-col items-end gap-1">
+      <div className="chat-user-message-bubble relative w-fit min-w-0 max-w-[90%] rounded-[22px] px-4 py-3 text-sm leading-relaxed text-foreground sm:max-w-[78%] sm:px-[18px] sm:py-3.5">
         {userFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap justify-end gap-1.5">
             {userFiles.map((file) => (
@@ -1103,7 +1108,7 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
           markdownCwd={ctx.markdownCwd}
         />
       </div>
-      <div className="flex w-full max-w-[80%] items-center justify-end pe-1 text-xs tabular-nums opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
+      <div className="flex w-full translate-y-0.5 items-center justify-end pe-1 text-xs tabular-nums opacity-0 transition-[opacity,transform] duration-150 ease-[var(--ease-fluid)] motion-reduce:transform-none motion-reduce:transition-none focus-within:translate-y-0 focus-within:opacity-100 group-hover/user-message:translate-y-0 group-hover/user-message:opacity-100">
         <div className="flex shrink-0 items-center gap-2">
           <Tooltip>
             <TooltipTrigger render={<p className="text-muted-foreground text-xs tabular-nums" />}>
@@ -1114,6 +1119,12 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
             </TooltipPopup>
           </Tooltip>
           <div className="flex items-center gap-0.5">
+            {canRevertAgentWork && ctx.onEditUserMessage ? (
+              <EditUserMessageButton
+                messageId={row.message.id}
+                text={displayedUserMessage.copyText ?? elementContextState.promptText}
+              />
+            ) : null}
             {canRevertAgentWork && <RevertUserMessageButton messageId={row.message.id} />}
             {displayedUserMessage.copyText && (
               <MessageCopyButton text={displayedUserMessage.copyText} variant="ghost" />
@@ -1122,6 +1133,31 @@ function UserTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" 
         </div>
       </div>
     </div>
+  );
+}
+
+function EditUserMessageButton({ messageId, text }: { messageId: MessageId; text: string }) {
+  const ctx = use(TimelineRowCtx);
+  const activity = use(TimelineRowActivityCtx);
+
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            size="xs"
+            variant="ghost"
+            disabled={activity.isRevertingCheckpoint || activity.isWorking}
+            onClick={() => ctx.onEditUserMessage?.(messageId, text)}
+            aria-label="Edit and resend this message"
+          />
+        }
+      >
+        <SquarePenIcon className="size-3" />
+      </TooltipTrigger>
+      <TooltipPopup side="top">Edit and resend</TooltipPopup>
+    </Tooltip>
   );
 }
 
@@ -1139,13 +1175,13 @@ function RevertUserMessageButton({ messageId }: { messageId: MessageId }) {
             variant="ghost"
             disabled={activity.isRevertingCheckpoint || activity.isWorking}
             onClick={() => ctx.onRevertUserMessage(messageId)}
-            aria-label="Revert to this message"
+            aria-label="Undo this turn"
           />
         }
       >
         <Undo2Icon className="size-3" />
       </TooltipTrigger>
-      <TooltipPopup side="top">Revert to this message</TooltipPopup>
+      <TooltipPopup side="top">Undo this turn</TooltipPopup>
     </Tooltip>
   );
 }
@@ -1207,7 +1243,7 @@ function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "mess
           onOpenTurnDiff={ctx.onOpenTurnDiff}
         />
         {row.showAssistantMeta ? (
-          <div className="mt-1.5 flex items-center gap-2 text-xs tabular-nums opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover/assistant:opacity-100">
+          <div className="mt-1.5 flex translate-y-0.5 items-center gap-2 text-xs tabular-nums opacity-0 transition-[opacity,transform] duration-150 ease-[var(--ease-fluid)] motion-reduce:transform-none motion-reduce:transition-none focus-within:translate-y-0 focus-within:opacity-100 group-hover/assistant:translate-y-0 group-hover/assistant:opacity-100">
             <AssistantCopyButton row={row} />
             {!row.message.streaming && (
               <Tooltip>

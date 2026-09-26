@@ -4,11 +4,13 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 const stageArtworkState = vi.hoisted(() => ({
   mode: "none" as "artwork" | "none",
+  style: "t3code" as "t3code" | "github",
   variant: null as "nightly" | "dev" | null,
 }));
 
 vi.mock("~/hooks/useSettings", () => ({
   useEnvironmentIdentificationMode: () => stageArtworkState.mode,
+  useInterfaceStyle: () => stageArtworkState.style,
 }));
 vi.mock("../SidebarStageBackdrop", () => ({
   StageBackdropButtonArt: ({ variant }: { variant: string }) => `stage-${variant}`,
@@ -109,6 +111,7 @@ function renderSendButton(sendDisabledReason: string | null = null) {
 }
 
 afterEach(() => {
+  stageArtworkState.style = "t3code";
   stageArtworkState.mode = "none";
   stageArtworkState.variant = null;
 });
@@ -204,6 +207,13 @@ describe("formatPendingPrimaryActionLabel", () => {
 });
 
 describe("ComposerPrimaryActions", () => {
+  it("keeps Default's send control plain even when environment artwork is enabled", () => {
+    stageArtworkState.mode = "artwork";
+    stageArtworkState.variant = "nightly";
+    stageArtworkState.style = "github";
+    expect(renderSendButton()).not.toContain("stage-nightly");
+    stageArtworkState.style = "t3code";
+  });
   it("disables and labels the send button while feedback is uploading", () => {
     const markup = renderSendButton("Sending feedback");
 

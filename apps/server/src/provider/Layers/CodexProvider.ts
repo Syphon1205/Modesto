@@ -34,6 +34,7 @@ import {
   type ServerProviderDraft,
 } from "../providerSnapshot.ts";
 import { expandHomePath } from "../../pathExpansion.ts";
+import { apiKeyProviderPresetForBaseUrl } from "@modesto/shared/apiKeyProviders";
 import { customModelEndpointModelSlug } from "../customModelEndpoints.ts";
 import packageJson from "../../../package.json" with { type: "json" };
 const isCodexAppServerSpawnError = Schema.is(CodexErrors.CodexAppServerSpawnError);
@@ -264,7 +265,11 @@ function appendCustomCodexModels(
 // Surfaces each configured custom/self-hosted model router's declared models
 // (or the router itself, if none were declared) as selectable Codex model
 // picker entries - see `customModelEndpointModelSlug` for the slug scheme
-// `CodexAdapter.ts` parses back out at session-start time.
+// `CodexAdapter.ts` parses back out at session-start time. Endpoints on a
+// known hosted API without a Responses route (NVIDIA NIM, DeepSeek, ...) are
+// skipped: Codex can only reach custom providers over Responses, so listing
+// them here would only offer models that fail on the first turn. They stay
+// available through OpenCode and Kilo.
 export function appendCustomModelEndpointModels(
   models: ReadonlyArray<ServerProviderModel>,
   customModelEndpoints: ReadonlyArray<CustomModelEndpointConfig>,
@@ -277,6 +282,9 @@ export function appendCustomModelEndpointModels(
   const fallbackCapabilities = models.find((model) => model.capabilities)?.capabilities ?? null;
   const entries: ServerProviderModel[] = [];
   for (const endpoint of customModelEndpoints) {
+    if (apiKeyProviderPresetForBaseUrl(endpoint.baseUrl)?.codexCompatible === false) {
+      continue;
+    }
     const declaredModelIds = endpoint.models.map((model) => model.trim()).filter(Boolean);
     const modelIds = declaredModelIds.length > 0 ? declaredModelIds : [endpoint.label];
     for (const modelId of modelIds) {
@@ -530,7 +538,10 @@ const makePendingCodexProvider = (
     });
   });
 
-function accountProbeStatus(account: CodexAppServerProviderSnapshot["account"]): {
+function accountProbeStatus(
+  account: CodexAppServerProviderSnapshot["account"],
+  customEndpointsAvailable: boolean,
+): {
   readonly status: Exclude<ServerProviderState, "disabled">;
   readonly auth: ServerProvider["auth"];
   readonly message?: string;
@@ -549,6 +560,13 @@ function accountProbeStatus(account: CodexAppServerProviderSnapshot["account"]):
   }
 
   if (account.requiresOpenaiAuth) {
+    if (customEndpointsAvailable) {
+      return {
+        status: "ready",
+        auth: { status: "unauthenticated" },
+        message: "Local and custom endpoints are ready; Codex cloud models require sign-in.",
+      };
+    }
     return {
       status: "error",
       auth: { status: "unauthenticated" },
@@ -655,7 +673,7 @@ export const checkCodexProviderStatus = Effect.fn("checkCodexProviderStatus")(fu
   }
 
   const snapshot = probeResult.success.value;
-  const accountStatus = accountProbeStatus(snapshot.account);
+  const accountStatus = accountProbeStatus(snapshot.account, customModelEndpoints.length > 0);
 
   return buildServerProvider({
     presentation: CODEX_PRESENTATION,

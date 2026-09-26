@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { DownloadIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -56,7 +56,7 @@ type ProviderUpdateToastId = ReturnType<typeof updatesToastManager.add>;
 const SETTLING_GRACE_MS = 30_000;
 
 function ProviderUpdateEnvironmentsNotification() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { groups, isAnySettling } = useLocalEnvironmentUpdateGroups();
   const { dismissedNotificationKeys, dismissNotificationKey } =
     useDismissedProviderUpdateNotificationKeys();

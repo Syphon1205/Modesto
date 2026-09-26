@@ -1,17 +1,29 @@
-import { scopeProjectRef } from "@modesto/client-runtime/environment";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
+import { scopeProjectRef, scopeThreadRef } from "@modesto/client-runtime/environment";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FolderPlusIcon, LinkIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import {
+  CircleHelpIcon,
+  FolderPlusIcon,
+  EllipsisIcon,
+  LinkIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  SearchIcon,
+  SettingsIcon,
+  SquarePenIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { openCommandPalette } from "../commandPaletteBus";
-import { ModestoLogo } from "../components/ModestoLogo";
 import { sortScopedProjectsForSidebar } from "../components/Sidebar.logic";
+import { OpenCodeProjectAvatar } from "../components/OpenCodeProjectAvatar";
 import { Button } from "../components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../components/ui/empty";
 import { SidebarInset } from "../components/ui/sidebar";
+import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../components/ui/menu";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
 import { useNewThreadHandler } from "../hooks/useHandleNewThread";
-import { randomHomeLandingGreeting } from "../lib/greeting";
+import { useClientSettingsHydrated, useInterfaceStyle } from "../hooks/useSettings";
 import { unscopedChatProjectRef } from "../lib/chatThreadActions";
 import {
   useAllEnvironmentShellsBootstrapped,
@@ -21,56 +33,268 @@ import {
 import { useEnvironments, usePrimaryEnvironmentId } from "../state/environments";
 import { APP_DISPLAY_NAME } from "~/branding";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
+import { buildThreadRouteParams } from "../threadRoutes";
 
 function ChatIndexRouteView() {
   const { authGateState } = Route.useRouteContext();
   const { environments } = useEnvironments();
+  const interfaceStyle = useInterfaceStyle();
+  const settingsHydrated = useClientSettingsHydrated();
+
+  if (!settingsHydrated) return null;
 
   if (authGateState.status === "hosted-static" && environments.length === 0) {
     return <HostedStaticOnboardingState />;
   }
 
+  if (interfaceStyle === "opencode") return <OpenCodeHome />;
+
   return <IndexDraftLanding />;
 }
 
-/**
- * Landing on the index route drops straight into a draft thread for the most
- * recently active project, so the first screen is a prompt instead of a dead
- * end. With no project yet, chats still open an unscoped composer.
- */
-function IndexDraftLanding() {
+function OpenCodeHome() {
   const projects = useProjects();
   const threads = useThreadShells();
+  const navigate = useAppNavigate();
+  const handleNewThread = useNewThreadHandler();
+  const [search, setSearch] = useState("");
+  const [selectedProjectKey, setSelectedProjectKey] = useState<string | null>(null);
+  const sortedProjects = useMemo(
+    () => sortScopedProjectsForSidebar(projects, threads, "updated_at"),
+    [projects, threads],
+  );
+
+  useEffect(() => {
+    if (
+      selectedProjectKey === null ||
+      !sortedProjects.some(
+        (project) => `${project.environmentId}:${project.id}` === selectedProjectKey,
+      )
+    ) {
+      const first = sortedProjects[0];
+      setSelectedProjectKey(first ? `${first.environmentId}:${first.id}` : null);
+    }
+  }, [selectedProjectKey, sortedProjects]);
+
+  const selectedProject =
+    sortedProjects.find(
+      (project) => `${project.environmentId}:${project.id}` === selectedProjectKey,
+    ) ?? null;
+  const normalizedSearch = search.trim().toLocaleLowerCase();
+  const sessions = useMemo(
+    () =>
+      threads
+        .filter(
+          (thread) =>
+            thread.archivedAt === null &&
+            thread.parentThreadId == null &&
+            thread.conversationMode !== "chat" &&
+            selectedProject !== null &&
+            thread.environmentId === selectedProject.environmentId &&
+            thread.projectId === selectedProject.id &&
+            (normalizedSearch.length === 0 ||
+              thread.title.toLocaleLowerCase().includes(normalizedSearch)),
+        )
+        .toSorted((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+    [normalizedSearch, selectedProject, threads],
+  );
+  const today = new Date().toDateString();
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = yesterdayDate.toDateString();
+  const todaySessions = sessions.filter(
+    (thread) => new Date(thread.updatedAt).toDateString() === today,
+  );
+  const yesterdaySessions = sessions.filter(
+    (thread) => new Date(thread.updatedAt).toDateString() === yesterday,
+  );
+  const olderSessions = sessions.filter((thread) => {
+    const updatedDay = new Date(thread.updatedAt).toDateString();
+    return updatedDay !== today && updatedDay !== yesterday;
+  });
+  const openNewSession = useCallback(() => {
+    if (selectedProject === null) {
+      openCommandPalette({ open: "add-project" });
+      return;
+    }
+    void handleNewThread(scopeProjectRef(selectedProject.environmentId, selectedProject.id));
+  }, [handleNewThread, selectedProject]);
+  const openSession = useCallback(
+    (environmentId: string, threadId: string) => {
+      void navigate({
+        to: "/$environmentId/$threadId",
+        params: buildThreadRouteParams(scopeThreadRef(environmentId, threadId)),
+      });
+    },
+    [navigate],
+  );
+
+  const renderSessions = (label: string, items: typeof sessions) =>
+    items.length === 0 ? null : (
+      <section data-opencode-home-session-group="">
+        <h2>{label}</h2>
+        {items.map((thread) => (
+          <button
+            key={`${thread.environmentId}:${thread.id}`}
+            type="button"
+            onClick={() => openSession(thread.environmentId, thread.id)}
+          >
+            <OpenCodeProjectAvatar
+              environmentId={selectedProject?.environmentId ?? thread.environmentId}
+              cwd={selectedProject?.workspaceRoot ?? null}
+              faviconPath={selectedProject?.faviconPath ?? null}
+              label={selectedProject?.title ?? thread.title}
+            />
+            <span>{thread.title}</span>
+          </button>
+        ))}
+      </section>
+    );
+
+  const utilityNav = (mobile: boolean) => (
+    <nav data-opencode-home-utility="" data-mobile={mobile || undefined}>
+      <button type="button" onClick={() => void navigate({ to: "/settings" })}>
+        <SettingsIcon />
+        <span>Settings</span>
+      </button>
+      <a href="https://opencode.ai/docs" target="_blank" rel="noreferrer">
+        <CircleHelpIcon />
+        <span>Help</span>
+      </a>
+    </nav>
+  );
+
+  return (
+    <SidebarInset data-opencode-home="" className="h-dvh min-h-0 overflow-hidden text-foreground">
+      <div data-opencode-home-surface="">
+        <aside data-opencode-home-projects="">
+          <div data-opencode-home-section-heading="">
+            <span>Projects</span>
+            <button
+              type="button"
+              aria-label="Add project"
+              onClick={() => openCommandPalette({ open: "add-project" })}
+            >
+              <FolderPlusIcon />
+            </button>
+          </div>
+          <div data-opencode-home-project-list="">
+            {sortedProjects.map((project) => {
+              const key = `${project.environmentId}:${project.id}`;
+              return (
+                <div
+                  key={key}
+                  data-opencode-home-project-row=""
+                  data-active={key === selectedProjectKey || undefined}
+                >
+                  <button type="button" onClick={() => setSelectedProjectKey(key)}>
+                    <OpenCodeProjectAvatar
+                      environmentId={project.environmentId}
+                      cwd={project.workspaceRoot}
+                      faviconPath={project.faviconPath}
+                      label={project.title}
+                    />
+                    <span>{project.title}</span>
+                  </button>
+                  <button
+                    type="button"
+                    data-opencode-project-new-session=""
+                    aria-label={`New session in ${project.title}`}
+                    onClick={() =>
+                      void handleNewThread(scopeProjectRef(project.environmentId, project.id))
+                    }
+                  >
+                    <SquarePenIcon />
+                  </button>
+                  <Menu>
+                    <MenuTrigger
+                      render={
+                        <button
+                          type="button"
+                          data-opencode-project-more=""
+                          aria-label={`More options for ${project.title}`}
+                          title={`More options for ${project.title}`}
+                        />
+                      }
+                    >
+                      <EllipsisIcon />
+                    </MenuTrigger>
+                    <MenuPopup align="end">
+                      <MenuItem
+                        onClick={() =>
+                          void navigate({
+                            to: "/projects/$projectKey",
+                            params: { projectKey: key },
+                          })
+                        }
+                      >
+                        Project settings
+                      </MenuItem>
+                      <MenuItem
+                        onClick={() =>
+                          void handleNewThread(scopeProjectRef(project.environmentId, project.id))
+                        }
+                      >
+                        New session
+                      </MenuItem>
+                    </MenuPopup>
+                  </Menu>
+                </div>
+              );
+            })}
+          </div>
+          {utilityNav(false)}
+        </aside>
+
+        <main data-opencode-home-sessions="">
+          <div data-opencode-home-search="">
+            <SearchIcon />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              placeholder={`Search sessions${selectedProject ? ` in ${selectedProject.title}` : ""}`}
+              aria-label="Search sessions"
+            />
+          </div>
+          <div data-opencode-home-new-session="">
+            <span />
+            <button type="button" onClick={openNewSession}>
+              <SquarePenIcon />
+              New session
+            </button>
+          </div>
+          <div data-opencode-home-session-list="">
+            {renderSessions("Today", todaySessions)}
+            {renderSessions("Yesterday", yesterdaySessions)}
+            {renderSessions(
+              todaySessions.length === 0 && yesterdaySessions.length === 0
+                ? "Recent sessions"
+                : "Older",
+              olderSessions,
+            )}
+            {sessions.length === 0 ? <p>No sessions yet</p> : null}
+          </div>
+        </main>
+        {utilityNav(true)}
+      </div>
+    </SidebarInset>
+  );
+}
+
+/**
+ * Landing on the index route always opens an unscoped chat. Project context
+ * is introduced only through an explicit handoff into the Projects surface.
+ */
+function IndexDraftLanding() {
   const bootstrapped = useAllEnvironmentShellsBootstrapped();
   const handleNewThread = useNewThreadHandler();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const startingRef = useRef(false);
   const [startState, setStartState] = useState({ failed: false, retryRequest: 0 });
 
-  const mostRecentProject = useMemo(
-    () =>
-      bootstrapped
-        ? (sortScopedProjectsForSidebar(projects, threads, "updated_at")[0] ?? null)
-        : null,
-    [bootstrapped, projects, threads],
-  );
-
   useEffect(() => {
-    if (!bootstrapped || startingRef.current) {
-      return;
-    }
-    if (mostRecentProject !== null) {
-      startingRef.current = true;
-      void handleNewThread(scopeProjectRef(mostRecentProject.environmentId, mostRecentProject.id), {
-        replace: true,
-        conversationMode: "chat",
-      }).catch(() => {
-        startingRef.current = false;
-        setStartState((state) => ({ ...state, failed: true }));
-      });
-      return;
-    }
-    if (primaryEnvironmentId === null) {
+    if (!bootstrapped || primaryEnvironmentId === null || startingRef.current) {
       return;
     }
     startingRef.current = true;
@@ -81,18 +305,12 @@ function IndexDraftLanding() {
       startingRef.current = false;
       setStartState((state) => ({ ...state, failed: true }));
     });
-  }, [
-    bootstrapped,
-    handleNewThread,
-    mostRecentProject,
-    primaryEnvironmentId,
-    startState.retryRequest,
-  ]);
+  }, [bootstrapped, handleNewThread, primaryEnvironmentId, startState.retryRequest]);
 
   if (!bootstrapped) {
     return null;
   }
-  if (mostRecentProject !== null || primaryEnvironmentId !== null) {
+  if (primaryEnvironmentId !== null) {
     return startState.failed ? (
       <DraftStartError
         onRetry={() => {
@@ -105,7 +323,7 @@ function IndexDraftLanding() {
       />
     ) : null;
   }
-  return <NoProjectsHero />;
+  return null;
 }
 
 function DraftStartError({ onRetry }: { readonly onRetry: () => void }) {
@@ -113,9 +331,9 @@ function DraftStartError({ onRetry }: { readonly onRetry: () => void }) {
     <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
       <Empty className="flex-1">
         <EmptyHeader className="max-w-md">
-          <EmptyTitle className="text-foreground text-xl">Couldn’t start a new thread</EmptyTitle>
+          <EmptyTitle className="text-foreground text-xl">Couldn’t start a new chat</EmptyTitle>
           <EmptyDescription className="mt-2 text-sm text-muted-foreground/78">
-            The project is still available. Try opening the draft again.
+            Chat is still available. Try opening the draft again.
           </EmptyDescription>
           <div className="mt-5 flex justify-center">
             <Button size="sm" onClick={onRetry}>
@@ -129,42 +347,12 @@ function DraftStartError({ onRetry }: { readonly onRetry: () => void }) {
   );
 }
 
-// Same visual language as the real chat landing (logo, greeting, centered
-// composer-width card) - clicking the Modesto logo with zero projects lands
-// here, so it should read as "the same chat window, just needing a project"
-// rather than a different, flatter dead-end screen.
-function NoProjectsHero() {
-  const openAddProject = useCallback(() => openCommandPalette({ open: "add-project" }), []);
-  const [greeting] = useState(randomHomeLandingGreeting);
-
-  return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-5 overflow-x-hidden bg-background px-6 pt-[8vh] text-center select-none">
-        <ModestoLogo aria-label="Modesto logo" className="size-10" />
-        <h1 className="font-normal text-2xl text-foreground tracking-tight sm:text-3xl">
-          {greeting}
-        </h1>
-        <button
-          type="button"
-          onClick={openAddProject}
-          className="mx-auto flex w-full max-w-3xl flex-col items-center gap-2 rounded-2xl border border-dashed border-border bg-card/40 px-6 py-8 text-center transition-colors hover:border-foreground/30 hover:bg-card/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <FolderPlusIcon className="size-5 text-muted-foreground" aria-hidden />
-          <span className="text-sm font-medium text-foreground/90">Add a project</span>
-          <span className="text-xs text-muted-foreground/70">
-            Pick a folder to start your first thread.
-          </span>
-        </button>
-      </div>
-    </SidebarInset>
-  );
-}
-
 export const Route = createFileRoute("/_chat/")({
   component: ChatIndexRouteView,
 });
 
 function HostedStaticOnboardingState() {
+  const navigate = useAppNavigate();
   const cloudEnabled = hasCloudPublicConfig();
 
   return (
@@ -193,7 +381,7 @@ function HostedStaticOnboardingState() {
                   : "Add a reachable backend manually to start working from this browser."}
               </EmptyDescription>
               <div className="mt-6 flex justify-center">
-                <Button render={<Link to="/settings/connections" />} size="sm">
+                <Button onClick={() => void navigate({ to: "/settings/connections" })} size="sm">
                   <PlusIcon className="size-4" />
                   {cloudEnabled ? "Open Connections" : "Add environment"}
                 </Button>

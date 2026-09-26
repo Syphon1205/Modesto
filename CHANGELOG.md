@@ -2,32 +2,39 @@
 
 All notable changes to Modesto are documented here, newest first.
 
-## 1.0.0 Aloha — Alpha Release Candidate (2026-09-12)
+## 0.4.0 Berkeley (2026-09-25)
 
-Nickname **Aloha**, version `1.0.0-alpha.1`. Chat and Work on the 1.0 line. Public GitHub Latest.
+Nickname **Berkeley**, version `0.4.0`. This is the redesign release from the latest development pass.
 
-### Product
+### Redesign
 
-- Composer **Chat / Work**: Chat can send with no project; Work is repo-scoped (worktree, diffs, PRs).
-- Sidebar: Pull Requests, Agents, Tasks (Draft / In Progress / Done), Automations, Connections, Skills & plugins.
-- Right panel: Browser, Mobile Simulator, Terminal, Files, Changes, Music, Canvas, Artifacts.
-- Desktop: local / WSL / SSH, pop-out chat, usage clock, Appshots.
-- Providers on by default: Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo.
+- Rebuilt the sidebar, chat landing page, composer, tabs, model picker, approvals, timeline, menus, icons, and navigation.
+- Rebuilt Settings with new navigation, breadcrumbs, search, restore controls, terminal appearance, and file-icon preferences.
+- Added OpenCode and VS Code theme catalogs, richer previews, editor synchronization, and a full notification-sound library.
+- Added dedicated Copilot customization, preferences, palettes, skills, and session-tree surfaces.
+- Added Claude, Codex, and Cursor interface styles with provider-matched layouts and default palettes.
+- Simplified expensive 3D/animated surfaces and standardized disclosure motion.
 
-### Known issues
+### Tools and reliability
 
-- Some Work cowork flows still landing (including Kanban drag-to-run).
-- Reconnects and partial streams still being hardened.
-- Signed GitHub Latest installers not published yet.
+- Improved artifacts, inline visuals, Canvas, Markdown, Monaco, Files, and right-panel state.
+- Redesigned provider/model selection and expanded custom endpoint and model-router support.
+- Improved Codex and Gemini session handling, approvals, handoffs, orchestration projections, and reconnect behavior.
+- Added native system-sound IPC and a Modesto-owned update feed with legacy-client manifest compatibility.
 
-See [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
+### Downloads
 
-## 0.4.0 - 2026-09-03
+- Native DMGs for Apple Silicon and Intel Macs, an x64 Windows installer, and an x64 Linux AppImage.
+- Automatic-update archives, blockmaps, and manifests for existing Modesto installations.
+
+See [docs/releases/v0.4.0.md](docs/releases/v0.4.0.md).
+
+## 0.3.0 - 2026-09-03
 
 ### Open source
 
 - Relicensed Modesto under MIT and prepared the public GitHub page for community contributions.
-- Positioned 0.4.0 as a local-first open-source foundation release: zero telemetry, complete ownership, Code + Work in one workspace.
+- Positioned 0.3.0 as a local-first open-source foundation release: zero telemetry, complete ownership, Code + Work in one workspace.
 
 ### Foundation
 
@@ -43,7 +50,7 @@ See [docs/releases/v1.0.0-alpha.1.md](docs/releases/v1.0.0-alpha.1.md).
 - Rebuilt Claude Code plugin installs natively against this tree's own conventions (skills/commands/agents from a GitHub repo into the real `~/.claude`).
 - New chat landing screen with animated starter cards.
 
-See [docs/releases/v0.4.0.md](docs/releases/v0.4.0.md) for the full migration notes.
+See [docs/releases/v0.3.0.md](docs/releases/v0.3.0.md) for the full migration notes.
 
 ## 0.1.9 - 2026-07-30
 

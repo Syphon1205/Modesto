@@ -160,7 +160,7 @@ export function buildThreadActionMenuItems(
     },
     {
       id: "delete",
-      label: noun === "chat" ? "Delete chat" : "Delete",
+      label: noun === "chat" ? "Delete chat" : "Delete session",
       destructive: true,
       icon: "trash",
     },

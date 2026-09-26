@@ -1,3 +1,4 @@
+import { useSettingsDialogStore } from "../../settings/settingsDialogStore";
 import { InfoIcon, Undo2Icon } from "lucide-react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -132,6 +133,7 @@ export function SettingsSection({
     <section
       {...sectionProps}
       ref={targetRef}
+      data-settings-section=""
       tabIndex={sectionProps.id ? -1 : sectionProps.tabIndex}
       className={cn("space-y-3", className)}
     >
@@ -171,6 +173,7 @@ export function SettingsRow({
       {...rowProps}
       ref={targetRef}
       tabIndex={rowProps.id ? -1 : rowProps.tabIndex}
+      data-settings-row=""
       className={cn("rounded-xl px-3 sm:px-4", children ? "pt-3 pb-1" : "py-3", className)}
     >
       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_minmax(10rem,auto)] sm:items-center sm:gap-8">
@@ -242,10 +245,15 @@ export function SettingsPageContainer({
 }) {
   const navigate = useNavigate();
   const hash = useLocation({ select: (location) => location.hash });
-  const targetId = hash.replace(/^#/, "") || null;
+  const dialog = useSettingsDialogStore();
+  const targetId = (dialog.open ? dialog.hash : hash).replace(/^#/, "") || null;
   const clearTargetHash = useCallback(() => {
+    if (dialog.open) {
+      dialog.clearTarget();
+      return;
+    }
     void navigate({ hash: "", replace: true, resetScroll: false, hashScrollIntoView: false });
-  }, [navigate]);
+  }, [navigate, dialog.open, dialog.clearTarget]);
 
   return (
     <SettingsSearchTargetProvider targetId={targetId} onTargetHandled={clearTargetHash}>

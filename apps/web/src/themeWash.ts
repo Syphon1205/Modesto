@@ -65,7 +65,11 @@ export function themeWashColors(
 export function playThemeColorWash(colors: { accent: string; canvas: string }): void {
   if (typeof document === "undefined" || typeof window === "undefined") return;
   if (!document.body || typeof document.createElement !== "function") return;
-  if (prefersReducedMotion()) return;
+  if (
+    prefersReducedMotion() ||
+    ["github", "opencode"].includes(document.documentElement?.dataset.interfaceStyle ?? "")
+  )
+    return;
   startThemeWashPointerTracking();
 
   activeWash?.animation.cancel();

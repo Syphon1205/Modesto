@@ -42,6 +42,9 @@ export const RPC_REQUIRED_SCOPES = {
   [WS_METHODS.serverGetSettings]: AuthOrchestrationReadScope,
   [WS_METHODS.serverUpdateSettings]: AuthOrchestrationOperateScope,
   [WS_METHODS.serverSetCustomModelEndpoint]: AuthOrchestrationOperateScope,
+  // Discovery sends a request to a user-configured endpoint, so it has the
+  // same operate-level authorization as creating or updating that endpoint.
+  [WS_METHODS.serverDiscoverCustomModelEndpoint]: AuthOrchestrationOperateScope,
   [WS_METHODS.serverDeleteCustomModelEndpoint]: AuthOrchestrationOperateScope,
   [WS_METHODS.serverDiscoverSourceControl]: AuthOrchestrationReadScope,
   [WS_METHODS.serverGetTraceDiagnostics]: AuthOrchestrationReadScope,

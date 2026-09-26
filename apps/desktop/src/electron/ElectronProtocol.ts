@@ -71,6 +71,9 @@ export function makeDesktopContentSecurityPolicy(input: DesktopProtocolRegistrat
   const scriptSources = [
     "'self'",
     "'unsafe-inline'",
+    // The bundled schema validator compiles trusted, application-owned schemas
+    // at startup. Without this source the renderer fails before React mounts.
+    "'unsafe-eval'",
     "'wasm-unsafe-eval'",
     ...(clerkOrigin ? [clerkOrigin] : []),
     "https://challenges.cloudflare.com",

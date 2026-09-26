@@ -251,6 +251,10 @@
       "types": "./src/rateLimits.ts",
       "import": "./src/rateLimits.ts"
     },
+    "./apiKeyProviders": {
+      "types": "./src/apiKeyProviders.ts",
+      "import": "./src/apiKeyProviders.ts"
+    },
     "./customModelEndpoint": {
       "types": "./src/customModelEndpoint.ts",
       "import": "./src/customModelEndpoint.ts"

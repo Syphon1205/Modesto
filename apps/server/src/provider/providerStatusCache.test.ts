@@ -182,6 +182,46 @@ it.layer(NodeServices.layer)("providerStatusCache", (it) => {
     );
   });
 
+  it("drops a cached custom-endpoint model no longer present in the fallback settings", () => {
+    // Unlike a built-in model slug, a `router:<endpointId>:<modelId>` slug is
+    // synchronously derived from current `customModelEndpoints` settings, so
+    // its absence from `fallbackCodex` means the user deleted or renamed that
+    // endpoint - not that this boot-time hydration predates a slow refresh.
+    // Carrying it over would offer a model in the picker that `CodexAdapter`
+    // always rejects at session start.
+    const cachedCodex = makeProvider(CODEX_DRIVER, {
+      checkedAt: "2026-04-10T12:00:00.000Z",
+      models: [
+        {
+          slug: "router:vllm:qwen38-nvfp4",
+          name: "qwen38-nvfp4",
+          subProvider: "vLLM",
+          isCustom: true,
+          capabilities: emptyCapabilities,
+        },
+      ],
+    });
+    const fallbackCodex = makeProvider(CODEX_DRIVER, {
+      models: [
+        {
+          slug: "router:dgx-spark:qwen3.8-flash-next",
+          name: "qwen3.8-flash-next",
+          subProvider: "DGX Spark",
+          isCustom: true,
+          capabilities: emptyCapabilities,
+        },
+      ],
+    });
+
+    assert.deepStrictEqual(
+      hydrateCachedProvider({
+        cachedProvider: cachedCodex,
+        fallbackProvider: fallbackCodex,
+      }).models,
+      fallbackCodex.models,
+    );
+  });
+
   it("ignores stale cached enabled state when the provider is now disabled", () => {
     const cachedCodex = makeProvider(CODEX_DRIVER, {
       checkedAt: "2026-04-10T12:00:00.000Z",

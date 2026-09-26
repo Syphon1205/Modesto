@@ -6,7 +6,83 @@ import {
 import { DEFAULT_CLIENT_SETTINGS } from "@modesto/contracts/settings";
 import { describe, expect, it } from "vite-plus/test";
 
-import { mergeEnvironmentSettings, resolveEnvironmentIdentificationMode } from "./useSettings";
+import {
+  mergeEnvironmentSettings,
+  resolveEnvironmentIdentificationMode,
+  resolveInterfaceStyle,
+  resolveClientInterfaceSettings,
+} from "./useSettings";
+
+describe("resolveInterfaceStyle", () => {
+  it("uses the GitHub shell", () => {
+    expect(resolveInterfaceStyle({ interfaceStyle: "github", legacySidebarEnabled: false })).toBe(
+      "github",
+    );
+  });
+
+  it("preserves the OpenCode shell", () => {
+    expect(resolveInterfaceStyle({ interfaceStyle: "opencode", legacySidebarEnabled: true })).toBe(
+      "opencode",
+    );
+  });
+
+  it("preserves the named classic shell", () => {
+    expect(resolveInterfaceStyle({ interfaceStyle: "classic", legacySidebarEnabled: false })).toBe(
+      "classic",
+    );
+  });
+
+  it("migrates the previous legacy sidebar preference to the classic shell", () => {
+    expect(resolveInterfaceStyle({ interfaceStyle: "modesto", legacySidebarEnabled: true })).toBe(
+      "classic",
+    );
+  });
+
+  it("migrates the retired Modesto style to the new default shell", () => {
+    expect(resolveInterfaceStyle({ interfaceStyle: "modesto", legacySidebarEnabled: false })).toBe(
+      "github",
+    );
+  });
+});
+
+describe("resolved interface settings", () => {
+  it("gives the composer and shell the same style for a saved Modesto preference", () => {
+    const stored = {
+      ...DEFAULT_CLIENT_SETTINGS,
+      interfaceStyle: "modesto" as const,
+      legacySidebarEnabled: false,
+    };
+    expect(resolveClientInterfaceSettings(stored).interfaceStyle).toBe("github");
+    expect(mergeEnvironmentSettings(DEFAULT_SERVER_SETTINGS, stored).interfaceStyle).toBe("github");
+    expect(stored.interfaceStyle).toBe("modesto");
+  });
+
+  it("keeps explicit alternate layouts and stable snapshots", () => {
+    for (const interfaceStyle of [
+      "github",
+      "opencode",
+      "classic",
+      "claude",
+      "codex",
+      "cursor",
+    ] as const) {
+      const stored = { ...DEFAULT_CLIENT_SETTINGS, interfaceStyle };
+      expect(resolveClientInterfaceSettings(stored)).toBe(stored);
+    }
+  });
+
+  it("does not make the old legacy sidebar opt-in irreversible", () => {
+    const stored = {
+      ...DEFAULT_CLIENT_SETTINGS,
+      interfaceStyle: "modesto" as const,
+      legacySidebarEnabled: true,
+    };
+    expect(resolveClientInterfaceSettings(stored).interfaceStyle).toBe("classic");
+    expect(
+      resolveClientInterfaceSettings({ ...stored, legacySidebarEnabled: false }).interfaceStyle,
+    ).toBe("github");
+  });
+});
 
 describe("resolveEnvironmentIdentificationMode", () => {
   it("keeps identification hidden until client settings hydrate", () => {

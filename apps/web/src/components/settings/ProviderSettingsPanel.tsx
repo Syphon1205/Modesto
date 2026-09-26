@@ -1,3 +1,4 @@
+import { AddProviderMenu } from "./AddProviderMenu";
 import { useAtomValue } from "@effect/atom-react";
 import { connectionStatusText } from "@modesto/client-runtime/connection";
 import { safeErrorLogAttributes } from "@modesto/client-runtime/errors";
@@ -25,6 +26,7 @@ import * as Equal from "effect/Equal";
 import * as Result from "effect/Result";
 import {
   CloudIcon,
+  BotIcon,
   LaptopIcon,
   LoaderIcon,
   MonitorIcon,
@@ -37,7 +39,11 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { isDesktopLocalConnectionTarget } from "../../connection/desktopLocal";
 import { isElectron } from "../../env";
 import { usePrimarySessionState } from "../../environments/primary";
-import { useEnvironmentSettings, useUpdateEnvironmentSettings } from "../../hooks/useSettings";
+import {
+  useEnvironmentSettings,
+  useUpdateEnvironmentSettings,
+  useInterfaceStyle,
+} from "../../hooks/useSettings";
 import { cn } from "../../lib/utils";
 import { resolveAppModelSelectionState } from "../../modelSelection";
 import {
@@ -370,6 +376,7 @@ export function EnvironmentProviderSettings({
   readonly readOnly?: boolean;
 }) {
   const settings = useEnvironmentSettings(environmentId);
+  const isGitHub = useInterfaceStyle() === "github";
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
   const serverProviders =
     useAtomValue(serverEnvironment.providersValueAtom(environmentId)) ?? EMPTY_SERVER_PROVIDERS;
@@ -381,6 +388,8 @@ export function EnvironmentProviderSettings({
   });
   const [isRefreshingProviders, setIsRefreshingProviders] = useState(false);
   const [isAddInstanceDialogOpen, setIsAddInstanceDialogOpen] = useState(false);
+  const [addInstanceInitialDriver, setAddInstanceInitialDriver] =
+    useState<ProviderDriverKind | null>(null);
   const [updatingProviderDrivers, setUpdatingProviderDrivers] = useState<
     ReadonlySet<ProviderDriverKind>
   >(() => new Set());
@@ -671,6 +680,7 @@ export function EnvironmentProviderSettings({
     <>
       <SettingsSection
         {...searchableSetting("providers")}
+        title={isGitHub ? "Configured providers" : searchableSetting("providers").title}
         headerAction={
           <div className="flex items-center gap-1.5">
             <ProviderLastChecked lastCheckedAt={lastCheckedAt} />
@@ -682,15 +692,42 @@ export function EnvironmentProviderSettings({
                       <Button
                         size="icon-micro"
                         variant="ghost-muted"
-                        onClick={() => setIsAddInstanceDialogOpen(true)}
-                        aria-label="Add provider instance"
+                        onClick={() => {
+                          setAddInstanceInitialDriver(ProviderDriverKind.make("customAcp"));
+                          setIsAddInstanceDialogOpen(true);
+                        }}
+                        aria-label="Add custom agent"
                       >
-                        <PlusIcon className="size-3" />
+                        <BotIcon className="size-3" />
                       </Button>
                     }
                   />
-                  <TooltipPopup side="top">Add provider instance</TooltipPopup>
+                  <TooltipPopup side="top">Add custom agent</TooltipPopup>
                 </Tooltip>
+                {isGitHub ? (
+                  <AddProviderMenu
+                    onSelect={(driver) => {
+                      setAddInstanceInitialDriver(driver);
+                      setIsAddInstanceDialogOpen(true);
+                    }}
+                  />
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          size="icon-micro"
+                          variant="ghost-muted"
+                          onClick={() => setIsAddInstanceDialogOpen(true)}
+                          aria-label="Add provider instance"
+                        >
+                          <PlusIcon className="size-3" />
+                        </Button>
+                      }
+                    />
+                    <TooltipPopup side="top">Add provider instance</TooltipPopup>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger
                     render={
@@ -908,7 +945,11 @@ export function EnvironmentProviderSettings({
           open
           environmentId={environmentId}
           environmentLabel={environmentLabel}
-          onOpenChange={setIsAddInstanceDialogOpen}
+          initialDriver={addInstanceInitialDriver ?? undefined}
+          onOpenChange={(open) => {
+            setIsAddInstanceDialogOpen(open);
+            if (!open) setAddInstanceInitialDriver(null);
+          }}
         />
       ) : null}
     </>

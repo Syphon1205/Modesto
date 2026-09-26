@@ -3,6 +3,8 @@ import { describe, expect, it } from "vite-plus/test";
 
 import {
   isAttachedSidechat,
+  selectActiveSpawnedThreads,
+  selectSpawnedThreadTree,
   selectSpawnedThreadsForParent,
   spawnedThreadIsLive,
   spawnedThreadKind,
@@ -88,6 +90,50 @@ describe("selectSpawnedThreadsForParent", () => {
     expect(
       selectSpawnedThreadsForParent([archived, deleted, live], parentId).map((entry) => entry.id),
     ).toEqual(["thread-live"]);
+  });
+});
+
+describe("recursive spawned sessions", () => {
+  it("includes agents spawned by agents with their depth", () => {
+    const child = thread({ id: "thread-child", parentThreadId: "thread-parent" });
+    const grandchild = thread({ id: "thread-grandchild", parentThreadId: "thread-child" });
+    const sidechat = thread({
+      id: "thread-sidechat",
+      parentThreadId: "thread-grandchild",
+      conversationMode: "chat",
+    });
+
+    expect(
+      selectSpawnedThreadTree([sidechat, grandchild, child], parentId).map((entry) => [
+        entry.thread.id,
+        entry.depth,
+      ]),
+    ).toEqual([
+      ["thread-child", 0],
+      ["thread-grandchild", 1],
+      ["thread-sidechat", 2],
+    ]);
+  });
+
+  it("selects live attached sessions regardless of conversation mode", () => {
+    const workingAgent = thread({ id: "agent", latestTurnState: "running" });
+    const workingSidechat = thread({
+      id: "sidechat",
+      conversationMode: "chat",
+      latestTurnState: "running",
+    });
+    const completed = thread({ id: "completed", latestTurnState: "completed" });
+    const topLevel = thread({
+      id: "top-level",
+      parentThreadId: null,
+      latestTurnState: "running",
+    });
+
+    expect(
+      selectActiveSpawnedThreads([completed, topLevel, workingSidechat, workingAgent]).map(
+        (entry) => entry.id,
+      ),
+    ).toEqual(["agent", "sidechat"]);
   });
 });
 

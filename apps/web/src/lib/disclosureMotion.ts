@@ -4,14 +4,19 @@
 // Exports: class-name helpers + Collapsible panel tokens
 // Why: Sidebar project/thread expand and chat disclosures reused the same grid/opacity
 //      timing in multiple places; centralize it so new expand/collapse surfaces stay consistent.
-//      Timing itself is delegated to lib/motion.ts, so a disclosure and a hover on the same
-//      surface share one duration ladder and one easing curve.
+//      All disclosures use 220ms ease-out; hover and press feedback lives in lib/motion.ts.
 
-import { MOTION_DURATION, MOTION_EASE } from "~/lib/motion";
 import { cn } from "~/lib/utils";
 
+const DISCLOSURE_TIMING_CLASS = "duration-[220ms] ease-out";
+
+/** Modal/menu disclosure follows the same shared timing, including reduced-motion behavior. */
+export const DISCLOSURE_OVERLAY_MOTION_CLASS = `transition-[scale,opacity,translate] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
+export const DISCLOSURE_BACKDROP_MOTION_CLASS = `transition-opacity ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
+export const DISCLOSURE_POPUP_MOTION_CLASS = `transition-[width,height,scale,opacity,translate] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none data-starting-style:scale-98 data-ending-style:scale-98 data-starting-style:opacity-0 data-ending-style:opacity-0`;
+
 /** Shell grid that animates height via grid-template-rows + fade. */
-export const DISCLOSURE_SHELL_MOTION_CLASS = `grid transition-[grid-template-rows,opacity] ${MOTION_DURATION.base} ${MOTION_EASE.fluid} motion-reduce:transition-none`;
+export const DISCLOSURE_SHELL_MOTION_CLASS = `grid transition-[grid-template-rows,opacity] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
 
 export const DISCLOSURE_SHELL_OPEN_CLASS = "grid-rows-[1fr] opacity-100";
 export const DISCLOSURE_SHELL_CLOSED_CLASS = "grid-rows-[0fr] opacity-0";
@@ -20,26 +25,26 @@ export const DISCLOSURE_SHELL_CLOSED_CLASS = "grid-rows-[0fr] opacity-0";
 export const DISCLOSURE_INNER_CLASS = "min-h-0 overflow-hidden";
 
 /** Optional content drift/fade layered on top of the shell animation. */
-export const DISCLOSURE_CONTENT_MOTION_CLASS = `transition-[opacity,transform] ${MOTION_DURATION.base} ${MOTION_EASE.fluid} motion-reduce:transition-none`;
+export const DISCLOSURE_CONTENT_MOTION_CLASS = `transition-[opacity,transform] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
 
 export const DISCLOSURE_CONTENT_OPEN_CLASS = "translate-y-0 opacity-100";
 export const DISCLOSURE_CONTENT_CLOSED_CLASS = "-translate-y-1 opacity-0 pointer-events-none";
 
 /** Chevron rotation paired with the shell motion. */
-export const DISCLOSURE_CHEVRON_MOTION_CLASS = `size-3.5 shrink-0 text-muted-foreground transition-transform ${MOTION_DURATION.base} ${MOTION_EASE.fluid} motion-reduce:transition-none`;
+export const DISCLOSURE_CHEVRON_MOTION_CLASS = `size-3.5 shrink-0 text-muted-foreground transition-transform ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
 
 /** Base-ui Collapsible panel height animation using the same timing curve. */
-export const DISCLOSURE_COLLAPSIBLE_PANEL_CLASS = `h-(--collapsible-panel-height) overflow-hidden transition-[height] ${MOTION_DURATION.base} ${MOTION_EASE.fluid} motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0 data-open:data-ending-style:[height:var(--collapsible-panel-height)]`;
+export const DISCLOSURE_COLLAPSIBLE_PANEL_CLASS = `h-(--collapsible-panel-height) overflow-hidden transition-[height] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none data-ending-style:h-0 data-starting-style:h-0 data-open:data-ending-style:[height:var(--collapsible-panel-height)]`;
 
 /**
  * Inline-axis (width) reveal for side panels that open/close along the
  * horizontal axis. Same timing curve as the vertical disclosures so every
  * toggle in the app stays consistent. Pair `open ? openWidthClassName : "w-0"`.
  */
-export const DISCLOSURE_WIDTH_MOTION_CLASS = `overflow-hidden transition-[width] ${MOTION_DURATION.base} ${MOTION_EASE.fluid} motion-reduce:transition-none`;
+export const DISCLOSURE_WIDTH_MOTION_CLASS = `overflow-hidden transition-[width] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transition-none`;
 
 /** Viewport-edge panels travel and resize as one surface on open/close. */
-export const DISCLOSURE_PANEL_MOTION_CLASS = `overflow-hidden transition-[width,height,opacity,transform,translate] ${MOTION_DURATION.slow} ${MOTION_EASE.soft} motion-reduce:transform-none motion-reduce:transition-none`;
+export const DISCLOSURE_PANEL_MOTION_CLASS = `overflow-hidden transition-[width,height,opacity,transform,translate] ${DISCLOSURE_TIMING_CLASS} motion-reduce:transform-none motion-reduce:transition-none`;
 
 export function disclosurePanelClassName(
   open: boolean,

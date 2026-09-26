@@ -286,6 +286,27 @@ describe("getComposerProviderState", () => {
     expect(state).not.toHaveProperty("composerSurfaceClassName");
     expect(state).not.toHaveProperty("modelPickerIconClassName");
   });
+
+  it("keeps only thinking controls in chat mode", () => {
+    const state = getComposerProviderState({
+      provider: PROVIDER,
+      model: MODEL,
+      models: modelWith([
+        selectDescriptor("reasoningEffort", [{ id: "high", label: "High", isDefault: true }]),
+        selectDescriptor("agent", [{ id: "ask", label: "Ask", isDefault: true }]),
+        selectDescriptor("contextWindow", [{ id: "default", label: "Default", isDefault: true }]),
+      ]),
+      modelOptions: selections(
+        ["reasoningEffort", "high"],
+        ["agent", "ask"],
+        ["contextWindow", "default"],
+      ),
+      planModeEnabled: true,
+      conversationMode: "chat",
+    });
+
+    expect(state.modelOptionsForDispatch).toEqual(selections(["reasoningEffort", "high"]));
+  });
 });
 
 describe("provider traits render guards", () => {

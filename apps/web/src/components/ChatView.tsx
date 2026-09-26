@@ -1,3 +1,4 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import type { EnvironmentThreadShell } from "@modesto/client-runtime/state/models";
 import {
   type ApprovalRequestId,
@@ -74,7 +75,6 @@ import {
   useState,
 } from "react";
 import { flushSync } from "react-dom";
-import { useNavigate } from "@tanstack/react-router";
 import { useShallow } from "zustand/react/shallow";
 import {
   executeAtomQuery,
@@ -88,10 +88,13 @@ import * as Cause from "effect/Cause";
 import { AsyncResult } from "effect/unstable/reactivity";
 import { isElectron } from "../env";
 import { readLocalApi } from "../localApi";
+import { CanvasFrame } from "./studio/CanvasFrame";
+import { VisualZoomControls } from "./chat/InlineVisual";
 import { useDiffPanelStore } from "../diffPanelStore";
 import {
   collapseExpandedComposerCursor,
   type ComposerSubmissionIntent,
+  parseConversationModeSlashCommand,
   parseMultiagentComposerCommand,
   parseSideComposerCommand,
   parseStandaloneComposerSlashCommand,
@@ -137,7 +140,7 @@ import {
 import { useTheme } from "../hooks/useTheme";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
 import { useTurnDiffSummaries } from "../hooks/useTurnDiffSummaries";
-import { isCommandPaletteOpen } from "../commandPaletteBus";
+import { isCommandPaletteOpen, openCommandPalette } from "../commandPaletteBus";
 import { buildTemporaryWorktreeBranchName } from "@modesto/shared/git";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 import { RIGHT_PANEL_INLINE_LAYOUT_MEDIA_QUERY } from "../rightPanelLayout";
@@ -194,7 +197,10 @@ import { PullRequestDetailPanel } from "./pullRequest/PullRequestDetailPanel";
 import { PullRequestDetailGhost } from "./pullRequest/PullRequestGhosts";
 import { PullRequestsUnavailableState } from "./pullRequest/PullRequestsUnavailableState";
 import { RightPanelTabs, type PullRequestTabStatus } from "./RightPanelTabs";
-import { AgentsPanel } from "./AgentsPanel";
+import {
+  FloatingPerformanceMonitor,
+  PerformanceMonitorPanel,
+} from "./performance/PerformanceMonitorPanel";
 import { selectSpawnedThreadsForParent, spawnedThreadIsLive } from "./agents/spawnedThreads";
 import {
   MAX_AGENT_SPLIT_PANES,
@@ -217,6 +223,7 @@ import { resolveShortcutCommand, shortcutLabelForCommand } from "../keybindings"
 import ThreadTerminalDrawer from "./ThreadTerminalDrawer";
 import {
   AlarmClockIcon,
+  AsteriskIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
   GitBranchIcon,
@@ -251,6 +258,7 @@ import { useNewThreadHandler } from "../hooks/useHandleNewThread";
 import { useStartNestedThread } from "../hooks/useStartNestedThread";
 import { resolveAppModelSelectionForInstance } from "../modelSelection";
 import { confirmTerminalClose, isTerminalCloseConfirmPending } from "../lib/terminalCloseConfirm";
+import { stageProjectChatHandoff } from "../lib/projectChatHandoff";
 import { getTerminalFocusOwner } from "../lib/terminalFocus";
 import {
   preventRepeatedTerminalCloseShortcut,
@@ -327,11 +335,17 @@ import {
 import { environmentShell } from "../state/shell";
 import { ChatComposer, type ChatComposerHandle } from "./chat/ChatComposer";
 import { DraftComposerSuggestions, DraftHeroHeadline } from "./chat/DraftHeroHeadline";
+import { ProviderProjectChip } from "./chat/ProviderProjectChip";
+import { providerLayoutOf } from "../providerLayouts";
+import { useProviderLayoutStore } from "../providerLayoutStore";
+import { ComposerConversationModeToggle } from "./chat/ComposerConversationModeToggle";
 import { ExpandedImageDialog } from "./chat/ExpandedImageDialog";
 import { PullRequestThreadDialog } from "./PullRequestThreadDialog";
 import { MessagesTimeline } from "./chat/MessagesTimeline";
 import { resolveTimelineIsAtEnd } from "./chat/MessagesTimeline.logic";
 import { ChatHeader } from "./chat/ChatHeader";
+import { ModestoLogo } from "./ModestoLogo";
+import { PinnedSummaryPanel } from "./chat/PinnedSummaryPanel";
 import { ArtifactsPanel } from "./artifacts/ArtifactsPanel";
 import { MusicPanel } from "./music/MusicPanel";
 import {
@@ -437,6 +451,7 @@ import {
   canSendWithoutActiveProject,
   isProjectSelectionRequired,
   resolveDraftThreadCreateProjectId,
+  resolveRevertTurnCountsByUserMessage,
   resolveThreadMetadataUpdateForNextTurn,
   resolveSendEnvMode,
   revokeBlobPreviewUrl,
@@ -474,6 +489,26 @@ import {
   serverUpdateGuidance,
 } from "../versionSkew";
 import { useAssetUrls } from "../assets/assetUrls";
+
+function GeneratedVisualPanel({
+  document,
+  title,
+}: {
+  readonly document: string;
+  readonly title: string;
+}) {
+  const [zoom, setZoom] = useState(1);
+  return (
+    <div className="flex min-h-0 flex-1 flex-col bg-background">
+      <div className="flex h-9 shrink-0 items-center justify-end border-b border-border/60 px-2">
+        <VisualZoomControls zoom={zoom} onZoomChange={setZoom} />
+      </div>
+      <div className="min-h-0 flex-1">
+        <CanvasFrame source={document} title={title} zoom={zoom} onZoomChange={setZoom} />
+      </div>
+    </div>
+  );
+}
 
 const IMAGE_ONLY_BOOTSTRAP_PROMPT =
   "[User attached one or more images without additional text. Respond using the conversation context and the attached image(s).]";
@@ -1456,6 +1491,8 @@ function ChatViewContent(props: ChatViewProps) {
   }, [routeKind, routeThreadRef, routeThreadState]);
   const markThreadVisited = useUiStateStore((store) => store.markThreadVisited);
   const settings = useEnvironmentSettings(environmentId);
+  const providerLayout = providerLayoutOf(settings.interfaceStyle);
+  const claudeSection = useProviderLayoutStore((state) => state.claudeSection);
   const updateClientSettings = useUpdateClientSettings();
   // New-thread defaults live in the primary environment's settings.json (the
   // settings UI never writes to remote environments), so read them from the
@@ -1465,7 +1502,7 @@ function ChatViewContent(props: ChatViewProps) {
     (store) => store.setStickyModelSelection,
   );
   const timestampFormat = settings.timestampFormat;
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { resolvedTheme } = useTheme();
 
   // ── Chat tabs ────────────────────────────────────────────────────────
@@ -1474,7 +1511,6 @@ function ChatViewContent(props: ChatViewProps) {
   // sync no matter how you got here - sidebar click, command palette,
   // keyboard jump, or a restored route on boot.
   const openChatTabInStrip = useChatTabsStore((store) => store.openTab);
-  const chatTabNavigation = useChatTabNavigation();
 
   // Granular store selectors — avoid subscribing to prompt changes.
   const composerRuntimeMode = useComposerDraftStore(
@@ -1552,6 +1588,7 @@ function ChatViewContent(props: ChatViewProps) {
   const [isWorkspaceFileDragActive, setIsWorkspaceFileDragActive] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [expandedImage, setExpandedImage] = useState<ExpandedImagePreview | null>(null);
+  const [performanceFloating, setPerformanceFloating] = useState(false);
   const [optimisticUserMessages, setOptimisticUserMessages] = useState<ChatMessage[]>([]);
   const [feedbackSubmissionsByThreadKey, setFeedbackSubmissionsByThreadKey] = useState<
     Record<string, ReadonlyArray<CodexFeedbackSubmission>>
@@ -1577,6 +1614,7 @@ function ChatViewContent(props: ChatViewProps) {
     null,
   );
   const [respondingRequestIds, setRespondingRequestIds] = useState<ApprovalRequestId[]>([]);
+  const [pendingProjectHandoffTask, setPendingProjectHandoffTask] = useState<string | null>(null);
   const [respondingUserInputRequestIds, setRespondingUserInputRequestIds] = useState<
     ApprovalRequestId[]
   >([]);
@@ -1767,13 +1805,13 @@ function ChatViewContent(props: ChatViewProps) {
   // would drop the user into a strip full of everything they had visited.
   const chatTabsEnabled = settings.chatTabsEnabled;
   useEffect(() => {
-    if (chatTabsEnabled && chatTabForRoute) {
+    if ((chatTabsEnabled || settings.interfaceStyle === "opencode") && chatTabForRoute) {
       openChatTabInStrip(chatTabForRoute);
     }
     // Keyed on the tab identity rather than the object so a re-render with an
     // equivalent tab does not re-open (and re-persist) it every frame.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chatTabsEnabled, chatTabForRouteKey, openChatTabInStrip]);
+  }, [chatTabsEnabled, chatTabForRouteKey, openChatTabInStrip, settings.interfaceStyle]);
   const threadError = isServerThread
     ? (localServerError ?? activeServerThread?.session?.lastError ?? null)
     : localDraftError;
@@ -2016,6 +2054,14 @@ function ChatViewContent(props: ChatViewProps) {
   const handleNewThreadInActiveProject = useCallback(() => {
     startNewThreadForProject(activeProjectRef, handleNewThread);
   }, [activeProjectRef, handleNewThread]);
+  const handleEmptyChatTabs = useCallback(() => {
+    if (activeProjectRef !== null) {
+      void handleNewThread(activeProjectRef, { conversationMode: "chat" });
+      return;
+    }
+    void navigate({ to: "/" });
+  }, [activeProjectRef, handleNewThread, navigate]);
+  const chatTabNavigation = useChatTabNavigation({ onEmpty: handleEmptyChatTabs });
   const handleStartThreadInChat = useCallback(() => {
     if (!activeThread || !isRegularChat || !isServerThread) return;
     void startNestedThread(activeThread);
@@ -2066,6 +2112,28 @@ function ChatViewContent(props: ChatViewProps) {
   // Compute the list of environments this logical project spans, used to
   // drive the environment picker in BranchToolbar.
   const allProjects = useProjects();
+  const continueProjectHandoff = useCallback(
+    async (projectId: ProjectId, projectEnvironmentId: EnvironmentId) => {
+      const task = pendingProjectHandoffTask;
+      if (!task) return;
+      const destination = await handleNewThread(scopeProjectRef(projectEnvironmentId, projectId), {
+        conversationMode: "code",
+        replace: true,
+      });
+      if (!destination) return;
+      setComposerDraftPrompt(destination.draftId, task);
+      clearComposerDraftContent(composerDraftTarget);
+      promptRef.current = "";
+      setPendingProjectHandoffTask(null);
+    },
+    [
+      clearComposerDraftContent,
+      composerDraftTarget,
+      handleNewThread,
+      pendingProjectHandoffTask,
+      setComposerDraftPrompt,
+    ],
+  );
   const primaryEnvironmentId = primaryEnvironment?.environmentId ?? null;
   useEffect(() => {
     if (!activeThreadRef || !activeProjectRef) return;
@@ -2920,6 +2988,7 @@ function ChatViewContent(props: ChatViewProps) {
   const showConversationModeToggle = shouldShowDraftConversationModeToggle({
     isDraftHeroState,
     conversationModeSelectable,
+    conversationMode,
   });
   const [
     attachDraftHeroTransitionGroupRef,
@@ -2931,43 +3000,22 @@ function ChatViewContent(props: ChatViewProps) {
   const turnDiffSummaryByAssistantMessageId = useMemo(() => {
     const byMessageId = new Map<MessageId, TurnDiffSummary>();
     for (const summary of turnDiffSummaries) {
-      if (!summary.assistantMessageId) continue;
-      byMessageId.set(summary.assistantMessageId, summary);
+      if (summary.assistantMessageId) {
+        byMessageId.set(summary.assistantMessageId, summary);
+      }
     }
     return byMessageId;
   }, [turnDiffSummaries]);
-  const revertTurnCountByUserMessageId = useMemo(() => {
-    const byUserMessageId = new Map<MessageId, number>();
-    for (let index = 0; index < timelineEntries.length; index += 1) {
-      const entry = timelineEntries[index];
-      if (!entry || entry.kind !== "message" || entry.message.role !== "user") {
-        continue;
-      }
-
-      for (let nextIndex = index + 1; nextIndex < timelineEntries.length; nextIndex += 1) {
-        const nextEntry = timelineEntries[nextIndex];
-        if (!nextEntry || nextEntry.kind !== "message") {
-          continue;
-        }
-        if (nextEntry.message.role === "user") {
-          break;
-        }
-        const summary = turnDiffSummaryByAssistantMessageId.get(nextEntry.message.id);
-        if (!summary) {
-          continue;
-        }
-        const turnCount =
-          summary.checkpointTurnCount ?? inferredCheckpointTurnCountByTurnId[summary.turnId];
-        if (typeof turnCount !== "number") {
-          break;
-        }
-        byUserMessageId.set(entry.message.id, Math.max(0, turnCount - 1));
-        break;
-      }
-    }
-
-    return byUserMessageId;
-  }, [inferredCheckpointTurnCountByTurnId, timelineEntries, turnDiffSummaryByAssistantMessageId]);
+  const revertTurnCountByUserMessageId = useMemo(
+    () =>
+      resolveRevertTurnCountsByUserMessage({
+        timelineEntries,
+        turnDiffSummaries,
+        inferredCheckpointTurnCountByTurnId,
+        hasOlderTurns: threadHasOlderTurns(routeThreadState),
+      }),
+    [inferredCheckpointTurnCountByTurnId, routeThreadState, timelineEntries, turnDiffSummaries],
+  );
 
   const gitCwd = activeProject
     ? projectScriptCwd({
@@ -3681,6 +3729,39 @@ function ChatViewContent(props: ChatViewProps) {
     ],
   );
 
+  // Provider layouts decide what an empty draft is: Claude follows its Chat /
+  // Code sidebar tab, Cursor agents always run in a repository, and Codex
+  // opens project drafts as Work (its header toggle still switches to Chat).
+  const draftHasWorkProject =
+    activeProject !== undefined && activeProject !== null && activeProject.kind !== "chat";
+  const providerDraftMode: ConversationMode | null =
+    providerLayout === null
+      ? null
+      : providerLayout === "claude"
+        ? claudeSection
+        : providerLayout === "cursor" || draftHasWorkProject
+          ? "code"
+          : null;
+  const appliedProviderDraftModeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isDraftHeroState || !draftId || providerDraftMode === null) {
+      return;
+    }
+    const applicationKey = `${providerLayout}:${draftId}:${providerDraftMode}`;
+    if (appliedProviderDraftModeRef.current === applicationKey) return;
+    appliedProviderDraftModeRef.current = applicationKey;
+    if (conversationMode !== providerDraftMode) {
+      handleConversationModeChange(providerDraftMode);
+    }
+  }, [
+    conversationMode,
+    draftId,
+    handleConversationModeChange,
+    isDraftHeroState,
+    providerDraftMode,
+    providerLayout,
+  ]);
+
   const handleInteractionModeChange = useCallback(
     (mode: ProviderInteractionMode) => {
       if (mode === interactionMode) return;
@@ -3722,13 +3803,19 @@ function ChatViewContent(props: ChatViewProps) {
     if (!activeThreadRef || !activeProject) return;
     useRightPanelStore.getState().open(activeThreadRef, "files");
   }, [activeProject, activeThreadRef]);
-  const addAgentsSurface = useCallback(() => {
-    if (!activeThreadRef) return;
-    useRightPanelStore.getState().open(activeThreadRef, "agents");
-  }, [activeThreadRef]);
   const addContextSurface = useCallback(() => {
     if (!activeThreadRef) return;
     useRightPanelStore.getState().open(activeThreadRef, "context");
+  }, [activeThreadRef]);
+  const addPerformanceSurface = useCallback(() => {
+    if (!activeThreadRef) return;
+    setPerformanceFloating(true);
+    useRightPanelStore.getState().close(activeThreadRef);
+  }, [activeThreadRef]);
+  const dockPerformanceSurface = useCallback(() => {
+    if (!activeThreadRef) return;
+    setPerformanceFloating(false);
+    useRightPanelStore.getState().open(activeThreadRef, "performance");
   }, [activeThreadRef]);
   const addArtifactsSurface = useCallback(() => {
     if (!activeThreadRef) return;
@@ -5514,31 +5601,36 @@ function ChatViewContent(props: ChatViewProps) {
   ]);
 
   const onRevertToTurnCount = useCallback(
-    async (turnCount: number) => {
+    async (turnCount: number, intent: "undo" | "edit" = "undo") => {
       const localApi = readLocalApi();
-      if (!localApi || !activeThread || isRevertingCheckpoint) return;
+      if (!localApi || !activeThread || isRevertingCheckpoint) return false;
 
       if (activeEnvironmentUnavailable && activeEnvironmentUnavailableLabel) {
         setThreadError(
           activeThread.id,
           `Reconnect ${activeEnvironmentUnavailableLabel} before reverting checkpoints.`,
         );
-        return;
+        return false;
       }
       if (phase === "running" || isSendBusy || isConnecting) {
         setThreadError(activeThread.id, "Interrupt the current turn before reverting checkpoints.");
-        return;
+        return false;
       }
       const confirmed = await localApi.dialogs.confirm(
-        [
-          `Revert this thread to checkpoint ${turnCount}?`,
-          "This will discard newer messages and turn diffs in this thread.",
-          "This action cannot be undone.",
-        ].join("\n"),
+        intent === "edit"
+          ? [
+              "Edit this message?",
+              "This will remove this message and everything after it, then restore the text to the composer.",
+            ].join("\n")
+          : [
+              "Undo this turn?",
+              "This will remove this message and every response after it.",
+              "This action cannot be undone.",
+            ].join("\n"),
         { variant: "destructive" },
       );
       if (!confirmed) {
-        return;
+        return false;
       }
 
       setIsRevertingCheckpoint(true);
@@ -5558,6 +5650,7 @@ function ChatViewContent(props: ChatViewProps) {
         );
       }
       setIsRevertingCheckpoint(false);
+      return result._tag !== "Failure";
     },
     [
       activeThread,
@@ -5795,6 +5888,31 @@ function ChatViewContent(props: ChatViewProps) {
       });
       return;
     }
+    const canParseModeCommand =
+      composerImages.length === 0 &&
+      sendableComposerTerminalContexts.length === 0 &&
+      composerElementContexts.length === 0 &&
+      composerAppshotContexts.length === 0 &&
+      composerPreviewAnnotations.length === 0 &&
+      composerReviewComments.length === 0;
+    const conversationModeCommand = canParseModeCommand
+      ? parseConversationModeSlashCommand(trimmed)
+      : null;
+    if (conversationModeCommand) {
+      if (routeKind !== "draft" || !isDraftHeroState) {
+        toastManager.add({
+          type: "info",
+          title: "Mode is fixed for this session",
+          description: "Start a new session, then use /chat or /code before the first message.",
+        });
+        return;
+      }
+      handleConversationModeChange(conversationModeCommand);
+      promptRef.current = "";
+      clearComposerDraftContent(composerDraftTarget);
+      composerRef.current?.resetCursorState();
+      return;
+    }
     // Legacy plan mode: /plan and /default only act when the beta flag is on;
     // otherwise they send as plain text like any other message.
     const standaloneSlashCommand =
@@ -5872,24 +5990,7 @@ function ChatViewContent(props: ChatViewProps) {
     const codingTaskIntent =
       isRegularChat && canParseAttachedThreadCommand ? detectCodingTaskIntent(trimmed) : null;
     if (codingTaskIntent) {
-      if (!activeProject) {
-        toastManager.add(
-          stackedThreadToast({
-            type: "warning",
-            title: "Choose a project first",
-            description: "Coding work needs a project so the new thread can share this workspace.",
-          }),
-        );
-        return;
-      }
-      promptRef.current = "";
-      clearComposerDraftContent(composerDraftTarget);
-      composerRef.current?.resetCursorState();
-      await onCreateAttachedThread({
-        kind: "code-task",
-        task: codingTaskIntent.task,
-        open: true,
-      });
+      setPendingProjectHandoffTask(codingTaskIntent.task);
       return;
     }
     const canvasCommand =
@@ -6906,8 +7007,6 @@ function ChatViewContent(props: ChatViewProps) {
           return;
         }
 
-        addAgentsSurface();
-
         if (input.kind === "multiagent" && props.embedded !== true) {
           const environmentShells = readThreadShells().filter(
             (thread) => thread.environmentId === parentEnvironmentId,
@@ -7015,7 +7114,6 @@ function ChatViewContent(props: ChatViewProps) {
       activeProject,
       activeThread,
       activeThreadBranch,
-      addAgentsSurface,
       createThread,
       isServerThread,
       deleteThread,
@@ -7399,6 +7497,18 @@ function ChatViewContent(props: ChatViewProps) {
     }
     void onRevertToTurnCountRef.current(targetTurnCount);
   }, []);
+  const onEditUserMessage = useCallback(
+    (messageId: MessageId, text: string) => {
+      const targetTurnCount = revertTurnCountRef.current.get(messageId);
+      if (typeof targetTurnCount !== "number") return;
+      void onRevertToTurnCountRef.current(targetTurnCount, "edit").then((reverted) => {
+        if (!reverted) return;
+        setComposerDraftPrompt(composerDraftTarget, text);
+        scheduleComposerFocus();
+      });
+    },
+    [composerDraftTarget, scheduleComposerFocus, setComposerDraftPrompt],
+  );
 
   const usageModelSelection =
     composerDraftModelSelection ??
@@ -7446,22 +7556,36 @@ function ChatViewContent(props: ChatViewProps) {
 
   const panelToggleControls = (
     <PanelLayoutControls
-      showTerminalControl={!isRegularChat}
+      summaryControl={
+        activeThreadRef && !isRegularChat && activeProject ? (
+          <PinnedSummaryPanel
+            activeThreadRef={activeThreadRef}
+            {...(routeKind === "draft" && draftId ? { draftId } : {})}
+            environmentLabel={environmentLabel}
+            environmentMode={envMode}
+            branch={activeThreadBranch}
+            diffStats={environmentDiff}
+            gitCwd={gitCwd}
+            onOpenChanges={addDiffSurface}
+            onOpenArtifacts={addArtifactsSurface}
+            {...(!supportsPullRequests || threadRepository === null
+              ? {}
+              : { onOpenPullRequest: openThreadPullRequest })}
+          />
+        ) : undefined
+      }
+      showTerminalControl={settings.interfaceStyle !== "opencode" && !isRegularChat}
       terminalAvailable={activeProject !== null}
       terminalOpen={terminalUiState.terminalOpen}
       terminalShortcutLabel={shortcutLabelForCommand(keybindings, "terminal.toggle")}
       rightPanelAvailable
       rightPanelOpen={rightPanelOpen}
       rightPanelShortcutLabel={shortcutLabelForCommand(keybindings, "rightPanel.toggle")}
-      // Suppressed while the Agents surface is visible: the roster itself is
-      // on screen, so the toggle badge would be pointing at nothing.
-      liveAgentCount={
-        rightPanelOpen && activeRightPanelSurface?.kind === "agents"
-          ? 0
-          : agentPanelModel.liveCount + spawnedLiveCount
-      }
+      liveAgentCount={agentPanelModel.liveCount + spawnedLiveCount}
       usageClock={
-        <UsageClock modelDisplayName={headerUsageModelDisplayName} limits={headerUsageLimits} />
+        settings.interfaceStyle === "opencode" ? undefined : (
+          <UsageClock modelDisplayName={headerUsageModelDisplayName} limits={headerUsageLimits} />
+        )
       }
       onToggleTerminal={toggleTerminalVisibility}
       onToggleRightPanel={toggleRightPanel}
@@ -7520,6 +7644,13 @@ function ChatViewContent(props: ChatViewProps) {
       />
     ) : activeRightPanelSurface?.kind === "context" ? (
       <ContextUsagePanel threadRef={activeThreadRef} />
+    ) : activeRightPanelSurface?.kind === "performance" ? (
+      <PerformanceMonitorPanel />
+    ) : activeRightPanelSurface?.kind === "visual" ? (
+      <GeneratedVisualPanel
+        document={activeRightPanelSurface.document}
+        title={activeRightPanelSurface.title}
+      />
     ) : activeRightPanelSurface?.kind === "diff" ? (
       <Suspense fallback={null}>
         <DiffPanel
@@ -7569,23 +7700,6 @@ function ChatViewContent(props: ChatViewProps) {
         composerDraftTarget={composerDraftTarget}
         onStateChange={handlePullRequestTabStatusChange}
       />
-    ) : activeRightPanelSurface?.kind === "agents" ? (
-      <AgentsPanel
-        model={agentPanelModel}
-        spawnedThreads={spawnedThreads}
-        environmentId={activeThreadRef?.environmentId ?? null}
-        threadId={activeThreadRef?.threadId ?? null}
-        onOpenThread={(threadId) => {
-          if (!activeThreadRef) return;
-          void navigate({
-            to: "/$environmentId/$threadId",
-            params: {
-              environmentId: activeThreadRef.environmentId,
-              threadId,
-            },
-          });
-        }}
-      />
     ) : activeRightPanelSurface?.kind === "artifacts" ? (
       <ArtifactsPanel
         threadRef={activeThreadRef}
@@ -7594,6 +7708,10 @@ function ChatViewContent(props: ChatViewProps) {
         // that drift apart. Without a project there is no workspace to resolve
         // the path against, so rows render disabled instead of misleading.
         onOpen={activeProject ? openFileSurface : undefined}
+        onOpenVisual={(visual) => {
+          if (!activeThreadRef) return;
+          useRightPanelStore.getState().openVisual(activeThreadRef, visual);
+        }}
       />
     ) : activeRightPanelSurface?.kind === "music" ? (
       <MusicPanel threadRef={activeThreadRef} />
@@ -7639,6 +7757,61 @@ function ChatViewContent(props: ChatViewProps) {
     ) : null
   ) : null;
 
+  const chatHeader = (
+    <ChatHeader
+      layout={providerLayout}
+      regularChat={isRegularChat}
+      compactChrome={compactChrome}
+      {...(isElectron && !compactChrome && window.desktopBridge?.floatingChat
+        ? { onPopOutChat: popOutFloatingChat }
+        : {})}
+      {...(!supportsPullRequests || threadRepository === null
+        ? {}
+        : { onOpenPullRequest: openThreadPullRequest })}
+      activeThreadEnvironmentId={activeThread.environmentId}
+      activeThreadId={activeThread.id}
+      {...(routeKind === "draft" && draftId ? { draftId } : {})}
+      activeThreadTitle={activeThread.title}
+      isServerThread={isServerThread}
+      changeRequest={activeThreadChangeRequest}
+      activeProjectName={activeProject?.title}
+      activeProjectCwd={activeProject?.workspaceRoot ?? null}
+      activeProjectFaviconPath={activeProject?.faviconPath ?? null}
+      openInCwd={gitCwd}
+      activeProjectScripts={activeProject?.scripts}
+      preferredScriptId={
+        activeProject ? (lastInvokedScriptByProjectId[activeProject.id] ?? null) : null
+      }
+      keybindings={keybindings}
+      availableEditors={availableEditors}
+      rightPanelOpen={rightPanelOpen}
+      gitCwd={gitCwd}
+      onNewThreadInProject={handleNewThreadInActiveProject}
+      {...(isRegularChat && isServerThread ? { onStartThread: handleStartThreadInChat } : {})}
+      onRunProjectScript={runProjectScript}
+      onAddProjectScript={saveProjectScript}
+      onUpdateProjectScript={updateProjectScript}
+      onDeleteProjectScript={deleteProjectScript}
+    />
+  );
+
+  // Provider layouts put the project picker at the head of the composer
+  // context row on an empty draft. Claude and Cursor only show that row
+  // before the first send; Codex keeps its run-location tray under the
+  // composer for the whole thread.
+  const showProviderProjectChip = providerLayout !== null && isDraftHeroState && !isRegularChat;
+  const showBranchToolbar =
+    showComposerContextStrip &&
+    (providerLayout === null || providerLayout === "codex" || isDraftHeroState);
+  const providerProjectChip =
+    providerLayout !== null ? (
+      <ProviderProjectChip
+        layout={providerLayout}
+        activeProjectRef={activeProjectRef}
+        activeProjectTitle={activeProject?.title ?? null}
+      />
+    ) : null;
+
   const workspaceFileDropHandlers = makeWorkspaceFileDropHandlers({
     setDragActive: setIsWorkspaceFileDragActive,
     addFiles: (files) => composerRef.current?.addDroppedFiles(files),
@@ -7647,7 +7820,13 @@ function ChatViewContent(props: ChatViewProps) {
     composerBannerItems.length > 0 || Boolean(threadSyncPhase && !activeEnvironmentUnavailable);
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
+    <div
+      className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+      data-opencode-route={settings.interfaceStyle === "opencode" ? routeKind : undefined}
+      data-github-route={settings.interfaceStyle === "github" ? routeKind : undefined}
+      data-provider-layout={providerLayout ?? undefined}
+      data-provider-route={providerLayout !== null ? routeKind : undefined}
+    >
       {rightPanelOpen && !shouldUseRightPanelSheet && !compactChrome ? panelLayoutControls : null}
       <div
         className={cn(
@@ -7666,50 +7845,58 @@ function ChatViewContent(props: ChatViewProps) {
             compactChrome && "pl-[var(--workspace-titlebar-content-left)]",
           )}
         >
-          {!rightPanelOpen && !compactChrome ? panelLayoutControls : null}
-          <ChatHeader
-            regularChat={isRegularChat}
-            compactChrome={compactChrome}
-            {...(isElectron && !compactChrome && window.desktopBridge?.floatingChat
-              ? { onPopOutChat: popOutFloatingChat }
-              : {})}
-            {...(!supportsPullRequests || threadRepository === null
-              ? {}
-              : { onOpenPullRequest: openThreadPullRequest })}
-            activeThreadEnvironmentId={activeThread.environmentId}
-            activeThreadId={activeThread.id}
-            {...(routeKind === "draft" && draftId ? { draftId } : {})}
-            activeThreadTitle={activeThread.title}
-            isServerThread={isServerThread}
-            changeRequest={activeThreadChangeRequest}
-            activeProjectName={activeProject?.title}
-            activeProjectCwd={activeProject?.workspaceRoot ?? null}
-            activeProjectFaviconPath={activeProject?.faviconPath ?? null}
-            openInCwd={gitCwd}
-            activeProjectScripts={activeProject?.scripts}
-            preferredScriptId={
-              activeProject ? (lastInvokedScriptByProjectId[activeProject.id] ?? null) : null
-            }
-            keybindings={keybindings}
-            availableEditors={availableEditors}
-            rightPanelOpen={rightPanelOpen}
-            gitCwd={gitCwd}
-            onNewThreadInProject={handleNewThreadInActiveProject}
-            {...(isRegularChat && isServerThread ? { onStartThread: handleStartThreadInChat } : {})}
-            onRunProjectScript={runProjectScript}
-            onAddProjectScript={saveProjectScript}
-            onUpdateProjectScript={updateProjectScript}
-            onDeleteProjectScript={deleteProjectScript}
-          />
+          {settings.interfaceStyle === "github" && isDraftHeroState ? (
+            <h1 className="sr-only">New</h1>
+          ) : providerLayout !== null ? (
+            <>
+              {isDraftHeroState && providerLayout !== "codex" ? (
+                <div className="min-w-0 flex-1" />
+              ) : (
+                chatHeader
+              )}
+              {providerLayout === "codex" && isDraftHeroState && routeKind === "draft" ? (
+                <div data-provider-header-center="" className="absolute left-1/2 -translate-x-1/2">
+                  <ComposerConversationModeToggle
+                    value={conversationMode}
+                    onChange={handleConversationModeChange}
+                  />
+                </div>
+              ) : null}
+              {!rightPanelOpen && !compactChrome ? panelLayoutControls : null}
+            </>
+          ) : settings.interfaceStyle === "opencode" ? (
+            <>
+              <h1
+                className="min-w-0 flex-1 truncate px-3 text-sm font-medium"
+                data-opencode-session-title=""
+              >
+                {activeThread.title}
+              </h1>
+              {!rightPanelOpen && !compactChrome ? panelLayoutControls : null}
+            </>
+          ) : (
+            <>
+              {!rightPanelOpen && !compactChrome ? panelLayoutControls : null}
+              {chatHeader}
+            </>
+          )}
         </WorkspacePageHeader>
 
-        {chatTabsEnabled && !compactChrome ? (
+        {chatTabsEnabled &&
+        settings.interfaceStyle !== "opencode" &&
+        settings.interfaceStyle !== "github" &&
+        providerLayout === null &&
+        !compactChrome ? (
           <ChatTabStrip
             onActivate={chatTabNavigation.activateTab}
             onNewTab={handleNewThreadInActiveProject}
             onClose={chatTabNavigation.closeTab}
           />
-        ) : isRegularChat || settings.chatTabsTipDismissed ? null : (
+        ) : settings.interfaceStyle === "opencode" ||
+          settings.interfaceStyle === "github" ||
+          providerLayout !== null ||
+          isRegularChat ||
+          settings.chatTabsTipDismissed ? null : (
           <ChatTabsTip
             onEnable={() =>
               updateClientSettings({ chatTabsEnabled: true, chatTabsTipDismissed: true })
@@ -7764,7 +7951,6 @@ function ChatViewContent(props: ChatViewProps) {
               {/* Messages — LegendList handles virtualization and scrolling internally */}
               <MessagesTimeline
                 agentPanelModel={agentPanelModel}
-                onOpenAgents={addAgentsSurface}
                 key={activeThread.id}
                 isWorking={isWorking}
                 workingStepLabel={workingStepLabel}
@@ -7779,6 +7965,7 @@ function ChatViewContent(props: ChatViewProps) {
                 onOpenTurnDiff={onOpenTurnDiff}
                 revertTurnCountByUserMessageId={revertTurnCountByUserMessageId}
                 onRevertUserMessage={onRevertUserMessage}
+                onEditUserMessage={onEditUserMessage}
                 isRevertingCheckpoint={isRevertingCheckpoint}
                 onImageExpand={onExpandTimelineImage}
                 markdownCwd={gitCwd ?? undefined}
@@ -7807,7 +7994,7 @@ function ChatViewContent(props: ChatViewProps) {
                   <Button
                     aria-label="Scroll to end"
                     onClick={() => scrollToEnd(true)}
-                    className="pointer-events-auto gap-1.5 rounded-full px-3 text-muted-foreground hover:text-foreground"
+                    className="pointer-events-auto gap-1.5 rounded-full px-3 text-muted-foreground shadow-sm transition-[background-color,border-color,color,box-shadow,opacity,transform] hover:-translate-y-0.5 hover:text-foreground motion-reduce:transform-none"
                     size="xs"
                     variant="glass"
                   >
@@ -7822,11 +8009,16 @@ function ChatViewContent(props: ChatViewProps) {
             <div
               ref={setComposerOverlayElement}
               data-chat-composer-overlay="true"
-              className={
+              data-draft-hero={isDraftHeroState || undefined}
+              className={cn(
                 isDraftHeroState
                   ? "pointer-events-none absolute inset-0 z-20 flex items-center pt-[8vh]"
-                  : "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
-              }
+                  : "chat-composer-docked-overlay pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2",
+                // Claude Code keeps the prompt docked at the bottom even on an
+                // empty session; Cursor centers it without the default lift.
+                isDraftHeroState && providerLayout === "claude" && "items-end pt-0",
+                isDraftHeroState && providerLayout === "cursor" && "pt-0 pb-[10vh]",
+              )}
             >
               <div
                 ref={attachDraftHeroTransitionGroupRef}
@@ -7873,7 +8065,8 @@ function ChatViewContent(props: ChatViewProps) {
                       className={cn(
                         "chat-composer-glass-shell relative mx-auto w-full max-w-3xl",
                         externalComposerDrawerAttached && "chat-composer-glass-shell-attached",
-                        showComposerContextStrip && "chat-composer-glass-shell-with-context",
+                        (showBranchToolbar || showProviderProjectChip) &&
+                          "chat-composer-glass-shell-with-context",
                       )}
                     >
                       <div className="chat-composer-glass-host relative z-10 w-full rounded-[22px]">
@@ -7966,6 +8159,7 @@ function ChatViewContent(props: ChatViewProps) {
                             toggleInteractionMode={toggleInteractionMode}
                             handleRuntimeModeChange={handleRuntimeModeChange}
                             handleInteractionModeChange={handleInteractionModeChange}
+                            handleConversationModeChange={handleConversationModeChange}
                             focusComposer={focusComposer}
                             scheduleComposerFocus={scheduleComposerFocus}
                             setThreadError={setThreadError}
@@ -7978,9 +8172,25 @@ function ChatViewContent(props: ChatViewProps) {
                           data-terminal-open={terminalUiState.terminalOpen ? "true" : undefined}
                           className="relative z-0"
                         >
-                          {showComposerContextStrip && (
+                          {showProviderProjectChip && !showBranchToolbar ? (
+                            <div
+                              className="chat-composer-context-strip pointer-events-auto mx-auto flex w-full items-center"
+                              data-appearance={providerLayout ?? undefined}
+                            >
+                              {providerProjectChip}
+                            </div>
+                          ) : null}
+                          {showBranchToolbar && (
                             <div className="pointer-events-auto">
                               <BranchToolbar
+                                appearance={
+                                  providerLayout ??
+                                  (settings.interfaceStyle === "opencode"
+                                    ? "opencode"
+                                    : settings.interfaceStyle === "github"
+                                      ? "copilot"
+                                      : "default")
+                                }
                                 environmentId={activeThread.environmentId}
                                 threadId={activeThread.id}
                                 showGitControls={isGitRepo}
@@ -8005,18 +8215,64 @@ function ChatViewContent(props: ChatViewProps) {
                                   : {})}
                                 {...(hasMultipleEnvironments ? { onEnvironmentChange } : {})}
                                 availableEnvironments={logicalProjectEnvironments}
+                                leadingControl={
+                                  showProviderProjectChip ? (
+                                    providerProjectChip
+                                  ) : isDraftHeroState &&
+                                    settings.interfaceStyle === "github" &&
+                                    showConversationModeToggle ? (
+                                    <ComposerConversationModeToggle
+                                      value={conversationMode}
+                                      onChange={handleConversationModeChange}
+                                    />
+                                  ) : null
+                                }
                               />
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
+                    {isDraftHeroState &&
+                    settings.interfaceStyle === "github" &&
+                    showConversationModeToggle &&
+                    !showComposerContextStrip ? (
+                      <div data-github-conversation-mode-row="" className="pointer-events-auto">
+                        <ComposerConversationModeToggle
+                          value={conversationMode}
+                          onChange={handleConversationModeChange}
+                        />
+                      </div>
+                    ) : null}
                     <div
                       aria-hidden
+                      data-composer-bottom-spacer=""
                       className="h-[calc(env(safe-area-inset-bottom)+1rem)] sm:h-[calc(env(safe-area-inset-bottom)+1.25rem)]"
                     />
                   </div>
-                  {isDraftHeroState ? (
+                  {isDraftHeroState && providerLayout === "cursor" && settings.planModeEnabled ? (
+                    <div
+                      data-provider-draft-actions="cursor"
+                      className="pointer-events-auto mx-auto flex w-full max-w-3xl flex-wrap gap-2 pt-3"
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={interactionMode === "plan"}
+                        onClick={() =>
+                          handleInteractionModeChange(
+                            interactionMode === "plan" ? "default" : "plan",
+                          )
+                        }
+                        className="h-8 rounded-full border border-border px-3.5 text-[13px] text-foreground/85 transition-colors hover:bg-accent aria-pressed:border-foreground/40 aria-pressed:bg-accent"
+                      >
+                        Plan New Idea
+                      </button>
+                    </div>
+                  ) : null}
+                  {isDraftHeroState &&
+                  settings.interfaceStyle !== "opencode" &&
+                  providerLayout !== "claude" &&
+                  providerLayout !== "cursor" ? (
                     <div className="mx-auto w-full max-w-3xl pt-4">
                       <DraftComposerSuggestions
                         composerDraftTarget={composerDraftTarget}
@@ -8028,6 +8284,11 @@ function ChatViewContent(props: ChatViewProps) {
               </div>
             </div>
 
+            {isDraftHeroState && settings.interfaceStyle === "github" ? (
+              <p className="pointer-events-none absolute inset-x-0 bottom-7 text-center text-[11px] text-muted-foreground">
+                Modesto uses AI. Check for mistakes.
+              </p>
+            ) : null}
             {activeThreadRef && activePreviewMiniPlayer && !compactChrome ? (
               <ThreadPreviewMiniPlayer
                 key={`${activeThreadKey}:${activePreviewMiniPlayer.tabId}`}
@@ -8062,6 +8323,58 @@ function ChatViewContent(props: ChatViewProps) {
                     }}
                   >
                     Switch branch
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogPopup>
+            </AlertDialog>
+
+            <AlertDialog
+              open={pendingProjectHandoffTask !== null}
+              onOpenChange={(open) => {
+                if (!open) setPendingProjectHandoffTask(null);
+              }}
+            >
+              <AlertDialogPopup>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Continue this in a project?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Chats are read-only and cannot edit files or run project tools. Choose a project
+                    to move this request into a new project thread.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {allProjects.length > 0 ? (
+                  <div className="max-h-64 space-y-2 overflow-y-auto py-1">
+                    {allProjects.map((project) => (
+                      <Button
+                        key={`${project.environmentId}:${project.id}`}
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() =>
+                          void continueProjectHandoff(project.id, project.environmentId)
+                        }
+                      >
+                        {project.title}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+                <AlertDialogFooter>
+                  <AlertDialogClose render={<Button variant="outline" />}>
+                    Stay in chat
+                  </AlertDialogClose>
+                  <Button
+                    type="button"
+                    variant={allProjects.length > 0 ? "ghost" : "default"}
+                    onClick={() => {
+                      if (pendingProjectHandoffTask) {
+                        stageProjectChatHandoff(pendingProjectHandoffTask);
+                      }
+                      setPendingProjectHandoffTask(null);
+                      openCommandPalette({ open: "add-project" });
+                    }}
+                  >
+                    Add a project
                   </Button>
                 </AlertDialogFooter>
               </AlertDialogPopup>
@@ -8134,8 +8447,8 @@ function ChatViewContent(props: ChatViewProps) {
           onAddDiff={addDiffSurface}
           onAddFiles={addFilesSurface}
           onAddPullRequest={addPullRequestSurface}
-          onAddAgents={addAgentsSurface}
           onAddContext={addContextSurface}
+          onAddPerformance={addPerformanceSurface}
           onAddArtifacts={addArtifactsSurface}
           onAddMusic={addMusicSurface}
           onAddCanvas={() => addCanvasSurface("dashboard")}
@@ -8151,7 +8464,6 @@ function ChatViewContent(props: ChatViewProps) {
           diffAvailable={!isRegularChat && isServerThread && isGitRepo}
           filesAvailable={activeProject !== null}
           pullRequestAvailable={!isRegularChat && pullRequestSurfaceAvailable}
-          agentsAvailable
           pullRequestStatuses={pullRequestTabStatuses}
           liveAgentCount={agentPanelModel.liveCount + spawnedLiveCount}
           projectLabel={environmentLabel}
@@ -8188,8 +8500,8 @@ function ChatViewContent(props: ChatViewProps) {
             onAddDiff={addDiffSurface}
             onAddFiles={addFilesSurface}
             onAddPullRequest={addPullRequestSurface}
-            onAddAgents={addAgentsSurface}
             onAddContext={addContextSurface}
+            onAddPerformance={addPerformanceSurface}
             onAddArtifacts={addArtifactsSurface}
             onAddMusic={addMusicSurface}
             onAddCanvas={() => addCanvasSurface("dashboard")}
@@ -8205,7 +8517,6 @@ function ChatViewContent(props: ChatViewProps) {
             diffAvailable={!isRegularChat && isServerThread && isGitRepo}
             filesAvailable={activeProject !== null}
             pullRequestAvailable={!isRegularChat && pullRequestSurfaceAvailable}
-            agentsAvailable
             pullRequestStatuses={pullRequestTabStatuses}
             liveAgentCount={agentPanelModel.liveCount + spawnedLiveCount}
             projectLabel={environmentLabel}
@@ -8222,6 +8533,14 @@ function ChatViewContent(props: ChatViewProps) {
           threadRef={activeThreadRef}
           bottomInset={isDraftHeroState ? 0 : composerOverlayHeight}
           musicPanelVisible={rightPanelOpen && activeRightPanelSurface?.kind === "music"}
+        />
+      ) : null}
+
+      {activeThreadRef && performanceFloating && !compactChrome ? (
+        <FloatingPerformanceMonitor
+          key={activeThreadKey}
+          onClose={() => setPerformanceFloating(false)}
+          onDock={dockPerformanceSurface}
         />
       ) : null}
 

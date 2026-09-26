@@ -121,6 +121,13 @@ const turnStartKeyForEvent = (event: ProviderIntentEvent): string =>
 const HANDLED_TURN_START_KEY_MAX = 10_000;
 const HANDLED_TURN_START_KEY_TTL = Duration.minutes(30);
 const DEFAULT_RUNTIME_MODE: RuntimeMode = "full-access";
+
+export function effectiveThreadRuntimeMode(
+  thread: Pick<OrchestrationThread, "conversationMode" | "runtimeMode">,
+): RuntimeMode {
+  return thread.conversationMode === "chat" ? "approval-required" : thread.runtimeMode;
+}
+
 const MAX_REGENERATION_ATTACHMENTS = 4;
 const MAX_THREAD_TITLE_CONTEXT_CHARS = 8_000;
 const MAX_FIRST_USER_TITLE_CONTEXT_CHARS = 2_000;
@@ -552,7 +559,7 @@ const make = Effect.gen(function* () {
           threadId: input.threadId,
           providerName: null,
           providerInstanceId: thread.modelSelection.instanceId,
-          runtimeMode: thread.runtimeMode,
+          runtimeMode: effectiveThreadRuntimeMode(thread),
         }),
         status: session?.status === "stopped" ? "stopped" : "error",
         activeTurnId: null,
@@ -693,7 +700,10 @@ const make = Effect.gen(function* () {
         return yield* Effect.die(new Error(`Thread '${threadId}' was not found in read model.`));
       }
 
-      const desiredRuntimeMode = thread.runtimeMode;
+      // Chat is a non-mutating surface. Keep the provider in its supervised /
+      // read-only runtime even for older chat rows that persisted a broader
+      // runtime mode before chats and projects were separated.
+      const desiredRuntimeMode = effectiveThreadRuntimeMode(thread);
       const requestedModelSelection = options?.modelSelection;
       const resolveActiveSession = (threadId: ThreadId) =>
         providerService
@@ -892,7 +902,7 @@ const make = Effect.gen(function* () {
       const existingSessionThreadId =
         thread.session && thread.session.status !== "stopped" && activeSession ? thread.id : null;
       if (existingSessionThreadId) {
-        const runtimeModeChanged = thread.runtimeMode !== thread.session?.runtimeMode;
+        const runtimeModeChanged = desiredRuntimeMode !== thread.session?.runtimeMode;
         const cwdChanged = effectiveCwd !== activeSession?.cwd;
         const modelChanged =
           requestedModelSelection !== undefined &&
@@ -944,7 +954,7 @@ const make = Effect.gen(function* () {
           desiredInstanceId,
           desiredProvider: desiredModelSelection.instanceId,
           currentRuntimeMode: thread.session?.runtimeMode,
-          desiredRuntimeMode: thread.runtimeMode,
+          desiredRuntimeMode,
           runtimeModeChanged,
           previousCwd: activeSession?.cwd,
           desiredCwd: effectiveCwd,

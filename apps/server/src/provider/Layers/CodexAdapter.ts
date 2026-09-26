@@ -46,6 +46,7 @@ import { getCodexServiceTierOptionValue } from "../../codexModelOptions.ts";
 import {
   customModelEndpointEnvVar,
   customModelEndpointSecretName,
+  normalizeCustomModelEndpointBaseUrl,
   parseCustomModelEndpointModelSlug,
 } from "../customModelEndpoints.ts";
 import * as ServerSecretStore from "../../auth/ServerSecretStore.ts";
@@ -1697,6 +1698,23 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
     Effect.gen(function* () {
       const resolved = yield* resolveCustomEndpointForModelSelection(modelSelection);
       if (!resolved) {
+        // A router slug is Modesto UI state, never a model name Codex can
+        // resolve itself. This happens when a saved chat refers to an endpoint
+        // that has since been deleted or recreated under a new id. Failing
+        // here gives the user an actionable repair instead of sending the
+        // synthetic slug to OpenAI (which produces a misleading ChatGPT
+        // account/model-entitlement error).
+        if (
+          modelSelection?.instanceId === boundInstanceId &&
+          modelSelection.model.startsWith("router:")
+        ) {
+          return yield* new ProviderAdapterValidationError({
+            provider: PROVIDER,
+            operation: "startSession",
+            issue:
+              "This chat uses a custom endpoint that is no longer configured. Select a current custom model and try again.",
+          });
+        }
         return undefined;
       }
       const { endpoint, modelId } = resolved;
@@ -1704,24 +1722,31 @@ export const makeCodexAdapter = Effect.fn("makeCodexAdapter")(function* (
         .get(customModelEndpointSecretName(endpoint.id))
         .pipe(Effect.orElseSucceed(() => Option.none<Uint8Array>()));
       const envVar = customModelEndpointEnvVar(endpoint.id);
+      const apiKey =
+        Option.isSome(apiKeyBytes) && apiKeyBytes.value.length > 0
+          ? new TextDecoder().decode(apiKeyBytes.value)
+          : null;
       return {
         modelId,
         appServerArgs: [
           "-c",
           `model_providers.${endpoint.id}.name="${escapeCustomModelEndpointTomlString(endpoint.label)}"`,
           "-c",
-          `model_providers.${endpoint.id}.base_url="${escapeCustomModelEndpointTomlString(endpoint.baseUrl)}"`,
+          `model_providers.${endpoint.id}.base_url="${escapeCustomModelEndpointTomlString(normalizeCustomModelEndpointBaseUrl(endpoint.baseUrl))}"`,
+          ...(apiKey ? ["-c", `model_providers.${endpoint.id}.env_key="${envVar}"`] : []),
           "-c",
-          `model_providers.${endpoint.id}.env_key="${envVar}"`,
+          // Hosted endpoints authenticate with their own key (or no key for
+          // a local server), never the signed-in ChatGPT account.
+          `model_providers.${endpoint.id}.requires_openai_auth=false`,
           "-c",
-          `model_providers.${endpoint.id}.wire_api="${endpoint.wireApi}"`,
+          // Codex's tool-capable custom-provider path uses Responses. Keep
+          // legacy `wireApi` for OpenCode/Kilo, but do not let it alter the
+          // Codex runtime contract.
+          `model_providers.${endpoint.id}.wire_api="responses"`,
           "-c",
           `model_provider="${endpoint.id}"`,
         ],
-        env:
-          Option.isSome(apiKeyBytes) && apiKeyBytes.value.length > 0
-            ? { [envVar]: new TextDecoder().decode(apiKeyBytes.value) }
-            : {},
+        env: apiKey ? { [envVar]: apiKey } : {},
       };
     });
   const nativeEventLogger =

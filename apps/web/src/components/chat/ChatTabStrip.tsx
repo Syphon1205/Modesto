@@ -5,15 +5,14 @@
 //
 // Modeled on OpenCode's tab strip (`packages/app/src/components/
 // titlebar-tab-strip.tsx`), which is what "Tabs like OpenCode" means here.
-// Placement differs deliberately: OpenCode puts tabs in the window titlebar,
-// this sits directly under the existing chat header so it works identically in
-// the browser build and needs no Electron chrome changes.
+// OpenCode mode places this strip in the window titlebar. The other interface
+// styles can still render it inside the chat workspace when tabs are enabled.
 //
 // All open/close/activate rules live in `chatTabs.ts`; this file is rendering
 // and navigation only.
 
 import { scopeThreadRef } from "@modesto/client-runtime/environment";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, SquarePenIcon, XIcon } from "lucide-react";
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -28,7 +27,9 @@ import {
 import { useChatTabsStore } from "../../chatTabsStore";
 import { cn } from "../../lib/utils";
 import { useProjects, useThreadShells } from "../../state/entities";
+import { useInterfaceStyle } from "../../hooks/useSettings";
 import { ThreadActivityIndicator } from "../ThreadStatusIndicators";
+import { OpenCodeProjectAvatar } from "../OpenCodeProjectAvatar";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { Tooltip, TooltipPopup, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
@@ -50,7 +51,7 @@ export interface ChatTabStripProps {
 function ChatTabStripItem({
   tab,
   title,
-  status,
+  leading,
   isActive,
   color,
   groupKey,
@@ -66,7 +67,7 @@ function ChatTabStripItem({
   readonly tab: ChatTab;
   readonly title: string;
   /** Leading activity indicator, or `null` for a resting/draft tab. */
-  readonly status: ReactNode;
+  readonly leading: ReactNode;
   readonly isActive: boolean;
   /** User-chosen tab color, or `null` for the default treatment. */
   readonly color: string | null;
@@ -133,11 +134,11 @@ function ChatTabStripItem({
         if (groupKey !== null) setColorMenuOpen(true);
       }}
       className={cn(
-        "group/chat-tab relative flex h-7 min-w-0 max-w-52 shrink-0 items-center gap-1 rounded-md pe-1 text-[12.5px] transition-colors",
-        status ? "ps-1.5" : "ps-2.5",
+        "group/chat-tab relative flex h-9 min-w-0 max-w-64 shrink-0 items-center gap-1 border-e border-border/50 pe-1 text-[12.5px] transition-colors",
+        leading ? "ps-1.5" : "ps-2.5",
         isActive
-          ? "bg-sidebar-control-surface text-foreground"
-          : "text-muted-foreground hover:bg-sidebar-row-hover hover:text-foreground",
+          ? "bg-muted/60 text-foreground"
+          : "text-muted-foreground hover:bg-muted/35 hover:text-foreground",
         // A left edge marking where the drop will land, like Chrome's insertion point.
         isDropTarget &&
           "before:absolute before:inset-y-0 before:-start-0.5 before:w-0.5 before:rounded-full before:bg-primary",
@@ -152,7 +153,7 @@ function ChatTabStripItem({
           style={{ backgroundColor: color }}
         />
       ) : null}
-      {status}
+      {leading}
       <button
         type="button"
         title={title}
@@ -174,8 +175,7 @@ function ChatTabStripItem({
         type="button"
         aria-label={`Close ${title}`}
         className={cn(
-          "grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground opacity-0 hover:bg-sidebar-control-surface hover:text-foreground focus-visible:opacity-100 group-hover/chat-tab:opacity-100",
-          isActive && "opacity-70",
+          "grid size-4 shrink-0 place-items-center rounded-sm text-muted-foreground/70 opacity-60 hover:bg-sidebar-control-surface hover:text-foreground focus-visible:opacity-100 group-hover/chat-tab:opacity-100",
         )}
         onClick={(event) => {
           event.stopPropagation();
@@ -278,6 +278,7 @@ export const ChatTabStrip = memo(function ChatTabStrip({
   const ensureGroupColors = useChatTabsStore((state) => state.ensureGroupColors);
   const threads = useThreadShells();
   const projects = useProjects();
+  const interfaceStyle = useInterfaceStyle();
 
   // Tab labels and status both track the live thread, so a rename, an
   // auto-generated title, or a turn starting shows up in the strip with no
@@ -296,10 +297,20 @@ export const ChatTabStrip = memo(function ChatTabStrip({
   const titleFor = useCallback(
     (tab: ChatTab) =>
       tab.type === "draft"
-        ? DRAFT_TAB_TITLE
+        ? interfaceStyle === "opencode"
+          ? "New session"
+          : DRAFT_TAB_TITLE
         : (threadByTabKey.get(chatTabKey(tab))?.title ?? "Thread"),
-    [threadByTabKey],
+    [interfaceStyle, threadByTabKey],
   );
+
+  const projectById = useMemo(() => {
+    const map = new Map<string, (typeof projects)[number]>();
+    for (const project of projects) {
+      map.set(`${project.environmentId}:${project.id}`, project);
+    }
+    return map;
+  }, [projects]);
 
   const projectTitleById = useMemo(() => {
     const map = new Map<string, string>();
@@ -384,10 +395,31 @@ export const ChatTabStrip = memo(function ChatTabStrip({
     [threadByTabKey],
   );
 
+  const openCodeLeadingFor = useCallback(
+    (tab: ChatTab): ReactNode => {
+      if (tab.type === "draft") {
+        return <SquarePenIcon className="size-4 shrink-0 text-muted-foreground" />;
+      }
+      const thread = threadByTabKey.get(chatTabKey(tab));
+      if (!thread) return null;
+      const project = projectById.get(`${thread.environmentId}:${thread.projectId}`);
+      if (!project) return null;
+      return (
+        <OpenCodeProjectAvatar
+          environmentId={project.environmentId}
+          cwd={project.workspaceRoot}
+          faviconPath={project.faviconPath}
+          label={project.title}
+        />
+      );
+    },
+    [projectById, threadByTabKey],
+  );
+
   // One tab is just "the thread you are looking at" - a strip showing a single
   // tab is pure noise, so it stays hidden until there is something to switch
   // between.
-  if (tabs.length < 2) {
+  if (tabs.length < 2 && interfaceStyle !== "opencode") {
     return null;
   }
 
@@ -411,18 +443,18 @@ export const ChatTabStrip = memo(function ChatTabStrip({
           event.preventDefault();
           reorderTab(draggedKey, null);
         }}
-        className="flex shrink-0 items-center gap-1 overflow-x-auto border-b border-border/60 bg-background px-2 py-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-9 shrink-0 items-center overflow-x-auto border-b border-border/60 bg-background [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {groups.map((group, groupIndex) => {
+        {groups.flatMap((group) => {
           const groupKey = group.key;
-          const items = group.tabs.map((tab) => {
+          return group.tabs.map((tab) => {
             const key = chatTabKey(tab);
             return (
               <ChatTabStripItem
                 key={key}
                 tab={tab}
                 title={titleFor(tab)}
-                status={statusFor(tab)}
+                leading={interfaceStyle === "opencode" ? openCodeLeadingFor(tab) : statusFor(tab)}
                 isActive={key === activeKey}
                 color={group.color}
                 groupKey={groupKey}
@@ -437,51 +469,23 @@ export const ChatTabStrip = memo(function ChatTabStrip({
               />
             );
           });
-          // A tab whose project is not known yet (an unsent draft, or a thread
-          // whose shell has not loaded) stands alone rather than being grouped
-          // into a bucket it would jump out of a moment later.
-          if (groupKey === null) {
-            return items;
-          }
-          return (
-            <div
-              key={groupKey}
-              role="presentation"
-              // The whole project reads as one unit: a shared underline in the
-              // project's colour, with the project name leading it so the
-              // grouping is legible without hovering anything.
-              className={cn(
-                "flex shrink-0 items-center gap-1 rounded-md border-b-2 pb-px",
-                groupIndex > 0 && "ms-2",
-              )}
-              style={{ borderBottomColor: group.color ?? "transparent" }}
-            >
-              {group.label ? (
-                <span
-                  className="max-w-24 shrink-0 truncate ps-1 text-[10.5px] font-medium uppercase tracking-wide text-muted-foreground"
-                  title={group.label}
-                >
-                  {group.label}
-                </span>
-              ) : null}
-              {items}
-            </div>
-          );
         })}
         <Tooltip>
           <TooltipTrigger
             render={
               <button
                 type="button"
-                aria-label="New thread tab"
-                className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-sidebar-row-hover hover:text-foreground"
+                aria-label={interfaceStyle === "opencode" ? "New session" : "New thread tab"}
+                className="grid h-9 w-9 shrink-0 place-items-center border-e border-border/50 text-muted-foreground hover:bg-muted/35 hover:text-foreground"
                 onClick={onNewTab}
               />
             }
           >
             <PlusIcon className="size-3.5" />
           </TooltipTrigger>
-          <TooltipPopup side="bottom">New thread tab</TooltipPopup>
+          <TooltipPopup side="bottom">
+            {interfaceStyle === "opencode" ? "New session" : "New thread tab"}
+          </TooltipPopup>
         </Tooltip>
       </div>
     </TooltipProvider>

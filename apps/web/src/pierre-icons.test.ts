@@ -1,8 +1,9 @@
-import { assert, describe, it } from "vite-plus/test";
+import { assert, describe, it, vi } from "vite-plus/test";
 
 import {
   hasSpecificPierreIconForFileName,
   resolvePierreIconForEntry,
+  setActiveFileIconPack,
   syntheticFileNameForLanguageId,
   T3_PIERRE_ICONS,
 } from "./pierre-icons";
@@ -53,5 +54,40 @@ describe("Pierre file icons", () => {
     assert.equal(syntheticFileNameForLanguageId("typescript"), "file.ts");
     assert.equal(syntheticFileNameForLanguageId("shellscript"), "file.sh");
     assert.equal(syntheticFileNameForLanguageId("python"), "file.py");
+  });
+
+  it("rebuilds the resolver when a built-in icon pack changes", async () => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal("window", {
+      dispatchEvent: vi.fn(),
+      localStorage: {
+        getItem: (key: string) => storage.get(key) ?? null,
+        removeItem: (key: string) => storage.delete(key),
+        setItem: (key: string, value: string) => storage.set(key, value),
+      },
+    });
+    vi.stubGlobal("document", {
+      body: { prepend: vi.fn() },
+      createElement: () => ({
+        id: "",
+        innerHTML: "",
+        setAttribute: vi.fn(),
+        style: {},
+      }),
+      getElementById: () => null,
+    });
+    vi.stubGlobal(
+      "CustomEvent",
+      class CustomEvent {
+        constructor(public readonly type: string) {}
+      },
+    );
+
+    await setActiveFileIconPack("minimal");
+    assert.equal(resolvePierreIconForEntry("src/Button.tsx", "file")?.name, "file-tree-icon-file");
+
+    await setActiveFileIconPack("modesto");
+    assert.equal(resolvePierreIconForEntry("src/Button.tsx", "file")?.token, "react");
+    vi.unstubAllGlobals();
   });
 });

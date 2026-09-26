@@ -4,6 +4,7 @@ import {
   MODESTO_DESKTOP_ENTRY_URL,
   MODESTO_DESKTOP_ORIGIN,
   MODESTO_DESKTOP_UPDATE_CHANNEL,
+  MODESTO_DESKTOP_UPDATE_FEED_URL,
   MODESTO_DESKTOP_DEVELOPMENT_UPDATE_CHANNEL,
   MODESTO_DEVELOPMENT_BUNDLE_ID,
   MODESTO_PRODUCTION_BUNDLE_ID,
@@ -17,6 +18,9 @@ describe("desktopIdentity", () => {
     expect(modestoBundleId(false)).toBe(MODESTO_PRODUCTION_BUNDLE_ID);
     expect(modestoBundleId(true)).toBe(MODESTO_DEVELOPMENT_BUNDLE_ID);
     expect(MODESTO_DESKTOP_UPDATE_CHANNEL).toBe("modesto");
+    expect(MODESTO_DESKTOP_UPDATE_FEED_URL).toBe(
+      "https://github.com/Syphon1205/Modesto/releases/latest/download",
+    );
     expect(MODESTO_DESKTOP_DEVELOPMENT_UPDATE_CHANNEL).toBe("modesto-dev");
     expect(MODESTO_DESKTOP_ORIGIN).toBe("modesto://app");
     expect(MODESTO_DESKTOP_ENTRY_URL).toBe("modesto://app/index.html");

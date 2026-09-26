@@ -6,11 +6,11 @@
 
 <p align="center">
   <b>Your agents. Chat and Work. One local desk.</b><br />
-  <b>1.0.0 Aloha — Alpha Release Candidate</b>
+  <b>0.4.0 Berkeley</b>
 </p>
 
 <p align="center">
-  <img alt="1.0.0 Aloha Alpha RC" src="https://img.shields.io/badge/1.0.0%20Aloha-Alpha%20RC-6366f1.svg?style=flat-square" />
+  <img alt="0.4.0 Berkeley" src="https://img.shields.io/badge/0.4.0-Berkeley-6366f1.svg?style=flat-square" />
   <img alt="License: AGPL-3.0" src="https://img.shields.io/badge/license-AGPL--3.0-orange.svg?style=flat-square" />
   <img alt="macOS" src="https://img.shields.io/badge/macOS-arm64-111.svg?style=flat-square" />
   <img alt="Windows" src="https://img.shields.io/badge/Windows-x64-111.svg?style=flat-square" />
@@ -19,15 +19,15 @@
 
 <p align="center">
   <a href="#download">Download</a> ·
-  <a href="#whats-in-aloha">What's in Aloha</a> ·
+  <a href="#whats-in-berkeley">What's in Berkeley</a> ·
   <a href="#features">Features</a> ·
   <a href="#quick-start">From source</a> ·
-  <a href="https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1">Release</a>
+  <a href="https://github.com/Syphon1205/Modesto/releases/tag/v0.4.0">Release</a>
 </p>
 
 <br />
 
-Hey — this is **Aloha**. That's the nickname for **1.0.0-alpha.1**, the first **Alpha Release Candidate** on the 1.0 line. Not a finished 1.0. Not a quiet docs-only drop. It's the desk: **Chat** and **Work**, plus PRs, Agents, Tasks, Automations, Connections, Music, Canvas, the whole right panel.
+Hey — this is **Berkeley**. That's the Bay Area nickname for **0.4.0**, the stable release after 0.3.0. It's the desk: **Chat** and **Work**, plus PRs, Agents, Tasks, Automations, Connections, Music, Canvas, the whole right panel.
 
 Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, and friends stay the CLIs you already pay for. Modesto just puts them in one place. Built by **Tanner Davidson** and whoever showed up.
 
@@ -50,19 +50,18 @@ Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, and friends stay the CLIs y
 
 ## Download
 
-Grab **Aloha** from [the GitHub release](https://github.com/Syphon1205/Modesto/releases/tag/v1.0.0-alpha.1) (this is GitHub Latest).
+Grab **Berkeley** from [the GitHub release](https://github.com/Syphon1205/Modesto/releases/tag/v0.4.0) (this is GitHub Latest).
 
 | You | File |
 | --- | --- |
-| Mac (Apple Silicon) | [Modesto-1.0.0-alpha.1-arm64.dmg](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-arm64.dmg) |
-| Windows | [Modesto-1.0.0-alpha.1-x64.exe](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x64.exe) |
-| Linux | [Modesto-1.0.0-alpha.1-x86_64.AppImage](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/Modesto-1.0.0-alpha.1-x86_64.AppImage) |
+| Mac (Apple Silicon) | [Modesto-0.4.0-arm64.dmg](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-arm64.dmg) |
+| Mac (Intel) | [Modesto-0.4.0-x64.dmg](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x64.dmg) |
+| Windows x64 | [Modesto-0.4.0-x64.exe](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x64.exe) |
+| Linux x64 | [Modesto-0.4.0-x86_64.AppImage](https://github.com/Syphon1205/Modesto/releases/download/v0.4.0/Modesto-0.4.0-x86_64.AppImage) |
 
-Checksums: [SHA256SUMS.txt](https://github.com/Syphon1205/Modesto/releases/download/v1.0.0-alpha.1/SHA256SUMS.txt). Intel Mac isn't in this drop yet. It's an alpha RC — Gatekeeper / SmartScreen might side-eye you. That's expected.
+## What's in Berkeley
 
-## What's in Aloha
-
-**1.0.0-alpha.1 · Alpha Release Candidate.** Chat and Work are the headline. Everything else is the rest of the desk.
+**0.4.0 · Berkeley.** Chat and Work are the headline. Everything else is the rest of the desk.
 
 **Chat / Work** — flip it in the composer. Chat can fire with no folder open. Work is the repo job: branch, worktree, diffs, terminal, PRs.
 
@@ -70,9 +69,11 @@ Checksums: [SHA256SUMS.txt](https://github.com/Syphon1205/Modesto/releases/downl
 
 **Default agents** — Codex, Claude, Cursor, Gemini, Grok, Meta Muse Code, Kilo. Switch mid-thread. They keep the context.
 
+**Provider layouts** — Claude, Codex, and Cursor each have a dedicated interface style and matching default light/dark palette, while retaining Modesto's account, project, and sign-in controls.
+
 It's a candidate. Reconnects can still get weird. Some Work flows are still landing. Report it, don't whisper about it.
 
-More: [Aloha notes](docs/releases/v1.0.0-alpha.1.md).
+More: [Berkeley notes](docs/releases/v0.4.0.md).
 
 <details>
 <summary><b>Earlier releases</b></summary>
@@ -161,8 +162,8 @@ Each Work thread can take its own Git worktree and terminal so agents do not col
 
 ## Workspaces
 
-| Mode | What it's for |
-| ---- | ------------- |
+| Mode     | What it's for                                                                        |
+| -------- | ------------------------------------------------------------------------------------ |
 | **Chat** | Conversation-first threads. Start and send with no project. History under **Chats**. |
 | **Work** | Ship software — project, branch, worktree, terminal, diffs, approvals, commits, PRs. |
 
@@ -170,7 +171,7 @@ Connections, Music, Canvas, Artifacts, and Browser are available beside the thre
 
 ## Platform support
 
-The core product is a React web application served by a TypeScript/Bun server over WebSocket RPC. Electron supplies the native desktop shell for macOS, Windows, and Linux. The 1.0.0-alpha.1 RC matrix is Apple Silicon and Intel DMGs, a Windows installer, and a Linux AppImage — **signed publication of that matrix is still pending**. macOS-specific SwiftUI/AppKit enhancements are planned for lifecycle, menus, settings, pickers, notifications, window restoration, deep links, and system integrations — the main workspace stays web-based.
+The core product is a React web application served by a TypeScript/Bun server over WebSocket RPC. Electron supplies the native desktop shell for macOS, Windows, and Linux. The 0.4.0 release targets Apple Silicon and Intel DMGs, a Windows installer, and a Linux AppImage. macOS-specific SwiftUI/AppKit enhancements are planned for lifecycle, menus, settings, pickers, notifications, window restoration, deep links, and system integrations — the main workspace stays web-based.
 
 The Windows build supports WSL2 for Linux-backed projects, commands, provider
 CLIs, development, and tests. See the

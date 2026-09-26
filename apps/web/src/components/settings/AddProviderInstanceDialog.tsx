@@ -102,6 +102,8 @@ interface AddProviderInstanceDialogProps {
   readonly environmentId: EnvironmentId;
   readonly environmentLabel: string;
   readonly onOpenChange: (open: boolean) => void;
+  /** Preselect an executable agent driver when launched from the agent flow. */
+  readonly initialDriver?: ProviderDriverKind | undefined;
 }
 
 export function AddProviderInstanceDialog({
@@ -109,12 +111,13 @@ export function AddProviderInstanceDialog({
   environmentId,
   environmentLabel,
   onOpenChange,
+  initialDriver,
 }: AddProviderInstanceDialogProps) {
   const settings = useEnvironmentSettings(environmentId);
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
 
-  const [wizardStep, setWizardStep] = useState(0);
-  const [driver, setDriver] = useState<ProviderDriverKind>(DEFAULT_DRIVER_KIND);
+  const [wizardStep, setWizardStep] = useState(initialDriver ? 1 : 0);
+  const [driver, setDriver] = useState<ProviderDriverKind>(initialDriver ?? DEFAULT_DRIVER_KIND);
   const [label, setLabel] = useState("");
   const [accentColor, setAccentColor] = useState<string>("");
   const [instanceIdOverride, setInstanceIdOverride] = useState<string | null>(null);
@@ -215,10 +218,13 @@ export function AddProviderInstanceDialog({
       <DialogPopup className="max-w-xl overflow-hidden">
         <div className="flex min-h-0 flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Add provider instance</DialogTitle>
+            <DialogTitle>
+              {initialDriver === "customAcp" ? "Add custom agent" : "Add provider instance"}
+            </DialogTitle>
             <DialogDescription>
-              Configure an additional provider instance on {environmentLabel} — for example, a
-              second Codex install pointed at a different workspace.
+              {initialDriver === "customAcp"
+                ? "Connect an ACP-compatible coding agent. It gets the same project, tools, and session lifecycle as the built-in agents."
+                : `Configure an additional provider instance on ${environmentLabel} — for example, a second Codex install pointed at a different workspace.`}
             </DialogDescription>
             <AddProviderInstanceWizardSteps
               currentStep={wizardStep}

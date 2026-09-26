@@ -1,4 +1,4 @@
-import { RotateCcwIcon } from "lucide-react";
+import { useSettingsDialogStore } from "../settings/settingsDialogStore";
 import {
   Outlet,
   createFileRoute,
@@ -9,30 +9,20 @@ import {
 } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 
-import { useSettingsRestore } from "../components/settings/SettingsPanels";
+import RestoreSettingsButton from "../components/settings/RestoreSettingsButton";
 import { SettingsBreadcrumb } from "../components/settings/SettingsBreadcrumb";
-import { Button } from "../components/ui/button";
 import { SidebarInset } from "../components/ui/sidebar";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
+import {
+  ensureClientSettingsHydrated,
+  getClientSettings,
+  resolveInterfaceStyle,
+  useInterfaceStyle,
+} from "../hooks/useSettings";
 import { isElectron } from "../env";
 
-function RestoreDefaultsButton({ onRestored }: { onRestored: () => void }) {
-  const { changedSettingLabels, restoreDefaults } = useSettingsRestore(onRestored);
-
-  return (
-    <Button
-      size="xs"
-      variant="ghost"
-      disabled={changedSettingLabels.length === 0}
-      onClick={() => void restoreDefaults()}
-    >
-      <RotateCcwIcon className="mx-1 size-3.5" />
-      Restore defaults
-    </Button>
-  );
-}
-
 function SettingsContentLayout() {
+  const interfaceStyle = useInterfaceStyle();
   const location = useLocation();
   const navigate = useNavigate();
   const canGoBack = useCanGoBack();
@@ -48,6 +38,11 @@ function SettingsContentLayout() {
   }, [canGoBack, navigate]);
 
   useEffect(() => {
+    if (interfaceStyle === "github") {
+      useSettingsDialogStore.getState().show(location.pathname, location.hash);
+      void navigate({ to: "/", replace: true });
+      return;
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (event.key === "Escape") {
@@ -66,17 +61,27 @@ function SettingsContentLayout() {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [navigateBackWithinApp]);
+  }, [interfaceStyle, navigateBackWithinApp, navigate, location.pathname, location.hash]);
 
-  return (
-    <SidebarInset className="h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground isolate">
+  const content = (
+    <SidebarInset
+      data-opencode-settings-content=""
+      className={
+        interfaceStyle === "github"
+          ? "h-full min-h-0 overflow-hidden bg-background text-foreground isolate"
+          : "h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground isolate"
+      }
+    >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
-        <WorkspacePageHeader electron={isElectron}>
+        <WorkspacePageHeader
+          data-opencode-settings-header=""
+          electron={isElectron && interfaceStyle !== "github"}
+        >
           <div className="flex w-full items-center gap-3">
             <SettingsBreadcrumb pathname={location.pathname} />
             {showRestoreDefaults ? (
               <div className="ms-auto flex items-center gap-2">
-                <RestoreDefaultsButton onRestored={handleRestored} />
+                <RestoreSettingsButton onRestored={handleRestored} />
               </div>
             ) : null}
           </div>
@@ -88,6 +93,8 @@ function SettingsContentLayout() {
       </div>
     </SidebarInset>
   );
+
+  return content;
 }
 
 function SettingsRouteLayout() {
@@ -101,6 +108,12 @@ export const Route = createFileRoute("/settings")({
       context.authGateState.status !== "hosted-static"
     ) {
       throw redirect({ to: "/pair", replace: true });
+    }
+
+    await ensureClientSettingsHydrated();
+    if (resolveInterfaceStyle(getClientSettings()) === "github") {
+      useSettingsDialogStore.getState().show(location.pathname, location.hash);
+      throw redirect({ to: "/", replace: true });
     }
 
     if (location.pathname === "/settings") {

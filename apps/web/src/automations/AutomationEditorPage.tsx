@@ -24,7 +24,13 @@ import {
 } from "./automationSchedule";
 import { AUTOMATION_TEMPLATES } from "./automationTemplates";
 
-export function AutomationEditorPage({ templateId }: { readonly templateId?: string }) {
+export function AutomationEditorPage({
+  templateId,
+  skillName,
+}: {
+  readonly templateId?: string;
+  readonly skillName?: string;
+}) {
   const navigate = useNavigate();
   const environmentId = useAtomValue(primaryEnvironmentIdAtom);
   const createCommand = useAtomCommand(automationCreate);
@@ -35,8 +41,11 @@ export function AutomationEditorPage({ templateId }: { readonly templateId?: str
     [templateId],
   );
 
-  const [name, setName] = useState(template?.name ?? "");
-  const [instructions, setInstructions] = useState(template?.instructions ?? "");
+  const [name, setName] = useState(template?.name ?? skillName ?? "");
+  const [instructions, setInstructions] = useState(
+    template?.instructions ??
+      (skillName ? `Use the ${skillName} skill to complete this task.` : ""),
+  );
   const [schedule, setSchedule] = useState<ScheduleFormValue>(
     template?.schedule ?? DEFAULT_SCHEDULE_FORM,
   );

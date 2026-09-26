@@ -10,6 +10,7 @@ import {
   parseMultiagentComposerCommand,
   parseSideComposerCommand,
   parseStandaloneComposerSlashCommand,
+  parseConversationModeSlashCommand,
   replaceTextRange,
 } from "./composer-logic";
 import { INLINE_TERMINAL_CONTEXT_PLACEHOLDER } from "./lib/terminalContext";
@@ -437,6 +438,18 @@ describe("parseStandaloneComposerSlashCommand", () => {
   });
 });
 
+describe("parseConversationModeSlashCommand", () => {
+  it("parses chat and code mode commands", () => {
+    expect(parseConversationModeSlashCommand(" /chat ")).toBe("chat");
+    expect(parseConversationModeSlashCommand("/CODE")).toBe("code");
+  });
+
+  it("only accepts standalone mode commands", () => {
+    expect(parseConversationModeSlashCommand("/chat explain this")).toBeNull();
+    expect(parseConversationModeSlashCommand("/plan")).toBeNull();
+  });
+});
+
 describe("parseMultiagentComposerCommand", () => {
   it("parses /multiagent with a task argument", () => {
     expect(parseMultiagentComposerCommand(" /multiagent fix the flaky auth test ")).toEqual({
@@ -490,6 +503,13 @@ describe("parseSideComposerCommand", () => {
     expect(parseSideComposerCommand("/side what broke in auth?")).toEqual({
       ok: true,
       task: "what broke in auth?",
+    });
+  });
+
+  it("accepts /sidechat as the descriptive alias", () => {
+    expect(parseSideComposerCommand("/sidechat compare this approach")).toEqual({
+      ok: true,
+      task: "compare this approach",
     });
   });
 

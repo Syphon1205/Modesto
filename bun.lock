@@ -17,7 +17,7 @@
     },
     "apps/desktop": {
       "name": "@modesto/desktop",
-      "version": "1.0.0-alpha.1",
+      "version": "0.4.0",
       "dependencies": {
         "@clerk/electron": "catalog:",
         "@clerk/electron-passkeys": "catalog:",
@@ -58,7 +58,7 @@
     },
     "apps/server": {
       "name": "@modesto/cli",
-      "version": "1.0.0-alpha.1",
+      "version": "0.4.0",
       "bin": {
         "modesto": "./dist/bin.mjs",
       },
@@ -92,7 +92,7 @@
     },
     "apps/web": {
       "name": "@modesto/web",
-      "version": "1.0.0-alpha.1",
+      "version": "0.4.0",
       "dependencies": {
         "@base-ui/react": "^1.4.1",
         "@bible-strong/avatar-core": "0.1.0",
@@ -174,7 +174,7 @@
     },
     "packages/contracts": {
       "name": "@modesto/contracts",
-      "version": "1.0.0-alpha.1",
+      "version": "0.4.0",
       "dependencies": {
         "effect": "catalog:",
       },

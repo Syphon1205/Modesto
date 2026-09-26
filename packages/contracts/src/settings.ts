@@ -30,6 +30,22 @@ export const TimestampFormat = Schema.Literals(["locale", "12-hour", "24-hour"])
 export type TimestampFormat = typeof TimestampFormat.Type;
 export const DEFAULT_TIMESTAMP_FORMAT: TimestampFormat = "locale";
 
+/**
+ * The overall application shell. Themes own color; interface styles own
+ * information density, navigation, and workspace framing.
+ */
+export const InterfaceStyle = Schema.Literals([
+  "github",
+  "modesto",
+  "classic",
+  "opencode",
+  "claude",
+  "codex",
+  "cursor",
+]);
+export type InterfaceStyle = typeof InterfaceStyle.Type;
+export const DEFAULT_INTERFACE_STYLE: InterfaceStyle = "github";
+
 export const SidebarProjectSortOrder = Schema.Literals(["updated_at", "created_at", "manual"]);
 export type SidebarProjectSortOrder = typeof SidebarProjectSortOrder.Type;
 export const DEFAULT_SIDEBAR_PROJECT_SORT_ORDER: SidebarProjectSortOrder = "updated_at";
@@ -144,6 +160,9 @@ export const ClientSettingsSchema = Schema.Struct({
   appearanceContrast: AppearanceContrast.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_APPEARANCE_CONTRAST)),
   ),
+  interfaceStyle: InterfaceStyle.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_STYLE)),
+  ),
   browserDefaultViewport: PreviewViewportSetting.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_BROWSER_VIEWPORT)),
   ),
@@ -188,6 +207,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   fontSizeTerminal: TerminalFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_TERMINAL_FONT_SIZE)),
+  ),
+  terminalAppearance: Schema.Literals(["system", "light", "dark"]).pipe(
+    Schema.withDecodingDefault(Effect.succeed("system")),
   ),
   fontFamilyCode: FontFamilyPreference.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   fontFamilyComposer: FontFamilyPreference.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
@@ -248,6 +270,21 @@ export const ClientSettingsSchema = Schema.Struct({
   // every device attached to it. Off by default, matching every other
   // opinionated audio/UI toggle in this file.
   thinkingSoundEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  notificationSoundsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  notificationSoundVolume: Schema.Number.check(Schema.isBetween({ minimum: 0, maximum: 100 })).pipe(
+    Schema.withDecodingDefault(Effect.succeed(50)),
+  ),
+  startSound: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed("modesto-start"))),
+  completionSound: Schema.String.pipe(
+    Schema.withDecodingDefault(Effect.succeed("modesto-complete")),
+  ),
+  attentionSound: Schema.String.pipe(
+    Schema.withDecodingDefault(Effect.succeed("modesto-attention")),
+  ),
+  interruptionSound: Schema.String.pipe(
+    Schema.withDecodingDefault(Effect.succeed("modesto-interrupted")),
+  ),
+  errorSound: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed("modesto-error"))),
   // Desktop-only (macOS): both-Option Appshots that capture the frontmost
   // window into the active chat composer. Browser clients ignore it.
   appshotsEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
@@ -985,11 +1022,8 @@ export const BackgroundActivitySettings = Schema.Struct({
 export type BackgroundActivitySettings = typeof BackgroundActivitySettings.Type;
 
 // Custom OpenAI-compatible endpoints (vLLM, LM Studio, OpenRouter, Portkey,
-// LiteLLM, etc). Only Codex consumes these - it's the one built-in driver
-// whose CLI/app-server has a real, native `model_providers` config mechanism
-// for pointing at an arbitrary OpenAI-compatible base URL; no other driver
-// in this tree has an equivalent. Global (not per Codex instance): one list
-// of endpoints, selectable from any Codex instance's model picker.
+// LiteLLM, etc). `wireApi` is retained only so older settings files decode;
+// transport selection is now an internal concern of each provider runtime.
 export const CustomModelEndpointWireApi = Schema.Literals(["chat", "responses"]);
 export type CustomModelEndpointWireApi = typeof CustomModelEndpointWireApi.Type;
 
@@ -1009,6 +1043,9 @@ export const CustomModelEndpointConfig = Schema.Struct({
   id: CustomModelEndpointId,
   label: TrimmedString.check(Schema.isMaxLength(120)),
   baseUrl: TrimmedString.check(Schema.isMaxLength(2048)),
+  // Legacy persistence field retained so older settings files and clients
+  // still decode. Each runtime now owns its transport selection: Codex uses
+  // Responses while OpenCode/Kilo use their generic compatibility provider.
   wireApi: CustomModelEndpointWireApi.pipe(
     Schema.withDecodingDefault(Effect.succeed("chat" as const)),
   ),
@@ -1429,6 +1466,7 @@ export type ServerSettingsPatch = typeof ServerSettingsPatch.Type;
 
 export const ClientSettingsPatch = Schema.Struct({
   appearanceContrast: Schema.optionalKey(AppearanceContrast),
+  interfaceStyle: Schema.optionalKey(InterfaceStyle),
   browserDefaultViewport: Schema.optionalKey(PreviewViewportSetting),
   browserDefaultZoomFactor: Schema.optionalKey(PreviewZoomFactor),
   browserDefaultAppearance: Schema.optionalKey(PreviewAppearancePreference),
@@ -1443,6 +1481,7 @@ export const ClientSettingsPatch = Schema.Struct({
   fontSizePrompt: Schema.optionalKey(PromptFontSize),
   fontSizeCode: Schema.optionalKey(CodeFontSize),
   fontSizeTerminal: Schema.optionalKey(TerminalFontSize),
+  terminalAppearance: Schema.optionalKey(Schema.Literals(["system", "light", "dark"])),
   fontFamilyCode: Schema.optionalKey(FontFamilyPreference),
   fontFamilyComposer: Schema.optionalKey(FontFamilyPreference),
   fontFamilySans: Schema.optionalKey(FontFamilyPreference),
@@ -1471,6 +1510,15 @@ export const ClientSettingsPatch = Schema.Struct({
   ),
   ambientPresenceEnabled: Schema.optionalKey(Schema.Boolean),
   thinkingSoundEnabled: Schema.optionalKey(Schema.Boolean),
+  notificationSoundsEnabled: Schema.optionalKey(Schema.Boolean),
+  notificationSoundVolume: Schema.optionalKey(
+    Schema.Number.check(Schema.isBetween({ minimum: 0, maximum: 100 })),
+  ),
+  startSound: Schema.optionalKey(Schema.String),
+  completionSound: Schema.optionalKey(Schema.String),
+  attentionSound: Schema.optionalKey(Schema.String),
+  interruptionSound: Schema.optionalKey(Schema.String),
+  errorSound: Schema.optionalKey(Schema.String),
   appshotsEnabled: Schema.optionalKey(Schema.Boolean),
   chatTabsEnabled: Schema.optionalKey(Schema.Boolean),
   chatTabsTipDismissed: Schema.optionalKey(Schema.Boolean),

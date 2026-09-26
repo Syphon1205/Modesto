@@ -1,5 +1,5 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { useAtomValue } from "@effect/atom-react";
-import { useNavigate } from "@tanstack/react-router";
 import { Loader2Icon, MonitorIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -63,7 +63,7 @@ async function openGitHubDeviceAuthUrl(verificationUri: string): Promise<boolean
 }
 
 export function AppSignInChooser({ redirect }: { readonly redirect?: string }) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const [pane, setPane] = useState<"choose" | "github">("choose");
   const environmentId = useAtomValue(primaryEnvironmentIdAtom);
   const githubStatus = useEnvironmentQuery(

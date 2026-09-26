@@ -567,6 +567,20 @@ export const WORK_MARKETPLACE_ITEMS: readonly MarketplaceItem[] = [
   },
   // Anthropic skills marketplace shelf (Apache-2.0 examples; open in GitHub)
   {
+    id: "impeccable",
+    name: "Impeccable",
+    description:
+      "Design guidance, visual review, and polish commands for frontend work across coding agents.",
+    kind: "skill-pack",
+    filter: "skills",
+    install: "external",
+    href: "https://github.com/pbakaus/impeccable",
+    cta: "View install options",
+    iconLabel: "Im",
+    iconSrc: "/work/ext-skills.svg",
+    badge: "Skills",
+  },
+  {
     id: "anthropic-document-skills",
     name: "Document skills",
     description: "Excel, Word, PowerPoint, and PDF skills from Anthropic’s skills marketplace.",

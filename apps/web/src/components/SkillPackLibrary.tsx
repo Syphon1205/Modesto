@@ -16,7 +16,10 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 
-export function SkillPackLibrary() {
+export function SkillPackLibrary({
+  query = "",
+  installedOnly = false,
+}: { query?: string; installedOnly?: boolean } = {}) {
   const environmentId = useAtomValue(primaryEnvironmentIdAtom);
   const list = useEnvironmentQuery(
     environmentId === null ? null : skillPackList({ environmentId, input: {} }),
@@ -60,102 +63,115 @@ export function SkillPackLibrary() {
     }
   }, [environmentId, installCommand, pending, preview, url]);
 
-  const installed = list.data?.packs ?? [];
+  const installed = (list.data?.packs ?? []).filter((pack) =>
+    `${pack.name} ${pack.skills.map((skill) => skill.name).join(" ")}`
+      .toLowerCase()
+      .includes(query.toLowerCase()),
+  );
   const blockedProviders = preview?.eligibility.filter((entry) => !entry.eligible) ?? [];
   const canInstall = Boolean(preview) && blockedProviders.length === 0;
   return (
     <section className="flex min-w-0 flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <div>
-          <h2 className="text-sm font-medium text-foreground">Install a portable skill pack</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Paste any GitHub repository containing SKILL.md files. Modesto pins the revision and
-            installs the same skills for Codex and Claude.
-          </p>
-        </div>
-        <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-          <Input
-            value={url}
-            onChange={(event) => setUrl(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") void handlePreview();
-            }}
-            placeholder="https://github.com/owner/skills"
-            disabled={pending !== null}
-            className="min-w-0 sm:max-w-md"
-          />
-          <Button
-            className="self-start"
-            onClick={() => void handlePreview()}
-            disabled={!url.trim() || pending !== null}
-          >
-            {pending === "preview" ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-            Preview
-          </Button>
-        </div>
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      </div>
-
-      {preview ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{preview.name}</CardTitle>
-            <CardDescription>
-              {preview.skills.length} skill{preview.skills.length === 1 ? "" : "s"} · revision{" "}
-              {preview.source.revision.slice(0, 8)} · Codex + Claude
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-0">
-            {preview.warnings.map((warning) => (
-              <div key={warning} className="flex gap-2 text-xs text-warning-foreground">
-                <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
-                <span>{warning}</span>
-              </div>
-            ))}
-            {blockedProviders.map((entry) => (
-              <div key={entry.provider} className="flex gap-2 text-xs text-warning-foreground">
-                <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
-                <span>
-                  {entry.provider === "codex" ? "Codex" : "Claude"} already has an untracked skill
-                  named {entry.collisionDirectory?.split(/[\\/]/).at(-1)}. Install will refuse to
-                  overwrite it.
-                </span>
-              </div>
-            ))}
-            <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-              {preview.skills.map((skill) => (
-                <div
-                  key={skill.sourcePath}
-                  className="min-w-0 rounded-lg border border-border/60 px-3 py-2"
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <BookOpenIcon className="size-3.5 text-muted-foreground" />
-                    {skill.name}
-                  </div>
-                  {skill.description ? (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {skill.description}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
+      {installedOnly ? null : (
+        <>
+          <div className="flex flex-col gap-2">
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Install a portable skill pack</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Paste any GitHub repository containing SKILL.md files. Modesto pins the revision and
+                installs the same skills for Codex and Claude.
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+              <Input
+                value={url}
+                onChange={(event) => setUrl(event.currentTarget.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handlePreview();
+                }}
+                placeholder="https://github.com/owner/skills"
+                disabled={pending !== null}
+                className="min-w-0 sm:max-w-md"
+              />
               <Button
-                onClick={() => void handleInstall()}
-                disabled={!canInstall || pending !== null}
+                className="self-start"
+                onClick={() => void handlePreview()}
+                disabled={!url.trim() || pending !== null}
               >
-                {pending === "install" ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
-                Install for both providers
-              </Button>
-              <Button variant="ghost" onClick={() => setPreview(null)} disabled={pending !== null}>
-                Cancel
+                {pending === "preview" ? <Loader2Icon className="size-3.5 animate-spin" /> : null}
+                Preview
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      ) : null}
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          </div>
 
+          {preview ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>{preview.name}</CardTitle>
+                <CardDescription>
+                  {preview.skills.length} skill{preview.skills.length === 1 ? "" : "s"} · revision{" "}
+                  {preview.source.revision.slice(0, 8)} · Codex + Claude
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-0">
+                {preview.warnings.map((warning) => (
+                  <div key={warning} className="flex gap-2 text-xs text-warning-foreground">
+                    <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+                {blockedProviders.map((entry) => (
+                  <div key={entry.provider} className="flex gap-2 text-xs text-warning-foreground">
+                    <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
+                    <span>
+                      {entry.provider === "codex" ? "Codex" : "Claude"} already has an untracked
+                      skill named {entry.collisionDirectory?.split(/[\\/]/).at(-1)}. Install will
+                      refuse to overwrite it.
+                    </span>
+                  </div>
+                ))}
+                <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+                  {preview.skills.map((skill) => (
+                    <div
+                      key={skill.sourcePath}
+                      className="min-w-0 rounded-lg border border-border/60 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <BookOpenIcon className="size-3.5 text-muted-foreground" />
+                        {skill.name}
+                      </div>
+                      {skill.description ? (
+                        <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                          {skill.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => void handleInstall()}
+                    disabled={!canInstall || pending !== null}
+                  >
+                    {pending === "install" ? (
+                      <Loader2Icon className="size-3.5 animate-spin" />
+                    ) : null}
+                    Install for both providers
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setPreview(null)}
+                    disabled={pending !== null}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+        </>
+      )}
       <div className="flex flex-col gap-3">
         <h2 className="text-sm font-medium text-foreground">Installed skill packs</h2>
         {list.isPending && installed.length === 0 ? (

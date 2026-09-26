@@ -1,3 +1,7 @@
+import { useSettingsDialogStore } from "../../settings/settingsDialogStore";
+import { TerminalAppearanceSettings } from "./TerminalAppearanceSettings";
+import { CopilotPaletteLibrary } from "./CopilotPaletteLibrary";
+import { availableLibraryThemes, ensureBundledPalette } from "../../themes/catalog";
 import {
   CheckIcon,
   CopyIcon,
@@ -11,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { cn } from "../../lib/utils";
+import { useInterfaceStyle } from "../../hooks/useSettings";
 import {
   getThemeDefinition,
   getThemeModes,
@@ -49,6 +54,8 @@ import {
   type ThemeMode,
 } from "./ThemePreviewCircles";
 import { ThemeWireframe } from "./ThemeWireframe";
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
+import { getImportedFileIconThemeLabel } from "../../pierre-icons";
 
 const MAINTAINER_THEMES: ReadonlyArray<ThemeDefinition> = [
   MODESTO_THEME,
@@ -125,6 +132,7 @@ function ThemeLibraryCard({
     onSelectAndUse: (themeIndex: number, mode: ThemeAppearance) => void;
   };
 }) {
+  const copilotStyle = useInterfaceStyle() === "github";
   // A one-appearance theme can only take its own side of the mix, so the card
   // tooltip promises exactly what clicking it does.
   const cardModes = theme.previews.map((preview) => preview.mode);
@@ -155,10 +163,22 @@ function ThemeLibraryCard({
             )}
             data-theme-library-card={theme.id}
             onClick={onUse}
-            style={isActive ? { boxShadow: "inset 0 0 0 1px var(--ring)" } : undefined}
+            style={
+              isActive && !copilotStyle ? { boxShadow: "inset 0 0 0 1px var(--ring)" } : undefined
+            }
           >
             <div className="relative">
-              {variantNavigation ? (
+              {copilotStyle ? (
+                <ThemeWireframe
+                  className="h-20 rounded-none border-0"
+                  panes={theme.previews.map((preview, index) => ({
+                    colors: preview.colors,
+                    ...(theme.previews.length > 1
+                      ? { clip: index === 0 ? ("left" as const) : ("right" as const) }
+                      : {}),
+                  }))}
+                />
+              ) : variantNavigation ? (
                 <div
                   aria-label="Light and dark theme variants"
                   className="relative h-20"
@@ -433,7 +453,7 @@ function CustomThemeCollectionCard({
   onDuplicate: (theme: ThemeDefinition) => void;
   onEdit: (theme: ThemeDefinition) => void;
   onDownload: (theme: ThemeDefinition) => void;
-  onRemove: (theme: ThemeDefinition) => void;
+  onRemove?: (theme: ThemeDefinition) => void;
 }) {
   const [variantIndex, setVariantIndex] = useState(() => {
     const activeIndex = themes.findIndex((theme) => activeModesFor(theme.id).length > 0);
@@ -468,7 +488,7 @@ function CustomThemeCollectionCard({
       onDownload={() => onDownload(theme)}
       onDuplicate={() => onDuplicate(theme)}
       onEdit={() => onEdit(theme)}
-      onRemove={() => onRemove(theme)}
+      {...(onRemove ? { onRemove: () => onRemove(theme) } : {})}
       onUse={selectCollectionDefaults}
       onUseMode={(mode) => onUseMode(theme, mode)}
       theme={getThemeCardDefinition(theme)}
@@ -522,6 +542,9 @@ export function ThemeLibrary({
   themeHalves: ThemeHalves | null;
   setThemeHalf: (appearance: ThemeAppearance, themeId: string | null) => boolean;
 }) {
+  const interfaceStyle = useInterfaceStyle();
+  const copilotStyle = interfaceStyle === "github";
+  const openCodeStyle = interfaceStyle === "opencode";
   const openThemeEditor = useThemeEditorStore((store) => store.openThemeEditor);
   const [themeRemovalTarget, setThemeRemovalTarget] = useState<{
     theme: ThemeDefinition;
@@ -560,6 +583,12 @@ export function ThemeLibrary({
 
   const persistTheme = useCallback(
     (nextTheme: string) => {
+      try {
+        ensureBundledPalette(nextTheme);
+      } catch {
+        notifyThemeSaveFailure();
+        return false;
+      }
       const didSave = setTheme(nextTheme);
       if (!didSave) notifyThemeSaveFailure();
       return didSave;
@@ -678,6 +707,12 @@ export function ThemeLibrary({
   // ----- Wireframe tiles on top, two-ball cards below --------------------
   const handlePairPick = (cardId: string | null) => (mode: ThemeMode) => {
     if (mode === "system") return;
+    try {
+      if (cardId) ensureBundledPalette(cardId);
+    } catch {
+      notifyThemeSaveFailure();
+      return;
+    }
     assignHalf(mode, cardId);
   };
 
@@ -708,46 +743,70 @@ export function ThemeLibrary({
     />
   );
 
-  const renderModeTiles = () => (
-    <div
-      aria-label="Appearance mode"
-      className="mx-auto grid w-full max-w-[56rem] grid-cols-3 gap-3 px-3 sm:px-4"
-      role="group"
-    >
-      {(["system", "light", "dark"] as const).map((mode) => {
-        const isActive = appearanceMode === mode;
-        return (
-          <button
-            aria-label={mode === "system" ? "Follow the system appearance" : `Use ${mode} mode`}
-            aria-pressed={isActive}
-            className={cn(
-              "flex cursor-pointer flex-col items-stretch gap-1.5 rounded-xl border p-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-              isActive
-                ? "border-transparent bg-accent/30"
-                : "border-border/70 bg-card/60 hover:bg-accent/10",
-            )}
-            key={mode}
-            style={isActive ? { boxShadow: "inset 0 0 0 1px var(--ring)" } : undefined}
-            onClick={() => setMode(mode)}
-            type="button"
-          >
-            {renderWireframe(mode)}
-            <span
+  const renderModeTiles = () =>
+    openCodeStyle ? (
+      <select
+        aria-label="Appearance mode"
+        value={appearanceMode}
+        onChange={(event) => setMode(event.target.value as ThemeMode)}
+        className="rounded-md border border-input bg-background px-3 py-1.5 text-xs"
+      >
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    ) : (
+      <div
+        aria-label="Appearance mode"
+        className={cn(
+          copilotStyle
+            ? "inline-flex shrink-0 items-center justify-end gap-0.5 rounded-md bg-muted/40 p-0.5"
+            : "mx-auto grid w-full max-w-[56rem] grid-cols-3 gap-3 px-3 sm:px-4",
+        )}
+        role="group"
+      >
+        {(["system", "light", "dark"] as const).map((mode) => {
+          const isActive = appearanceMode === mode;
+          return (
+            <button
+              aria-label={mode === "system" ? "Follow the system appearance" : `Use ${mode} mode`}
+              aria-pressed={isActive}
               className={cn(
-                "flex items-center justify-center text-xs font-medium",
-                isActive ? "text-foreground" : "text-muted-foreground",
+                copilotStyle
+                  ? "h-7 cursor-pointer rounded-md px-3 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                  : "flex cursor-pointer flex-col items-stretch gap-1.5 rounded-xl border p-2 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+                copilotStyle
+                  ? isActive
+                    ? "bg-accent text-foreground shadow-sm"
+                    : "text-muted-foreground hover:bg-accent/50"
+                  : isActive
+                    ? "border-transparent bg-accent/30"
+                    : "border-border/70 bg-card/60 hover:bg-accent/10",
               )}
+              key={mode}
+              style={
+                isActive && !copilotStyle ? { boxShadow: "inset 0 0 0 1px var(--ring)" } : undefined
+              }
+              onClick={() => setMode(mode)}
+              type="button"
             >
-              {mode === "system" ? "System" : mode === "light" ? "Light" : "Dark"}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
+              {copilotStyle ? null : renderWireframe(mode)}
+              <span
+                className={cn(
+                  "flex items-center justify-center text-xs font-medium",
+                  isActive ? "text-foreground" : "text-muted-foreground",
+                )}
+              >
+                {mode === "system" ? "System" : mode === "light" ? "Light" : "Dark"}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
 
   const customThemeCollections = [
-    ...customThemes
+    ...availableLibraryThemes(customThemes)
       .reduce((groups, customTheme) => {
         const groupId = customTheme.collection
           ? `collection:${customTheme.collection.id}`
@@ -767,8 +826,15 @@ export function ThemeLibrary({
     // accepted — scoping the group tighter makes the handoffs feel sluggish.
     <TooltipProvider>
       <div
-        className="mx-auto grid w-full max-w-[56rem] gap-2 px-3 sm:px-4"
-        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))" }}
+        className={cn(
+          "mx-auto grid w-full max-w-[56rem] gap-2 px-3 sm:px-4",
+          copilotStyle && "grid-cols-2 sm:grid-cols-3",
+        )}
+        style={
+          copilotStyle
+            ? undefined
+            : { gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))" }
+        }
       >
         {STANDARD_THEME_CARDS.map((standardTheme) => (
           <ThemeLibraryCard
@@ -816,24 +882,37 @@ export function ThemeLibrary({
             onDownload={(customTheme) =>
               downloadThemeFile(`${customTheme.id}.json`, serializeThemeFile(customTheme))
             }
-            onDuplicate={(customTheme) =>
+            onDuplicate={(customTheme) => {
+              ensureBundledPalette(customTheme.id);
               openThemeEditor({
                 editingThemeId: null,
                 seedThemeId: customTheme.id,
                 seedName: `${customTheme.label} copy`,
                 initialAppearance,
-              })
-            }
-            onEdit={(customTheme) =>
+              });
+            }}
+            onEdit={(customTheme) => {
+              ensureBundledPalette(customTheme.id);
               openThemeEditor({
                 editingThemeId: customTheme.id,
                 seedThemeId: null,
                 seedName: null,
                 initialAppearance,
-              })
-            }
-            onRemove={(customTheme) => handleRemoveTheme(customTheme, themes)}
+              });
+            }}
+            {...(themes.some((theme) => customThemes.some((custom) => custom.id === theme.id))
+              ? {
+                  onRemove: (customTheme: ThemeDefinition) =>
+                    handleRemoveTheme(customTheme, themes),
+                }
+              : {})}
             onUse={(customTheme) => {
+              try {
+                ensureBundledPalette(customTheme.id);
+              } catch {
+                notifyThemeSaveFailure();
+                return;
+              }
               const modes = getThemeModes(customTheme);
               if (modes.length === 1) assignHalf(modes[0]!, customTheme.id);
               else persistTheme(customTheme.id);
@@ -848,44 +927,154 @@ export function ThemeLibrary({
 
   return (
     <div className="space-y-3">
-      <p className="px-3 text-[13px] leading-[1.45] text-muted-foreground/80 sm:px-4">
-        Choose how Modesto looks. Use a built-in theme or make your own.
-      </p>
-      <h3 className="px-3 text-sm font-medium tracking-[-0.005em] text-foreground sm:px-4">
-        Color scheme
-      </h3>
-      {renderModeTiles()}
-      <div className="flex min-h-8 flex-wrap items-center justify-between gap-3 px-3 pt-2 sm:px-4">
-        <h3 className="text-sm font-medium tracking-[-0.005em] text-foreground">Themes</h3>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            size="xs"
-            variant="outline"
-            onClick={() =>
-              openThemeEditor({
-                editingThemeId: null,
-                seedThemeId: activeThemeForAppearance?.id ?? null,
-                seedName: null,
-                initialAppearance,
-              })
-            }
-          >
-            <PaintbrushIcon />
-            Create theme
-          </Button>
-          <Button size="xs" variant="outline" onClick={() => onImportOpenChange(true)}>
-            <PlusIcon />
-            Add theme
-          </Button>
+      {copilotStyle || openCodeStyle ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-3 pb-3 sm:px-4">
+            <div>
+              <h3 className="text-sm font-medium">Mode</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Choose a light or dark appearance and a color variant.
+              </p>
+            </div>
+            {renderModeTiles()}
+          </div>
+          <TerminalAppearanceSettings />
+        </>
+      ) : (
+        <>
+          <p className="px-3 text-[13px] leading-[1.45] text-muted-foreground/80 sm:px-4">
+            Choose how Modesto looks. Use a built-in theme or make your own.
+          </p>
+          <h3 className="px-3 text-sm font-medium sm:px-4">Color scheme</h3>
+          {renderModeTiles()}
+        </>
+      )}
+      {!copilotStyle ? (
+        <div className="flex min-h-8 flex-wrap items-center justify-between gap-3 px-3 pt-2 sm:px-4">
+          <h3 className="text-sm font-medium tracking-[-0.005em] text-foreground">
+            {copilotStyle ? "Palettes" : "Themes"}
+          </h3>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() =>
+                openThemeEditor({
+                  editingThemeId: null,
+                  seedThemeId: activeThemeForAppearance?.id ?? null,
+                  seedName: null,
+                  initialAppearance,
+                })
+              }
+            >
+              <PaintbrushIcon />
+              Create theme
+            </Button>
+            <Button size="xs" variant="outline" onClick={() => onImportOpenChange(true)}>
+              <PlusIcon />
+              {copilotStyle ? "Browse VS Code themes" : "Add theme"}
+            </Button>
+          </div>
         </div>
-      </div>
-      {renderPairGrid()}
+      ) : null}
+      {copilotStyle ? (
+        <CopilotPaletteLibrary
+          cards={[...STANDARD_THEME_CARDS, ...MAINTAINER_THEMES.map(getThemeCardDefinition)]}
+          customThemes={customThemes}
+          appearance={initialAppearance}
+          activeId={initialAppearance === "light" ? lightOwner : darkOwner}
+          onBrowse={() => onImportOpenChange(true)}
+          onCreate={() => {
+            useSettingsDialogStore.getState().close();
+            openThemeEditor({
+              editingThemeId: null,
+              seedThemeId: activeThemeForAppearance?.id ?? null,
+              seedName: null,
+              initialAppearance,
+            });
+          }}
+          onEdit={(customTheme) => {
+            useSettingsDialogStore.getState().close();
+            openThemeEditor({
+              editingThemeId: customTheme.id,
+              seedThemeId: null,
+              seedName: null,
+              initialAppearance,
+            });
+          }}
+          onDuplicate={(customTheme) => {
+            useSettingsDialogStore.getState().close();
+            openThemeEditor({
+              editingThemeId: null,
+              seedThemeId: customTheme?.id ?? null,
+              seedName: `${customTheme?.label ?? "Modesto"} copy`,
+              initialAppearance,
+            });
+          }}
+          onRemove={(customTheme) => handleRemoveTheme(customTheme, [customTheme])}
+          onSelect={(id, mode) => {
+            if (!persistTheme(id ?? (appearanceMode === "system" ? "system" : appearanceMode)))
+              return false;
+            if (mode && !setAppearanceMode(mode)) {
+              notifyThemeSaveFailure();
+              return false;
+            }
+            return true;
+          }}
+        />
+      ) : openCodeStyle ? (
+        <div className="space-y-4 px-3 sm:px-4">
+          <p className="text-xs text-muted-foreground">
+            Choose a theme for each appearance. System mode follows your device and uses the
+            matching palette.
+          </p>
+          {(["light", "dark"] as const).map((mode) => (
+            <label
+              key={mode}
+              className="flex items-center justify-between gap-4 rounded-lg border border-border p-3 text-sm"
+            >
+              <span>{mode === "light" ? "Light theme" : "Dark theme"}</span>
+              <select
+                aria-label={`${mode === "light" ? "Light" : "Dark"} theme`}
+                className="min-w-0 max-w-[65%] rounded-md border border-input bg-background px-2 py-1.5 text-xs"
+                value={(mode === "light" ? lightOwner : darkOwner) ?? "default"}
+                onChange={(event) =>
+                  handlePairPick(event.target.value === "default" ? null : event.target.value)(mode)
+                }
+              >
+                <option value="default">Modesto</option>
+                {[...MAINTAINER_THEMES, ...availableLibraryThemes(customThemes)]
+                  .filter((definition) => getThemeModes(definition).includes(mode))
+                  .map((definition) => (
+                    <option key={definition.id} value={definition.id}>
+                      {definition.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          ))}
+          <Collapsible>
+            <CollapsibleTrigger className="rounded-md border border-border px-3 py-2 text-xs">
+              Manage palettes
+            </CollapsibleTrigger>
+            <CollapsiblePanel>
+              <div className="pt-4">{renderPairGrid()}</div>
+            </CollapsiblePanel>
+          </Collapsible>
+        </div>
+      ) : (
+        <>
+          {renderPairGrid()}
+          <TerminalAppearanceSettings />
+        </>
+      )}
       <ThemeImportDialog
         onImportedMany={(importedThemes, { updated }) => {
           // Re-apply after collection updates. The update may remove the
           // selected variant, in which case the theme hook falls back safely.
           if (updated) refreshTheme();
           const verb = updated ? "updated" : "added";
+          const iconThemeLabel = getImportedFileIconThemeLabel();
           toastManager.add(
             stackedThreadToast({
               type: "success",
@@ -893,7 +1082,12 @@ export function ThemeLibrary({
                 importedThemes.length === 1
                   ? `${importedThemes[0]!.label} ${verb}`
                   : `${importedThemes.length} themes ${verb}`,
-              description: importedThemes.map((imported) => imported.label).join(", "),
+              description: [
+                importedThemes.map((imported) => imported.label).join(", "),
+                ...(iconThemeLabel ? [`File icons: ${iconThemeLabel}`] : []),
+              ]
+                .filter(Boolean)
+                .join(" · "),
             }),
           );
         }}

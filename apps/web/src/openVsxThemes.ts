@@ -9,6 +9,12 @@ import {
   parseVsCodeThemeFile,
   resolveThemeLabelCollisions,
 } from "./vscodeThemeImport";
+import { installImportedFileIconTheme } from "./pierre-icons";
+import {
+  installVsCodeDeclarativeExtension,
+  type VsCodeLanguageContribution,
+  type VsCodeSnippetContribution,
+} from "./vscodeExtensionRuntime";
 
 const OPEN_VSX_SEARCH_URL = "https://open-vsx.org/api/-/search";
 const MAX_VSIX_BYTES = 20 * 1024 * 1024;
@@ -17,6 +23,7 @@ const MAX_DETAIL_BYTES = 256 * 1024;
 const MAX_MANIFEST_BYTES = 256 * 1024;
 const SEARCH_REQUEST_TIMEOUT_MS = 10_000;
 const MAX_THEME_BYTES = 256 * 1024;
+const MAX_ICON_THEME_JSON_BYTES = 4 * 1024 * 1024;
 const MAX_ZIP_ENTRIES = 5_000;
 const MAX_UNCOMPRESSED_BYTES = 100 * 1024 * 1024;
 const MAX_COMPRESSION_RATIO = 200;
@@ -25,6 +32,9 @@ const MAX_INCLUDE_DEPTH = 8;
 const MAX_PACKAGE_PATH_LENGTH = 1_024;
 const MAX_COLOR_VALUE_LENGTH = 128;
 const MAX_RESOLVED_THEME_FILES = MAX_THEMES_PER_EXTENSION * MAX_INCLUDE_DEPTH;
+const MAX_LANGUAGES_PER_EXTENSION = 40;
+const MAX_SNIPPET_FILES_PER_EXTENSION = 40;
+const MAX_SNIPPETS_PER_EXTENSION = 800;
 const SUPPORTED_LICENSES = new Set([
   "0BSD",
   "Apache-2.0",
@@ -97,14 +107,32 @@ export type OpenVsxThemeExtension = {
   vsixUrl: string;
   version: string;
   license: string;
+  supportsColorThemes?: boolean;
+  supportsFileIconThemes?: boolean;
+  supportsLanguages?: boolean;
+  supportsSnippets?: boolean;
+  hasRuntimeCode?: boolean;
 };
 
 export type OpenVsxThemeSearchOptions = {
   signal?: AbortSignal;
   sortBy?: OpenVsxThemeSort;
+  includeFileIconThemes?: boolean;
+  includeDeclarativeExtensions?: boolean;
+  category?: "Themes" | "Programming Languages" | "Snippets";
+};
+
+export type OpenVsxAppearanceImport = {
+  themes: ReadonlyArray<ThemeDefinition>;
+  fileIconThemeInstalled: boolean;
+  languageCount: number;
+  snippetCount: number;
 };
 
 type ThemeContribution = { label?: unknown; uiTheme?: unknown; path?: unknown };
+type IconThemeContribution = { id?: unknown; label?: unknown; path?: unknown };
+type LanguageContribution = { id?: unknown; aliases?: unknown; extensions?: unknown };
+type SnippetContribution = { language?: unknown; path?: unknown };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -163,6 +191,111 @@ function themeContributions(manifest: Record<string, unknown>): ThemeContributio
     : [];
 }
 
+function iconThemeContributions(manifest: Record<string, unknown>): IconThemeContribution[] {
+  const contributes = isRecord(manifest.contributes) ? manifest.contributes : null;
+  return Array.isArray(contributes?.iconThemes)
+    ? (contributes.iconThemes.filter(isRecord) as IconThemeContribution[])
+    : [];
+}
+
+function languageContributions(manifest: Record<string, unknown>): LanguageContribution[] {
+  const contributes = isRecord(manifest.contributes) ? manifest.contributes : null;
+  return Array.isArray(contributes?.languages)
+    ? (contributes.languages.filter(isRecord) as LanguageContribution[])
+    : [];
+}
+
+function snippetContributions(manifest: Record<string, unknown>): SnippetContribution[] {
+  const contributes = isRecord(manifest.contributes) ? manifest.contributes : null;
+  return Array.isArray(contributes?.snippets)
+    ? (contributes.snippets.filter(isRecord) as SnippetContribution[])
+    : [];
+}
+
+const MAX_ICON_THEME_DEFINITIONS = 3_000;
+const MAX_ICON_ASSET_BYTES = 128 * 1024;
+const MAX_ICON_THEME_STORAGE_BYTES = 12 * 1024 * 1024;
+
+async function importBundledIconTheme(
+  zip: JSZip,
+  extension: OpenVsxThemeExtension,
+  contribution: IconThemeContribution,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  if (typeof contribution.path !== "string") return false;
+  const themePath = normalizePackagePath(contribution.path);
+  const value = parseJsoncObject(
+    await readZipText(zip, themePath, "File icon theme", signal, MAX_ICON_THEME_JSON_BYTES),
+    "File icon theme",
+  );
+  if (!isRecord(value.iconDefinitions)) return false;
+  const definitions = Object.entries(value.iconDefinitions).slice(0, MAX_ICON_THEME_DEFINITIONS);
+  const symbolByDefinition = new Map<string, string>();
+  const symbols: string[] = [];
+  let storedBytes = 0;
+  for (const [definitionId, rawDefinition] of definitions) {
+    if (!isRecord(rawDefinition) || typeof rawDefinition.iconPath !== "string") continue;
+    const assetPath = normalizePackagePath(rawDefinition.iconPath, themePath);
+    const file = zip.file(assetPath) as InspectableZipObject | null;
+    if (
+      !file ||
+      typeof file._data?.uncompressedSize !== "number" ||
+      file._data.uncompressedSize > MAX_ICON_ASSET_BYTES
+    )
+      continue;
+    const asset = await file.async("uint8array");
+    signal?.throwIfAborted();
+    const source = new TextDecoder().decode(asset);
+    const isSvg = /^\s*<svg[\s>]/i.test(source);
+    const isPng =
+      asset.length >= 8 &&
+      asset.slice(0, 8).every((byte, index) => byte === [137, 80, 78, 71, 13, 10, 26, 10][index]);
+    // SVGs render inside an <image> document, keeping their markup isolated
+    // from Modesto's DOM. Reject active/external constructs before storing.
+    if (
+      isSvg &&
+      /<(?:script|foreignObject)|\bon[a-z]+\s*=|(?:href|src)\s*=\s*["'](?:https?:|javascript:)/i.test(
+        source,
+      )
+    )
+      continue;
+    if (!isSvg && !isPng) continue;
+    let binary = "";
+    for (let offset = 0; offset < asset.length; offset += 0x8000) {
+      binary += String.fromCharCode(...asset.subarray(offset, offset + 0x8000));
+    }
+    const encoded = btoa(binary);
+    storedBytes += encoded.length;
+    if (storedBytes > MAX_ICON_THEME_STORAGE_BYTES) break;
+    const symbolId = `ovx-file-icon-${shortHash(`${extension.id}:${definitionId}`)}`;
+    symbolByDefinition.set(definitionId, symbolId);
+    symbols.push(
+      `<symbol id="${symbolId}" viewBox="0 0 16 16"><image width="16" height="16" href="data:${isSvg ? "image/svg+xml" : "image/png"};base64,${encoded}" /></symbol>`,
+    );
+  }
+  if (symbols.length === 0) return false;
+  const mapIcons = (raw: unknown): Record<string, string> => {
+    if (!isRecord(raw)) return {};
+    return Object.fromEntries(
+      Object.entries(raw).flatMap(([key, definition]) => {
+        const symbol =
+          typeof definition === "string" ? symbolByDefinition.get(definition) : undefined;
+        return symbol && key.length <= 128 ? [[key.toLowerCase(), symbol]] : [];
+      }),
+    );
+  };
+  await installImportedFileIconTheme({
+    id: `${extension.id}:${typeof contribution.id === "string" ? contribution.id : "icons"}`,
+    label: typeof contribution.label === "string" ? contribution.label : `${extension.name} icons`,
+    spriteSheet: `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">${symbols.join("")}</svg>`,
+    byFileName: mapIcons(value.fileNames),
+    byFileExtension: mapIcons(value.fileExtensions),
+    byFolderName: mapIcons(value.folderNames),
+    folderIcon: typeof value.folder === "string" ? symbolByDefinition.get(value.folder) : undefined,
+  });
+  return true;
+}
+
 function manifestLicenseMatches(manifest: Record<string, unknown>, license: string): boolean {
   return (
     typeof manifest.license === "string" &&
@@ -208,6 +341,11 @@ function extensionFromDetail(value: unknown): OpenVsxThemeExtension | null {
     vsixUrl,
     version,
     license,
+    supportsColorThemes: false,
+    supportsFileIconThemes: false,
+    supportsLanguages: false,
+    supportsSnippets: false,
+    hasRuntimeCode: false,
   };
 }
 
@@ -235,13 +373,18 @@ async function withSearchTimeout<T>(
 
 export async function searchOpenVsxThemes(
   query: string,
-  { signal, sortBy = "downloadCount" }: OpenVsxThemeSearchOptions = {},
+  {
+    signal,
+    sortBy = "downloadCount",
+    includeFileIconThemes = false,
+    includeDeclarativeExtensions = false,
+    category = "Themes",
+  }: OpenVsxThemeSearchOptions = {},
 ): Promise<OpenVsxThemeExtension[]> {
   const searchText = query.trim();
-  if (!searchText) return [];
   const url = new URL(OPEN_VSX_SEARCH_URL);
-  url.searchParams.set("query", searchText);
-  url.searchParams.set("category", "Themes");
+  if (searchText) url.searchParams.set("query", searchText);
+  url.searchParams.set("category", category);
   url.searchParams.set("sortBy", sortBy);
   url.searchParams.set("sortOrder", "desc");
   // Ask for a few extras because results without a supported SPDX license
@@ -275,7 +418,7 @@ export async function searchOpenVsxThemes(
       withSearchTimeout(async (requestSignal) => {
         const detailUrl = `https://open-vsx.org/api/${encodeURIComponent(namespace)}/${encodeURIComponent(name)}`;
         const detailResponse = await fetch(detailUrl, { signal: requestSignal });
-        if (!detailResponse.ok) throw new Error("Open VSX theme details are unavailable.");
+        if (!detailResponse.ok) throw new Error("Open VSX extension details are unavailable.");
         const detailBytes = await readCappedResponse(
           detailResponse,
           MAX_DETAIL_BYTES,
@@ -303,12 +446,27 @@ export async function searchOpenVsxThemes(
             new TextDecoder().decode(manifestBytes),
             "Extension manifest",
           );
-          return themeContributions(manifest).length > 0 &&
+          const supportsColorThemes = themeContributions(manifest).length > 0;
+          const supportsFileIconThemes = iconThemeContributions(manifest).length > 0;
+          const supportsLanguages = languageContributions(manifest).length > 0;
+          const supportsSnippets = snippetContributions(manifest).length > 0;
+          const hasRuntimeCode =
+            typeof manifest.main === "string" || typeof manifest.browser === "string";
+          return (supportsColorThemes ||
+            (includeFileIconThemes && supportsFileIconThemes) ||
+            (includeDeclarativeExtensions && (supportsLanguages || supportsSnippets))) &&
             manifestLicenseMatches(manifest, extension.license)
-            ? extension
+            ? {
+                ...extension,
+                supportsColorThemes,
+                supportsFileIconThemes,
+                supportsLanguages,
+                supportsSnippets,
+                hasRuntimeCode,
+              }
             : null;
         } catch {
-          throw new Error("Open VSX returned unreadable theme details.");
+          throw new Error("Open VSX returned unreadable extension details.");
         }
       }, signal),
     ),
@@ -316,9 +474,53 @@ export async function searchOpenVsxThemes(
   if (signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
   const completedDetails = details.filter((result) => result.status === "fulfilled");
   if (identities.length > 0 && completedDetails.length === 0) {
-    throw new Error("Open VSX theme details are unavailable right now.");
+    throw new Error("Open VSX extension details are unavailable right now.");
   }
   return completedDetails.flatMap((result) => (result.value ? [result.value] : [])).slice(0, 8);
+}
+
+export async function searchOpenVsxCompatibleExtensions(
+  query: string,
+  options: Pick<OpenVsxThemeSearchOptions, "signal" | "sortBy"> = {},
+): Promise<OpenVsxThemeExtension[]> {
+  const categories = ["Themes", "Programming Languages", "Snippets"] as const;
+  const settled = await Promise.allSettled(
+    categories.map((category) =>
+      searchOpenVsxThemes(query, {
+        ...options,
+        category,
+        includeFileIconThemes: true,
+        includeDeclarativeExtensions: true,
+      }),
+    ),
+  );
+  options.signal?.throwIfAborted();
+  const successful = settled.filter((result) => result.status === "fulfilled");
+  if (successful.length === 0)
+    throw new Error("Open VSX extension discovery is unavailable right now.");
+  const byId = new Map<string, OpenVsxThemeExtension>();
+  for (const result of successful) {
+    for (const extension of result.value) {
+      const current = byId.get(extension.id);
+      byId.set(
+        extension.id,
+        current
+          ? {
+              ...current,
+              supportsColorThemes: current.supportsColorThemes || extension.supportsColorThemes,
+              supportsFileIconThemes:
+                current.supportsFileIconThemes || extension.supportsFileIconThemes,
+              supportsLanguages: current.supportsLanguages || extension.supportsLanguages,
+              supportsSnippets: current.supportsSnippets || extension.supportsSnippets,
+              hasRuntimeCode: current.hasRuntimeCode || extension.hasRuntimeCode,
+            }
+          : extension,
+      );
+    }
+  }
+  return [...byId.values()]
+    .toSorted((left, right) => right.downloadCount - left.downloadCount)
+    .slice(0, 18);
 }
 
 function parseJsoncObject(source: string, description: string): Record<string, unknown> {
@@ -469,6 +671,7 @@ async function readZipText(
   path: string,
   description: string,
   signal?: AbortSignal,
+  maxBytes = MAX_THEME_BYTES,
 ): Promise<string> {
   signal?.throwIfAborted();
   const file = zip.file(path) as InspectableZipObject | null;
@@ -476,7 +679,7 @@ async function readZipText(
   if (typeof file._data?.uncompressedSize !== "number" || !file.internalStream) {
     throw new Error(`${description} has unreadable size metadata.`);
   }
-  if (file._data.uncompressedSize > MAX_THEME_BYTES) {
+  if (file._data.uncompressedSize > maxBytes) {
     throw new Error(`${description} is too large.`);
   }
 
@@ -498,7 +701,7 @@ async function readZipText(
       .on("data", (chunk) => {
         if (settled) return;
         byteLength += chunk.byteLength;
-        if (byteLength > MAX_THEME_BYTES) {
+        if (byteLength > maxBytes) {
           settled = true;
           stream.pause();
           cleanup();
@@ -613,18 +816,90 @@ async function readCappedResponse(
 
 async function fetchPackage(url: string, signal?: AbortSignal): Promise<Uint8Array> {
   const response = await fetch(url, signal ? { signal } : {});
-  if (!response.ok) throw new Error("That Open VSX theme could not be downloaded.");
+  if (!response.ok) throw new Error("That Open VSX extension could not be downloaded.");
   return readCappedResponse(
     response,
     MAX_VSIX_BYTES,
-    "That theme extension is too large to import safely.",
+    "That extension is too large to import safely.",
   );
 }
 
-export async function importOpenVsxThemeExtension(
+async function readDeclarativeContributions(
+  zip: JSZip,
+  manifest: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<{
+  languages: VsCodeLanguageContribution[];
+  snippets: VsCodeSnippetContribution[];
+}> {
+  const languages = languageContributions(manifest)
+    .slice(0, MAX_LANGUAGES_PER_EXTENSION)
+    .flatMap((candidate): VsCodeLanguageContribution[] => {
+      if (typeof candidate.id !== "string" || !/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(candidate.id))
+        return [];
+      const aliases = Array.isArray(candidate.aliases)
+        ? candidate.aliases
+            .filter((item): item is string => typeof item === "string" && item.length <= 80)
+            .slice(0, 12)
+        : [];
+      const extensions = Array.isArray(candidate.extensions)
+        ? candidate.extensions
+            .filter(
+              (item): item is string =>
+                typeof item === "string" && /^\.[a-z0-9._+-]{1,24}$/i.test(item),
+            )
+            .slice(0, 40)
+        : [];
+      return [{ id: candidate.id, aliases, extensions }];
+    });
+
+  const snippets: VsCodeSnippetContribution[] = [];
+  for (const contribution of snippetContributions(manifest).slice(
+    0,
+    MAX_SNIPPET_FILES_PER_EXTENSION,
+  )) {
+    signal?.throwIfAborted();
+    if (typeof contribution.language !== "string" || typeof contribution.path !== "string")
+      continue;
+    const language = contribution.language;
+    if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(language)) continue;
+    const path = normalizePackagePath(contribution.path);
+    const value = parseJsoncObject(
+      await readZipText(zip, path, "Snippet file", signal),
+      "Snippet file",
+    );
+    for (const [label, rawSnippet] of Object.entries(value)) {
+      if (snippets.length >= MAX_SNIPPETS_PER_EXTENSION || !isRecord(rawSnippet)) break;
+      const rawPrefixes = Array.isArray(rawSnippet.prefix)
+        ? rawSnippet.prefix
+        : [rawSnippet.prefix];
+      const prefixes = rawPrefixes
+        .filter(
+          (item): item is string =>
+            typeof item === "string" && item.length > 0 && item.length <= 120,
+        )
+        .slice(0, 12);
+      const body = Array.isArray(rawSnippet.body)
+        ? rawSnippet.body.filter((line): line is string => typeof line === "string").join("\n")
+        : typeof rawSnippet.body === "string"
+          ? rawSnippet.body
+          : "";
+      if (prefixes.length === 0 || body.length === 0 || body.length > 16_384) continue;
+      const description =
+        typeof rawSnippet.description === "string" ? rawSnippet.description.slice(0, 500) : "";
+      for (const prefix of prefixes) {
+        snippets.push({ language, label: label.slice(0, 160), prefix, body, description });
+        if (snippets.length >= MAX_SNIPPETS_PER_EXTENSION) break;
+      }
+    }
+  }
+  return { languages, snippets };
+}
+
+export async function importOpenVsxAppearanceExtension(
   extension: OpenVsxThemeExtension,
   signal?: AbortSignal,
-): Promise<ReadonlyArray<ThemeDefinition>> {
+): Promise<OpenVsxAppearanceImport> {
   const manifestResponse = await fetch(extension.manifestUrl, signal ? { signal } : {});
   if (!manifestResponse.ok) throw new Error("That Open VSX extension has no readable manifest.");
   const manifestBytes = await readCappedResponse(
@@ -634,8 +909,16 @@ export async function importOpenVsxThemeExtension(
   );
   const manifest = parseJsoncObject(new TextDecoder().decode(manifestBytes), "Extension manifest");
   const advertisedContributions = themeContributions(manifest);
-  if (advertisedContributions.length === 0) {
-    throw new Error("That extension does not contain color themes.");
+  const advertisedIconContributions = iconThemeContributions(manifest);
+  const advertisedLanguages = languageContributions(manifest);
+  const advertisedSnippets = snippetContributions(manifest);
+  if (
+    advertisedContributions.length === 0 &&
+    advertisedIconContributions.length === 0 &&
+    advertisedLanguages.length === 0 &&
+    advertisedSnippets.length === 0
+  ) {
+    throw new Error("That extension does not contain features Modesto can use yet.");
   }
   if (advertisedContributions.length > MAX_THEMES_PER_EXTENSION) {
     throw new Error("That extension contains too many color themes to import safely.");
@@ -644,7 +927,7 @@ export async function importOpenVsxThemeExtension(
   const packageBytes = await fetchPackage(extension.vsixUrl, signal);
   signal?.throwIfAborted();
   const checksumResponse = await fetch(extension.sha256Url, signal ? { signal } : {});
-  if (!checksumResponse.ok) throw new Error("That Open VSX theme has no readable checksum.");
+  if (!checksumResponse.ok) throw new Error("That Open VSX extension has no readable checksum.");
   const expectedChecksum = new TextDecoder()
     .decode(
       await readCappedResponse(
@@ -656,14 +939,14 @@ export async function importOpenVsxThemeExtension(
     .trim()
     .split(/\s+/)[0];
   if (!expectedChecksum || !/^[a-f\d]{64}$/i.test(expectedChecksum)) {
-    throw new Error("That Open VSX theme has an invalid checksum.");
+    throw new Error("That Open VSX extension has an invalid checksum.");
   }
   signal?.throwIfAborted();
   const actualChecksum = [...sha256(packageBytes)]
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
   if (actualChecksum.toLowerCase() !== expectedChecksum.toLowerCase()) {
-    throw new Error("That Open VSX theme failed its integrity check.");
+    throw new Error("That Open VSX extension failed its integrity check.");
   }
   signal?.throwIfAborted();
   let zip: JSZip;
@@ -696,10 +979,24 @@ export async function importOpenVsxThemeExtension(
     throw new Error("That extension package does not match its advertised license.");
   }
   const contributions = themeContributions(packagedManifest);
-  if (contributions.length === 0) throw new Error("That extension does not contain color themes.");
+  const iconContributions = iconThemeContributions(packagedManifest);
+  const declarative = await readDeclarativeContributions(zip, packagedManifest, signal);
+  if (
+    contributions.length === 0 &&
+    iconContributions.length === 0 &&
+    declarative.languages.length === 0 &&
+    declarative.snippets.length === 0
+  ) {
+    throw new Error("That extension does not contain features Modesto can use yet.");
+  }
   if (contributions.length > MAX_THEMES_PER_EXTENSION) {
     throw new Error("That extension contains too many color themes to import safely.");
   }
+
+  const bundledIconTheme = iconContributions[0];
+  const fileIconThemeInstalled = bundledIconTheme
+    ? await importBundledIconTheme(zip, extension, bundledIconTheme, signal)
+    : false;
 
   const parsed: Array<{ theme: ThemeDefinition; sourceName: string; sourcePath: string }> = [];
   const failures: string[] = [];
@@ -745,8 +1042,32 @@ export async function importOpenVsxThemeExtension(
   if (failures.length > 0) {
     throw new Error("One or more color themes in that extension could not be imported safely.");
   }
-  if (parsed.length === 0) {
+  if (parsed.length === 0 && contributions.length > 0) {
     throw new Error("That extension has no compatible color themes.");
+  }
+  if (parsed.length === 0) {
+    if (
+      !fileIconThemeInstalled &&
+      declarative.languages.length === 0 &&
+      declarative.snippets.length === 0
+    ) {
+      throw new Error("That extension has no compatible themes, icons, languages, or snippets.");
+    }
+    if (declarative.languages.length > 0 || declarative.snippets.length > 0) {
+      installVsCodeDeclarativeExtension({
+        id: extension.id,
+        name: extension.name,
+        version: extension.version,
+        languages: declarative.languages,
+        snippets: declarative.snippets,
+      });
+    }
+    return {
+      themes: [],
+      fileIconThemeInstalled,
+      languageCount: declarative.languages.length,
+      snippetCount: declarative.snippets.length,
+    };
   }
   const extensionId = extension.id.toLowerCase();
   const sourcePathCounts = new Map<string, number>();
@@ -773,5 +1094,30 @@ export async function importOpenVsxThemeExtension(
     id: extension.collectionId,
     label: extension.name.slice(0, 48),
   };
-  return themes.map((theme) => ({ ...theme, collection }));
+  if (declarative.languages.length > 0 || declarative.snippets.length > 0) {
+    installVsCodeDeclarativeExtension({
+      id: extension.id,
+      name: extension.name,
+      version: extension.version,
+      languages: declarative.languages,
+      snippets: declarative.snippets,
+    });
+  }
+  return {
+    themes: themes.map((theme) => ({ ...theme, collection })),
+    fileIconThemeInstalled,
+    languageCount: declarative.languages.length,
+    snippetCount: declarative.snippets.length,
+  };
+}
+
+export async function importOpenVsxThemeExtension(
+  extension: OpenVsxThemeExtension,
+  signal?: AbortSignal,
+): Promise<ReadonlyArray<ThemeDefinition>> {
+  const imported = await importOpenVsxAppearanceExtension(extension, signal);
+  if (imported.themes.length === 0) {
+    throw new Error("That extension does not contain color themes.");
+  }
+  return imported.themes;
 }

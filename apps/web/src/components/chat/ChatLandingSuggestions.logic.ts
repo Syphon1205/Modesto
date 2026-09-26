@@ -157,6 +157,31 @@ export const CHAT_LANDING_SUGGESTION_CATEGORIES: readonly LandingSuggestionCateg
   },
 ];
 
+/** Project ideas shown by the GitHub Copilot-style New surface. */
+export const GITHUB_LANDING_SUGGESTION_CATEGORIES: readonly LandingSuggestionCategory[] = [
+  {
+    id: "website",
+    label: "Website",
+    cardPrompt: "Build a personal landing page with dark mode.",
+    cardDescriptions: ["Build a personal landing page with dark mode."],
+    prompts: ["Build a personal landing page with dark mode."],
+  },
+  {
+    id: "game",
+    label: "Game",
+    cardPrompt: "Create a space exploration quiz with animated feedback.",
+    cardDescriptions: ["Create a space exploration quiz with animated feedback."],
+    prompts: ["Create a space exploration quiz with animated feedback."],
+  },
+  {
+    id: "app",
+    label: "App",
+    cardPrompt: "Build a weather app that shows live forecasts.",
+    cardDescriptions: ["Build a weather app that shows live forecasts."],
+    prompts: ["Build a weather app that shows live forecasts."],
+  },
+];
+
 /** How often empty-landing card subtitles rotate (ms). */
 export const LANDING_CATEGORY_ROTATION_MS = 5_500;
 

@@ -1,6 +1,7 @@
 import {
   createFileTreeIconResolver,
   getBuiltInSpriteSheet,
+  type FileTreeIconConfig,
   type FileTreeIcons,
 } from "@pierre/trees";
 
@@ -10,6 +11,13 @@ export interface PierreIconResolution {
 }
 
 const PIERRE_ICON_SPRITE_ID = "modesto-pierre-file-icon-sprite";
+const IMPORTED_ICON_THEME_STORAGE_KEY = "modesto:file-icon-theme:v1";
+const IMPORTED_ICON_THEME_METADATA_KEY = "modesto:file-icon-theme:active:v1";
+const FILE_ICON_PACK_PREFERENCE_KEY = "modesto:file-icon-pack:v1";
+const ICON_THEME_DATABASE_NAME = "modesto-appearance";
+const ICON_THEME_DATABASE_VERSION = 1;
+const ICON_THEME_STORE_NAME = "file-icon-themes";
+const ACTIVE_ICON_THEME_KEY = "active";
 
 const T3_FILE_ICON_SPRITE = `
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">
@@ -37,7 +45,7 @@ const T3_FILE_ICON_SPRITE = `
   </symbol>
 </svg>`;
 
-export const T3_PIERRE_ICONS = {
+const BASE_PIERRE_ICONS = {
   set: "complete",
   colored: true,
   spriteSheet: T3_FILE_ICON_SPRITE,
@@ -52,7 +60,395 @@ export const T3_PIERRE_ICONS = {
   },
 } satisfies FileTreeIcons;
 
-const completeIconResolver = createFileTreeIconResolver(T3_PIERRE_ICONS);
+export type ImportedFileIconTheme = Readonly<{
+  id: string;
+  label: string;
+  spriteSheet: string;
+  byFileName: Record<string, string>;
+  byFileExtension: Record<string, string>;
+  byFolderName?: Record<string, string>;
+  folderIcon?: string;
+}>;
+
+export type BuiltInFileIconPackId = "modesto" | "modesto-mono" | "standard" | "minimal";
+export type FileIconPackOption = Readonly<{
+  id: string;
+  label: string;
+  description: string;
+  custom: boolean;
+}>;
+
+export const BUILT_IN_FILE_ICON_PACKS: ReadonlyArray<FileIconPackOption> = [
+  {
+    id: "modesto",
+    label: "Modesto Color",
+    description: "Detailed, colorful icons for common project files.",
+    custom: false,
+  },
+  {
+    id: "modesto-mono",
+    label: "Modesto Mono",
+    description: "The same file shapes in a quieter single-color style.",
+    custom: false,
+  },
+  {
+    id: "standard",
+    label: "Classic",
+    description: "A compact set with familiar code-file shapes.",
+    custom: false,
+  },
+  {
+    id: "minimal",
+    label: "Minimal",
+    description: "Simple icons with the least visual noise.",
+    custom: false,
+  },
+];
+
+function isBuiltInFileIconPackId(value: string): value is BuiltInFileIconPackId {
+  return BUILT_IN_FILE_ICON_PACKS.some((pack) => pack.id === value);
+}
+
+function readFileIconPackPreference(): string {
+  if (typeof window === "undefined") return "modesto";
+  try {
+    return window.localStorage.getItem(FILE_ICON_PACK_PREFERENCE_KEY) || "modesto";
+  } catch {
+    return "modesto";
+  }
+}
+
+function readImportedFileIconTheme(): ImportedFileIconTheme | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value: unknown = JSON.parse(
+      window.localStorage.getItem(IMPORTED_ICON_THEME_STORAGE_KEY) ?? "null",
+    );
+    if (!value || typeof value !== "object") return null;
+    const theme = value as Partial<ImportedFileIconTheme>;
+    if (
+      typeof theme.id !== "string" ||
+      typeof theme.label !== "string" ||
+      typeof theme.spriteSheet !== "string"
+    )
+      return null;
+    if (
+      !theme.byFileName ||
+      typeof theme.byFileName !== "object" ||
+      !theme.byFileExtension ||
+      typeof theme.byFileExtension !== "object"
+    )
+      return null;
+    return theme as ImportedFileIconTheme;
+  } catch {
+    return null;
+  }
+}
+
+let importedFileIconTheme = readImportedFileIconTheme();
+let activeFileIconPackId = readFileIconPackPreference();
+let iconThemeActivationVersion = 0;
+
+function isImportedFileIconTheme(value: unknown): value is ImportedFileIconTheme {
+  if (!value || typeof value !== "object") return false;
+  const theme = value as Partial<ImportedFileIconTheme>;
+  return (
+    typeof theme.id === "string" &&
+    typeof theme.label === "string" &&
+    typeof theme.spriteSheet === "string" &&
+    Boolean(theme.byFileName) &&
+    typeof theme.byFileName === "object" &&
+    Boolean(theme.byFileExtension) &&
+    typeof theme.byFileExtension === "object"
+  );
+}
+
+function openIconThemeDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB is unavailable."));
+      return;
+    }
+    const request = indexedDB.open(ICON_THEME_DATABASE_NAME, ICON_THEME_DATABASE_VERSION);
+    request.addEventListener("upgradeneeded", () => {
+      if (!request.result.objectStoreNames.contains(ICON_THEME_STORE_NAME)) {
+        request.result.createObjectStore(ICON_THEME_STORE_NAME);
+      }
+    });
+    request.addEventListener("error", () =>
+      reject(request.error ?? new Error("Could not open icon theme storage.")),
+    );
+    request.addEventListener("success", () => resolve(request.result));
+  });
+}
+
+async function readIndexedIconTheme(): Promise<ImportedFileIconTheme | null> {
+  const database = await openIconThemeDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = database
+        .transaction(ICON_THEME_STORE_NAME, "readonly")
+        .objectStore(ICON_THEME_STORE_NAME)
+        .get(ACTIVE_ICON_THEME_KEY);
+      request.addEventListener("error", () =>
+        reject(request.error ?? new Error("Could not read the icon theme.")),
+      );
+      request.addEventListener("success", () =>
+        resolve(isImportedFileIconTheme(request.result) ? request.result : null),
+      );
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function writeIndexedIconTheme(theme: ImportedFileIconTheme): Promise<void> {
+  const database = await openIconThemeDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(ICON_THEME_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(ICON_THEME_STORE_NAME);
+      store.put(theme, `theme:${theme.id}`);
+      store.put(theme, ACTIVE_ICON_THEME_KEY);
+      transaction.addEventListener("abort", () =>
+        reject(transaction.error ?? new Error("Could not save the icon theme.")),
+      );
+      transaction.addEventListener("error", () =>
+        reject(transaction.error ?? new Error("Could not save the icon theme.")),
+      );
+      transaction.addEventListener("complete", () => resolve());
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function readIndexedIconThemeById(id: string): Promise<ImportedFileIconTheme | null> {
+  const database = await openIconThemeDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = database
+        .transaction(ICON_THEME_STORE_NAME, "readonly")
+        .objectStore(ICON_THEME_STORE_NAME)
+        .get(`theme:${id}`);
+      request.addEventListener("error", () =>
+        reject(request.error ?? new Error("Could not read the icon pack.")),
+      );
+      request.addEventListener("success", () =>
+        resolve(isImportedFileIconTheme(request.result) ? request.result : null),
+      );
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function listIndexedIconThemes(): Promise<ImportedFileIconTheme[]> {
+  const database = await openIconThemeDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const themes: ImportedFileIconTheme[] = [];
+      const request = database
+        .transaction(ICON_THEME_STORE_NAME, "readonly")
+        .objectStore(ICON_THEME_STORE_NAME)
+        .openCursor();
+      request.addEventListener("error", () =>
+        reject(request.error ?? new Error("Could not list icon packs.")),
+      );
+      request.addEventListener("success", () => {
+        const cursor = request.result;
+        if (!cursor) {
+          resolve([...new Map(themes.map((theme) => [theme.id, theme])).values()]);
+          return;
+        }
+        if (isImportedFileIconTheme(cursor.value)) themes.push(cursor.value);
+        cursor.continue();
+      });
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function deleteIndexedIconTheme(id: string): Promise<void> {
+  const database = await openIconThemeDatabase();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(ICON_THEME_STORE_NAME, "readwrite");
+      const store = transaction.objectStore(ICON_THEME_STORE_NAME);
+      store.delete(`theme:${id}`);
+      if (importedFileIconTheme?.id === id) store.delete(ACTIVE_ICON_THEME_KEY);
+      transaction.addEventListener("abort", () =>
+        reject(transaction.error ?? new Error("Could not remove the icon pack.")),
+      );
+      transaction.addEventListener("error", () =>
+        reject(transaction.error ?? new Error("Could not remove the icon pack.")),
+      );
+      transaction.addEventListener("complete", () => resolve());
+    });
+  } finally {
+    database.close();
+  }
+}
+
+function activePierreIcons(): FileTreeIconConfig {
+  if (isBuiltInFileIconPackId(activeFileIconPackId)) {
+    if (activeFileIconPackId === "modesto-mono") return { ...BASE_PIERRE_ICONS, colored: false };
+    if (activeFileIconPackId === "standard") return { set: "standard", colored: false };
+    if (activeFileIconPackId === "minimal") return { set: "minimal", colored: false };
+  }
+  return importedFileIconTheme
+    ? {
+        ...BASE_PIERRE_ICONS,
+        spriteSheet: mergeSvgSpriteSheets(
+          BASE_PIERRE_ICONS.spriteSheet,
+          importedFileIconTheme.spriteSheet,
+        ),
+        byFileName: { ...BASE_PIERRE_ICONS.byFileName, ...importedFileIconTheme.byFileName },
+        byFileExtension: importedFileIconTheme.byFileExtension,
+      }
+    : BASE_PIERRE_ICONS;
+}
+
+function mergeSvgSpriteSheets(...sheets: string[]): string {
+  const content = sheets
+    .map((sheet) => sheet.replace(/^\s*<svg\b[^>]*>/i, "").replace(/<\/svg>\s*$/i, ""))
+    .join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true">${content}</svg>`;
+}
+
+export let T3_PIERRE_ICONS = activePierreIcons();
+let completeIconResolver = createFileTreeIconResolver(T3_PIERRE_ICONS);
+
+function activateImportedFileIconTheme(theme: ImportedFileIconTheme): void {
+  importedFileIconTheme = theme;
+  activeFileIconPackId = theme.id;
+  T3_PIERRE_ICONS = activePierreIcons();
+  completeIconResolver = createFileTreeIconResolver(T3_PIERRE_ICONS);
+  document.getElementById(PIERRE_ICON_SPRITE_ID)?.remove();
+  ensurePierreIconSprite();
+  window.dispatchEvent(new CustomEvent("modesto:file-icon-theme-changed"));
+}
+
+/** Install and activate a sanitized file-icon contribution from a theme extension. */
+export async function installImportedFileIconTheme(theme: ImportedFileIconTheme): Promise<void> {
+  iconThemeActivationVersion += 1;
+  let storedInIndexedDb = false;
+  try {
+    await writeIndexedIconTheme(theme);
+    storedInIndexedDb = true;
+  } catch (indexedDbCause) {
+    try {
+      // Browser test contexts and restrictive embedded views may not expose
+      // IndexedDB. Keep small themes working there through the legacy store.
+      window.localStorage.setItem(IMPORTED_ICON_THEME_STORAGE_KEY, JSON.stringify(theme));
+    } catch (localStorageCause) {
+      throw new Error("This icon theme could not be saved in browser storage.", {
+        cause: localStorageCause ?? indexedDbCause,
+      });
+    }
+  }
+  if (storedInIndexedDb) {
+    try {
+      window.localStorage.removeItem(IMPORTED_ICON_THEME_STORAGE_KEY);
+    } catch {
+      // The IndexedDB copy has already been committed.
+    }
+  }
+  try {
+    window.localStorage.setItem(FILE_ICON_PACK_PREFERENCE_KEY, theme.id);
+    window.localStorage.setItem(
+      IMPORTED_ICON_THEME_METADATA_KEY,
+      JSON.stringify({ id: theme.id, label: theme.label }),
+    );
+  } catch {
+    // IndexedDB remains the source of truth when localStorage is unavailable.
+  }
+  activateImportedFileIconTheme(theme);
+}
+
+export function getActiveFileIconPackId(): string {
+  return activeFileIconPackId;
+}
+
+export async function listFileIconPacks(): Promise<FileIconPackOption[]> {
+  let imported: ImportedFileIconTheme[] = [];
+  try {
+    imported = await listIndexedIconThemes();
+  } catch {
+    if (importedFileIconTheme) imported = [importedFileIconTheme];
+  }
+  return [
+    ...BUILT_IN_FILE_ICON_PACKS,
+    ...imported.map((theme) => ({
+      id: theme.id,
+      label: theme.label,
+      description: "Installed from a VS Code extension.",
+      custom: true,
+    })),
+  ];
+}
+
+function refreshActiveFileIcons(): void {
+  T3_PIERRE_ICONS = activePierreIcons();
+  completeIconResolver = createFileTreeIconResolver(T3_PIERRE_ICONS);
+  document.getElementById(PIERRE_ICON_SPRITE_ID)?.remove();
+  ensurePierreIconSprite();
+  window.dispatchEvent(new CustomEvent("modesto:file-icon-theme-changed"));
+}
+
+export async function setActiveFileIconPack(id: string): Promise<void> {
+  if (isBuiltInFileIconPackId(id)) {
+    iconThemeActivationVersion += 1;
+    activeFileIconPackId = id;
+    importedFileIconTheme = null;
+    window.localStorage.setItem(FILE_ICON_PACK_PREFERENCE_KEY, id);
+    window.localStorage.removeItem(IMPORTED_ICON_THEME_METADATA_KEY);
+    refreshActiveFileIcons();
+    return;
+  }
+  const theme =
+    importedFileIconTheme?.id === id ? importedFileIconTheme : await readIndexedIconThemeById(id);
+  if (!theme) throw new Error("That icon pack is no longer installed.");
+  try {
+    await writeIndexedIconTheme(theme);
+  } catch {
+    // A localStorage-backed theme can still be switched in restrictive views
+    // where IndexedDB is unavailable.
+  }
+  window.localStorage.setItem(FILE_ICON_PACK_PREFERENCE_KEY, id);
+  window.localStorage.setItem(
+    IMPORTED_ICON_THEME_METADATA_KEY,
+    JSON.stringify({ id: theme.id, label: theme.label }),
+  );
+  activateImportedFileIconTheme(theme);
+}
+
+export async function removeFileIconPack(id: string): Promise<void> {
+  if (isBuiltInFileIconPackId(id)) return;
+  await deleteIndexedIconTheme(id);
+  if (activeFileIconPackId === id) await setActiveFileIconPack("modesto");
+}
+
+export function getImportedFileIconThemeLabel(): string | null {
+  if (importedFileIconTheme?.label) return importedFileIconTheme.label;
+  try {
+    const metadata: unknown = JSON.parse(
+      window.localStorage.getItem(IMPORTED_ICON_THEME_METADATA_KEY) ?? "null",
+    );
+    return metadata &&
+      typeof metadata === "object" &&
+      typeof (metadata as { label?: unknown }).label === "string"
+      ? (metadata as { label: string }).label
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getActivePierreIcons(): FileTreeIconConfig {
+  return T3_PIERRE_ICONS;
+}
 
 const LANGUAGE_EXTENSION_ALIASES: Record<string, string> = {
   bash: "sh",
@@ -94,7 +490,12 @@ export function resolvePierreIconForEntry(
   pathValue: string,
   kind: "file" | "directory",
 ): PierreIconResolution | null {
-  if (kind === "directory") return null;
+  if (kind === "directory") {
+    if (!importedFileIconTheme || isBuiltInFileIconPackId(activeFileIconPackId)) return null;
+    const name = basenameOfPath(pathValue.replace(/\/$/, "")).toLowerCase();
+    const iconName = importedFileIconTheme.byFolderName?.[name] ?? importedFileIconTheme.folderIcon;
+    return iconName ? { name: iconName, token: "custom" } : null;
+  }
   return completeIconResolver.resolveIcon("file-tree-icon-file", pathValue);
 }
 
@@ -112,6 +513,25 @@ export function ensurePierreIconSprite(): void {
   container.style.height = "0";
   container.style.overflow = "hidden";
   container.style.pointerEvents = "none";
-  container.innerHTML = `${getBuiltInSpriteSheet("complete")}${T3_FILE_ICON_SPRITE}`;
+  const customSprite =
+    typeof T3_PIERRE_ICONS === "string" ? "" : (T3_PIERRE_ICONS.spriteSheet ?? "");
+  container.innerHTML = `${getBuiltInSpriteSheet("complete")}${customSprite}`;
   document.body.prepend(container);
+}
+
+if (typeof window !== "undefined") {
+  const hydrationVersion = iconThemeActivationVersion;
+  void readIndexedIconTheme()
+    .then((theme) => {
+      if (
+        theme &&
+        iconThemeActivationVersion === hydrationVersion &&
+        activeFileIconPackId === theme.id
+      ) {
+        activateImportedFileIconTheme(theme);
+      }
+    })
+    .catch(() => {
+      // The synchronous localStorage theme above remains the fallback.
+    });
 }

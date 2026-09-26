@@ -16,7 +16,12 @@
 //   2. Custom models (the user's own entries) are never announced. The user
 //      typed them; they are not a release.
 
-import type { ProviderDriverKind, ServerProvider, ServerProviderModel } from "@modesto/contracts";
+import {
+  DEFAULT_MODEL_BY_PROVIDER,
+  type ProviderDriverKind,
+  type ServerProvider,
+  type ServerProviderModel,
+} from "@modesto/contracts";
 
 /** Models already recorded for a provider, keyed by the provider's driver kind. */
 export type SeenProviderModels = Readonly<Record<string, ReadonlyArray<string>>>;
@@ -26,6 +31,61 @@ export interface ProviderModelRelease {
   /** Provider display name, e.g. "Cursor". */
   readonly providerName: string;
   readonly model: ServerProviderModel;
+}
+
+const NON_CRUCIAL_PATTERNS: ReadonlyArray<RegExp> = [
+  /\bembed/i,
+  /\bembedding/i,
+  /\bwhisper/i,
+  /\btts\b/i,
+  /\bimagen\b/i,
+  /\bdall-e/i,
+  /\bmoderation\b/i,
+  /\bbison\b/i,
+  /\bgecko\b/i,
+  /\baudio\b/i,
+  /\btranscription\b/i,
+  /\bre-?rank/i,
+];
+
+const CRUCIAL_PATTERNS: ReadonlyArray<RegExp> = [
+  // OpenAI / Codex flagships
+  /\bgpt-[4-9]/i,
+  /\bo[1-9](?:-mini|-preview|-plus|-max|\b)/i,
+  /\bcodex\b/i,
+  // Anthropic / Claude flagships
+  /\bclaude-(?:3[.-][57]|[4-9])/i,
+  /\b(?:sonnet|opus|fable)\b/i,
+  // Google Gemini flagships
+  /\bgemini-(?:2[.-][5-9]|[3-9]|pro|ultra|flash-thinking)/i,
+  /\bauto-gemini\b/i,
+  // xAI Grok flagships
+  /\bgrok-[3-9]/i,
+  /\bgrok-build\b/i,
+  // DeepSeek flagships
+  /\bdeepseek-(?:v[3-9]|r[1-9])/i,
+  // Meta Llama flagships
+  /\bllama-[3-9]/i,
+  // Cursor flagships
+  /\bcomposer-[1-9]/i,
+  // Qwen & Mistral flagships
+  /\bqwen-(?:2[.-]5|[3-9])/i,
+  /\bmistral-(?:large|[2-9])/i,
+];
+
+/**
+ * Distinguishes flagship/crucial model updates from minor/utility models
+ * (e.g. embeddings, audio transcriptions, legacy utility checkpoints).
+ */
+export function isCrucialModel(model: ServerProviderModel, driver?: ProviderDriverKind): boolean {
+  if (model.isDefault === true) return true;
+  if (driver && DEFAULT_MODEL_BY_PROVIDER[driver] === model.slug) return true;
+
+  const target = `${model.slug} ${model.name} ${model.shortName ?? ""}`;
+  if (NON_CRUCIAL_PATTERNS.some((pattern) => pattern.test(target))) {
+    return false;
+  }
+  return CRUCIAL_PATTERNS.some((pattern) => pattern.test(target));
 }
 
 /** Announcable models: vendor-served, non-legacy, and named. */
@@ -58,6 +118,8 @@ export function currentProviderModelSlugs(
  * currently reporting no models (its CLI is down, or a probe failed) also
  * yields nothing, because "the list got shorter" is not evidence about what is
  * new.
+ *
+ * Releases are ordered so crucial/flagship models appear first.
  */
 export function detectNewProviderModels(input: {
   readonly providers: ReadonlyArray<ServerProvider>;
@@ -88,6 +150,16 @@ export function detectNewProviderModels(input: {
     }
   }
 
+  // Prioritize crucial/flagship models so lead announcements and toast icons
+  // represent the most significant update in the batch.
+  releases.sort((a, b) => {
+    const aCrucial = isCrucialModel(a.model, a.driver);
+    const bCrucial = isCrucialModel(b.model, b.driver);
+    if (aCrucial && !bCrucial) return -1;
+    if (!aCrucial && bCrucial) return 1;
+    return 0;
+  });
+
   return releases;
 }
 
@@ -105,33 +177,78 @@ export function providerModelReleaseKey(
 /**
  * Headline for a batch of releases.
  *
- * One model is named outright - "Grok 4.6 is out" is the whole point of this
- * notification, and a generic "1 new model" would bury it.
+ * If the batch contains a crucial/flagship update, that model is named outright
+ * and the rest are counted (e.g. "Grok 4.6 is out", "GPT-5 and 14 more models are out").
+ * If the batch contains only non-crucial/utility models, it is summarized cleanly
+ * (e.g. "15 new models are available") rather than picking an arbitrary minor model.
  */
 export function describeProviderModelReleases(
   releases: ReadonlyArray<ProviderModelRelease>,
 ): string | null {
-  const first = releases[0];
-  if (!first) return null;
+  if (releases.length === 0) return null;
+
+  const crucial = releases.filter((r) => isCrucialModel(r.model, r.driver));
+  const lead = crucial[0] ?? releases[0];
+
   if (releases.length === 1) {
-    return `${first.model.name} is out`;
+    return `${lead.model.name} is out`;
   }
-  return `${first.model.name} and ${releases.length - 1} more model${
-    releases.length - 1 === 1 ? "" : "s"
-  } are out`;
+
+  if (crucial.length > 0) {
+    const rest = releases.length - 1;
+    return `${lead.model.name} and ${rest} more model${rest === 1 ? "" : "s"} are out`;
+  }
+
+  return `${releases.length} new models are available`;
 }
 
-/** Sub-line naming where the models showed up. */
+/**
+ * Sub-line naming where the models showed up.
+ *
+ * When there are tons of models (>2), we summarize to avoid overwhelming the notification:
+ * - If non-crucial: "Now available in Cursor."
+ * - If crucial: highlights up to 2 crucial models and counts the rest:
+ *   "Now available in Cursor: GPT-5 and 14 other models."
+ */
 export function describeProviderModelReleaseSource(
   releases: ReadonlyArray<ProviderModelRelease>,
 ): string | null {
-  const first = releases[0];
-  if (!first) return null;
+  if (releases.length === 0) return null;
+
   const providerNames = [...new Set(releases.map((release) => release.providerName))];
-  if (providerNames.length === 1) {
-    return releases.length === 1
-      ? `Now available in ${providerNames[0]}.`
-      : `Now available in ${providerNames[0]}: ${releases.map((r) => r.model.name).join(", ")}.`;
+
+  if (providerNames.length > 1) {
+    return `Now available in ${providerNames.slice(0, -1).join(", ")} and ${providerNames.at(-1)}.`;
   }
-  return `Now available in ${providerNames.slice(0, -1).join(", ")} and ${providerNames.at(-1)}.`;
+
+  const providerName = providerNames[0];
+
+  if (releases.length === 1) {
+    return `Now available in ${providerName}.`;
+  }
+
+  const crucial = releases.filter((r) => isCrucialModel(r.model, r.driver));
+  const nonCrucial = releases.filter((r) => !isCrucialModel(r.model, r.driver));
+  const sortedReleases = [...crucial, ...nonCrucial];
+
+  if (releases.length === 2) {
+    return `Now available in ${providerName}: ${sortedReleases[0].model.name} and ${sortedReleases[1].model.name}.`;
+  }
+
+  // When releases.length > 2 ("tons of models")
+  if (crucial.length === 0) {
+    return `Now available in ${providerName}.`;
+  }
+
+  if (crucial.length === 1) {
+    const rest = releases.length - 1;
+    return `Now available in ${providerName}: ${crucial[0].model.name} and ${rest} other model${
+      rest === 1 ? "" : "s"
+    }.`;
+  }
+
+  const rest = releases.length - 2;
+  return `Now available in ${providerName}: ${crucial[0].model.name}, ${crucial[1].model.name}, and ${rest} other model${
+    rest === 1 ? "" : "s"
+  }.`;
 }

@@ -1,6 +1,8 @@
 import { type ProviderInstanceId } from "@modesto/contracts";
-import { memo, useLayoutEffect, useRef, useState } from "react";
-import { RouterIcon, SparklesIcon, StarIcon } from "lucide-react";
+import { apiKeyProviderPresetForLabel } from "@modesto/shared/apiKeyProviders";
+import { memo } from "react";
+import { DatabaseZapIcon, StarIcon } from "lucide-react";
+import { apiProviderIcon } from "../ApiProviderIcons";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { cn } from "~/lib/utils";
@@ -10,11 +12,6 @@ import {
   type ProviderInstanceEntry,
 } from "../../providerInstances";
 
-/**
- * Build the hover tooltip for an instance button. Mirrors the old
- * kind-based copy but uses the entry's configured `displayName` so custom
- * instances get their user-authored name (e.g. "Codex Personal — Unavailable.").
- */
 function describeUnavailableInstance(entry: ProviderInstanceEntry): string {
   const label = entry.displayName;
   if (!entry.enabled || entry.status === "disabled") {
@@ -29,36 +26,31 @@ function describeUnavailableInstance(entry: ProviderInstanceEntry): string {
   return msg ? `${label} — ${kind}. ${msg}` : `${label} — ${kind}.`;
 }
 
-// `data-model-picker-provider` value for a custom-endpoint rail button.
-// Namespaced so it can never collide with a real `ProviderInstanceId` or the
-// literal `"favorites"` key the indicator-position lookup also matches
-// against.
-function customEndpointRailKey(label: string): string {
-  return `customEndpoint:${label}`;
+export interface ModelPickerCustomEndpointEntry {
+  readonly id: string;
+  readonly label: string;
 }
 
-const SELECTED_INDICATOR_CLASS =
-  "pointer-events-none absolute -right-1 top-1/2 z-10 h-5 w-0.75 -translate-y-1/2 rounded-l-full bg-primary";
-const BADGE_BASE_CLASS =
-  "pointer-events-none absolute -right-0.5 top-0.5 z-10 flex size-3.5 items-center justify-center rounded-full bg-transparent shadow-sm ";
-const NEW_BADGE_CLASS = `${BADGE_BASE_CLASS} text-update-foreground `;
-
-/** Opens toward the rail so the list stays readable (not over the model names). */
-const PICKER_TOOLTIP_SIDE = "left" as const;
-const PICKER_TOOLTIP_SIDE_OFFSET = 8;
-const PICKER_TOOLTIP_CLASS = "max-w-64 text-balance font-normal leading-snug";
-
-/**
- * One rail entry per distinct Settings > Providers > Custom endpoint whose
- * models appear anywhere in the picker's instance-keyed model lists (see
- * `ModelPickerContent.tsx`'s `customEndpointEntries`). Keyed by the
- * endpoint's own label, not a `ProviderInstanceId` - a custom endpoint isn't
- * a separate provider instance, it's a set of models routed through
- * whichever Codex instance(s) it's configured on, surfaced here "with the
- * providers" so it doesn't require already knowing to click into Codex.
- */
-export interface ModelPickerCustomEndpointEntry {
-  readonly label: string;
+function CustomEndpointIcon({ label }: { readonly label: string }) {
+  const BrandIcon = apiProviderIcon(apiKeyProviderPresetForLabel(label)?.id);
+  if (BrandIcon) {
+    return <BrandIcon aria-hidden className="size-4 shrink-0" />;
+  }
+  const normalized = label.toLocaleLowerCase();
+  const monogram = normalized.includes("vllm")
+    ? "vL"
+    : normalized.includes("ollama")
+      ? "OL"
+      : normalized.includes("lm studio")
+        ? "LM"
+        : null;
+  return monogram ? (
+    <span className="grid size-4 shrink-0 place-items-center rounded bg-foreground text-[8px] font-bold tracking-tighter text-background">
+      {monogram}
+    </span>
+  ) : (
+    <DatabaseZapIcon className="size-3.5" />
+  );
 }
 
 export const ModelPickerSidebar = memo(function ModelPickerSidebar(props: {
@@ -84,235 +76,97 @@ export const ModelPickerSidebar = memo(function ModelPickerSidebar(props: {
   newBadgeInstanceIds?: ReadonlySet<ProviderInstanceId>;
   /** Custom-endpoint rail entries, rendered after the instance buttons. */
   customEndpointEntries?: ReadonlyArray<ModelPickerCustomEndpointEntry>;
-  selectedCustomEndpointLabel?: string | null;
-  onSelectCustomEndpoint?: (label: string) => void;
+  selectedCustomEndpointId?: string | null;
+  onSelectCustomEndpoint?: (id: string) => void;
 }) {
-  const selectedCustomEndpointLabel = props.selectedCustomEndpointLabel ?? null;
-  const handleSelect = (instanceId: ProviderInstanceId | "favorites") => {
-    props.onSelectInstance(instanceId);
-  };
-  const showFavorites = props.showFavorites ?? true;
-  const [hoveredInstanceId, setHoveredInstanceId] = useState<ProviderInstanceId | null>(null);
-  const sidebarContentRef = useRef<HTMLDivElement>(null);
-  const [selectedIndicatorTop, setSelectedIndicatorTop] = useState<number | null>(null);
-  const activeRailKey = selectedCustomEndpointLabel
-    ? customEndpointRailKey(selectedCustomEndpointLabel)
-    : props.selectedInstanceId;
-  useLayoutEffect(() => {
-    const content = sidebarContentRef.current;
-    if (!content) {
-      return;
-    }
-    const selectedItem = Array.from(
-      content.querySelectorAll<HTMLElement>("[data-model-picker-provider]"),
-    ).find((item) => item.dataset.modelPickerProvider === activeRailKey);
-    if (!selectedItem) {
-      setSelectedIndicatorTop(null);
-      return;
-    }
-    setSelectedIndicatorTop(selectedItem.offsetTop + selectedItem.offsetHeight / 2 - 10);
-  }, [activeRailKey, props.customEndpointEntries, props.instanceEntries, showFavorites]);
+  const selectedEndpoint = props.selectedCustomEndpointId ?? null;
+  const providerButtonClassName = (selected: boolean) =>
+    cn(
+      "flex min-h-9 w-full min-w-0 shrink-0 items-center gap-2 rounded-lg px-2.5 text-xs font-medium transition-[background-color,color,box-shadow,opacity] duration-150 ease-[var(--ease-fluid)] motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40",
+      selected
+        ? "bg-background text-foreground shadow-sm ring-1 ring-border/50"
+        : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
+    );
 
   return (
-    <div className="w-11 shrink-0 overflow-hidden bg-muted/30" data-model-picker-sidebar="true">
-      <div className="h-full overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div ref={sidebarContentRef} className="relative flex min-h-full flex-col gap-1 p-1">
-          {selectedIndicatorTop !== null ? (
-            <div
-              data-model-picker-selected-indicator="true"
-              className={cn(
-                SELECTED_INDICATOR_CLASS,
-                "right-0 translate-y-0 transition-[top] duration-200 ease-out",
-              )}
-              style={{ top: selectedIndicatorTop }}
-            />
-          ) : null}
-          {/* Favorites section */}
-          {showFavorites ? (
-            <>
-              <div className="relative w-full" data-model-picker-provider="favorites">
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        className={cn(
-                          "relative isolate flex w-full cursor-pointer aspect-square items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:outline-none",
-                        )}
-                        onClick={() => handleSelect("favorites")}
-                        type="button"
-                        aria-label="Favorites"
-                      >
-                        <StarIcon className="size-5 fill-current shrink-0" aria-hidden />
-                      </button>
-                    }
-                  />
-                  <TooltipPopup
-                    side={PICKER_TOOLTIP_SIDE}
-                    sideOffset={PICKER_TOOLTIP_SIDE_OFFSET}
-                    align="center"
-                    className={PICKER_TOOLTIP_CLASS}
-                  >
-                    Favorites
-                  </TooltipPopup>
-                </Tooltip>
-              </div>
-              <div className="border-b border-border/70" aria-hidden="true" />
-            </>
-          ) : null}
-
-          {/* Instance buttons (one per configured instance — built-in + custom) */}
-          {props.instanceEntries.map((entry) => {
-            const isUnavailable = !isProviderInstancePickerReady(entry);
-            const isContextDisabled = props.disabledInstanceIds?.has(entry.instanceId) ?? false;
-            const isDisabled = isUnavailable || isContextDisabled;
-            const isSelected =
-              !selectedCustomEndpointLabel && props.selectedInstanceId === entry.instanceId;
-            const isHovered = hoveredInstanceId === entry.instanceId;
-            const showNewBadge = props.newBadgeInstanceIds?.has(entry.instanceId) ?? false;
-            const showInstanceBadge = shouldShowInstanceBadge(entry, props.instanceEntries);
-
-            const tooltip = isUnavailable
-              ? describeUnavailableInstance(entry)
-              : isContextDisabled
-                ? (props.getDisabledInstanceTooltip?.(entry) ?? entry.displayName)
-                : showNewBadge
-                  ? `${entry.displayName} — New`
-                  : entry.displayName;
-
-            const button = (
+    <div
+      className="flex w-[34%] min-w-24 max-w-40 shrink-0 flex-col gap-1 overflow-y-auto border-r border-border/50 bg-muted/25 p-2 overscroll-y-contain"
+      data-model-picker-sidebar="true"
+      aria-label="Providers"
+    >
+      <div className="px-2.5 pt-1 pb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        Providers
+      </div>
+      {(props.showFavorites ?? true) && (
+        <button
+          type="button"
+          className={providerButtonClassName(
+            !selectedEndpoint && props.selectedInstanceId === "favorites",
+          )}
+          aria-pressed={!selectedEndpoint && props.selectedInstanceId === "favorites"}
+          onClick={() => props.onSelectInstance("favorites")}
+        >
+          <StarIcon className="size-3" />
+          Favorites
+        </button>
+      )}
+      {props.instanceEntries.map((entry) => {
+        const unavailable = !isProviderInstancePickerReady(entry);
+        const contextDisabled = props.disabledInstanceIds?.has(entry.instanceId) ?? false;
+        const disabled = unavailable || contextDisabled;
+        const selected = !selectedEndpoint && props.selectedInstanceId === entry.instanceId;
+        const description = unavailable
+          ? describeUnavailableInstance(entry)
+          : contextDisabled
+            ? (props.getDisabledInstanceTooltip?.(entry) ?? entry.displayName)
+            : entry.displayName;
+        return (
+          <Tooltip key={entry.instanceId}>
+            <TooltipTrigger render={<span className="flex min-w-0 shrink-0" />}>
               <button
-                className={cn(
-                  "relative isolate flex w-full cursor-pointer aspect-square items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:outline-none",
-                  isDisabled && "opacity-50 cursor-not-allowed hover:bg-transparent",
-                )}
-                data-provider-accent-color={entry.accentColor}
-                onClick={() => !isDisabled && handleSelect(entry.instanceId)}
-                onMouseEnter={() => setHoveredInstanceId(entry.instanceId)}
-                onMouseLeave={() =>
-                  setHoveredInstanceId((current) => (current === entry.instanceId ? null : current))
-                }
-                onFocus={() => setHoveredInstanceId(entry.instanceId)}
-                onBlur={() =>
-                  setHoveredInstanceId((current) => (current === entry.instanceId ? null : current))
-                }
-                disabled={isDisabled}
                 type="button"
-                aria-label={
-                  isDisabled
-                    ? tooltip
-                    : showNewBadge
-                      ? `${entry.displayName}, new`
-                      : entry.displayName
-                }
+                disabled={disabled}
+                aria-pressed={selected}
+                aria-label={description}
+                className={providerButtonClassName(selected)}
+                onClick={() => props.onSelectInstance(entry.instanceId)}
               >
                 <ProviderInstanceIcon
                   driverKind={entry.driverKind}
                   displayName={entry.displayName}
                   accentColor={entry.accentColor}
-                  showBadge={showInstanceBadge}
-                  className="size-6"
-                  iconClassName="size-5"
-                  indicatorBackground={
-                    isHovered && !isDisabled
-                      ? "var(--muted)"
-                      : isSelected
-                        ? "var(--background)"
-                        : "color-mix(in oklab, var(--muted) 30%, transparent)"
-                  }
-                  {...(entry.accentColor
-                    ? { badgeClassName: "h-3 min-w-3 px-0.5 text-[7px]" }
-                    : {})}
+                  showBadge={shouldShowInstanceBadge(entry, props.instanceEntries)}
+                  className="size-3.5"
+                  iconClassName="size-3.5"
+                  indicatorBackground="var(--popover)"
                 />
-                {showNewBadge ? (
-                  <span className={NEW_BADGE_CLASS} aria-hidden>
-                    <SparklesIcon className="size-2" />
-                  </span>
-                ) : null}
+                <span className="truncate">{entry.displayName}</span>
+                {props.newBadgeInstanceIds?.has(entry.instanceId) && (
+                  <span
+                    className="size-1 rounded-full bg-update-foreground"
+                    aria-label="New models"
+                  />
+                )}
               </button>
-            );
-
-            const trigger = isDisabled ? (
-              <span className="relative block w-full">{button}</span>
-            ) : (
-              button
-            );
-
-            return (
-              <div
-                key={entry.instanceId}
-                className="relative w-full"
-                data-model-picker-provider={entry.instanceId}
-              >
-                <Tooltip>
-                  <TooltipTrigger render={trigger} />
-                  <TooltipPopup
-                    side={PICKER_TOOLTIP_SIDE}
-                    sideOffset={PICKER_TOOLTIP_SIDE_OFFSET}
-                    align="center"
-                    className={PICKER_TOOLTIP_CLASS}
-                  >
-                    {tooltip}
-                  </TooltipPopup>
-                </Tooltip>
-              </div>
-            );
-          })}
-
-          {/* Custom-endpoint buttons (Settings > Providers > Custom
-              endpoints) — one per distinct endpoint whose models showed up
-              in the picker, so a self-hosted/router endpoint is reachable
-              right alongside the real providers instead of only inside
-              whichever Codex instance happens to carry its models. */}
-          {props.customEndpointEntries && props.customEndpointEntries.length > 0 ? (
-            <>
-              <div className="border-b border-border/70" aria-hidden="true" />
-              {props.customEndpointEntries.map((entry) => {
-                const isSelected = selectedCustomEndpointLabel === entry.label;
-                const railKey = customEndpointRailKey(entry.label);
-                const button = (
-                  <button
-                    className="relative isolate flex w-full cursor-pointer aspect-square items-center justify-center rounded-md transition-colors hover:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:bg-[color-mix(in_srgb,var(--popover)_90%,var(--contrast-foreground))] focus-visible:outline-none"
-                    onClick={() => props.onSelectCustomEndpoint?.(entry.label)}
-                    type="button"
-                    aria-label={entry.label}
-                  >
-                    <span
-                      className="flex size-6 items-center justify-center rounded-full"
-                      style={{
-                        background: isSelected
-                          ? "var(--background)"
-                          : "color-mix(in oklab, var(--muted) 30%, transparent)",
-                      }}
-                    >
-                      <RouterIcon className="size-3.5 shrink-0" aria-hidden />
-                    </span>
-                  </button>
-                );
-
-                return (
-                  <div
-                    key={entry.label}
-                    className="relative w-full"
-                    data-model-picker-provider={railKey}
-                  >
-                    <Tooltip>
-                      <TooltipTrigger render={button} />
-                      <TooltipPopup
-                        side={PICKER_TOOLTIP_SIDE}
-                        sideOffset={PICKER_TOOLTIP_SIDE_OFFSET}
-                        align="center"
-                        className={PICKER_TOOLTIP_CLASS}
-                      >
-                        {entry.label}
-                      </TooltipPopup>
-                    </Tooltip>
-                  </div>
-                );
-              })}
-            </>
-          ) : null}
-        </div>
-      </div>
+            </TooltipTrigger>
+            <TooltipPopup side="top" className="max-w-64">
+              {description}
+            </TooltipPopup>
+          </Tooltip>
+        );
+      })}
+      {props.customEndpointEntries?.map((entry) => (
+        <button
+          key={entry.id}
+          type="button"
+          className={providerButtonClassName(selectedEndpoint === entry.id)}
+          aria-pressed={selectedEndpoint === entry.id}
+          onClick={() => props.onSelectCustomEndpoint?.(entry.id)}
+        >
+          <CustomEndpointIcon label={entry.label} />
+          <span className="truncate">{entry.label}</span>
+        </button>
+      ))}
     </div>
   );
 });

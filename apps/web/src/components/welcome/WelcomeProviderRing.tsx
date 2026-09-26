@@ -1,19 +1,15 @@
 // FILE: WelcomeProviderRing.tsx
-// Purpose: The agents step's centrepiece — the CLIs this machine already has,
-//          settling into a ring around the count. WebGL cards when the client
-//          can run them, the same ring in CSS when it cannot. Quiet by design:
-//          hairline ring, the app's own card colours, one accent spent on the
-//          number. It decorates a plain fact the list beside it states in full.
+// Purpose: The providers step's centerpiece — the CLIs this machine already has,
+//          settling into a ring around the count. Clean CSS layout.
 
 import type { ServerProvider } from "@modesto/contracts";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { getDriverOption } from "~/components/settings/providerDriverMeta";
 import { cn } from "~/lib/utils";
 
 import {
   summarizeWelcomeAgent,
-  welcomeProviderMarkUrl,
   welcomeRingLayout,
   type WelcomeAgentReadiness,
 } from "./welcomeSetup";
@@ -47,7 +43,6 @@ function useCountUp(target: number): number {
     const duration = Math.min(320 + target * 90, 1000);
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1);
-      // Ease-out so the last digits settle rather than sweep.
       const eased = 1 - (1 - progress) ** 3;
       setValue(Math.round(eased * target));
       if (progress < 1) frameRef.current = requestAnimationFrame(tick);
@@ -68,73 +63,13 @@ export function WelcomeProviderRing({
 }) {
   const layout = welcomeRingLayout(providers.length);
   const counted = useCountUp(installedCount);
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [live, setLive] = useState(false);
-
-  const tiles = useMemo(
-    () =>
-      providers.map((provider) => {
-        const driver = getDriverOption(provider.driver);
-        const summary = summarizeWelcomeAgent(provider);
-        return {
-          id: provider.instanceId,
-          label: provider.displayName ?? driver?.label ?? provider.instanceId,
-          detail: summary.detail,
-          markUrl: welcomeProviderMarkUrl(provider.driver),
-          muted: summary.readiness === "missing",
-        };
-      }),
-    [providers],
-  );
-
-  useEffect(() => {
-    const host = stageRef.current;
-    if (!host) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let cancelled = false;
-    let dispose: (() => void) | undefined;
-    const readyWatcher = new MutationObserver(() => {
-      if (host.dataset.ready === "true") setLive(true);
-    });
-    readyWatcher.observe(host, { attributes: true, attributeFilter: ["data-ready"] });
-
-    void import("./welcomeBrand3d")
-      .then(({ mountProviderRing }) => mountProviderRing(host, tiles))
-      .then((stage) => {
-        if (cancelled) {
-          stage?.dispose();
-          return;
-        }
-        if (!stage) return;
-        dispose = () => stage.dispose();
-      })
-      .catch(() => {
-        /* The CSS ring remains as the fallback. */
-      });
-
-    return () => {
-      cancelled = true;
-      readyWatcher.disconnect();
-      setLive(false);
-      host.dataset.ready = "";
-      dispose?.();
-    };
-  }, [tiles]);
 
   return (
     <div
       className="welcome-provider-stage relative mx-auto aspect-square w-full max-w-[560px]"
       style={{ "--orbit-radius": layout.radius } as CSSProperties}
     >
-      {/* CSS ring: the fallback, and what shows until WebGL has drawn a frame. */}
-      <div
-        aria-hidden
-        className={cn(
-          "absolute inset-0 transition-opacity duration-500 ease-out",
-          live && "opacity-0",
-        )}
-      >
+      <div aria-hidden className="absolute inset-0">
         <span className="welcome-provider-track absolute inset-[10%] rounded-full border border-border/80" />
         <span className="absolute inset-[24%] rounded-full border border-border/40" />
 
@@ -174,14 +109,6 @@ export function WelcomeProviderRing({
           );
         })}
       </div>
-
-      <div
-        ref={stageRef}
-        className={cn(
-          "absolute inset-0 transition-opacity duration-700 ease-out",
-          live ? "opacity-100" : "pointer-events-none opacity-0",
-        )}
-      />
 
       <div className="welcome-detected pointer-events-none absolute inset-0 z-20 grid place-items-center">
         <div className="grid justify-items-center gap-1 text-center">

@@ -32,12 +32,15 @@ describe("built-in composer slash commands", () => {
 
     expect(side?.label).toBe("/side");
     expect(side?.description).toBe("Start a sidechat in this conversation");
+    expect(side?.aliases).toEqual(["sidechat"]);
   });
 
   it("builds menu items with slash ids and the spawn alias", () => {
     const items = builtInComposerSlashCommandItems({ planModeEnabled: true });
 
     expect(items.map((item) => item.id)).toEqual([
+      "slash:code",
+      "slash:chat",
       "slash:model",
       "slash:canvas",
       "slash:slides",

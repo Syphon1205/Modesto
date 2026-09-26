@@ -24,6 +24,7 @@ export type ComposerProviderStateInput = {
   promptInjectionState?: ComposerPromptInjectionState;
   modelOptions: ReadonlyArray<ProviderOptionSelection> | null | undefined;
   planModeEnabled: boolean;
+  conversationMode?: "chat" | "code";
 };
 
 export type ComposerPromptInjectionState = "none" | "ultrathink";
@@ -48,7 +49,16 @@ type TraitsRenderInput = {
   prompt: string;
   onPromptChange: (prompt: string) => void;
   planModeEnabled: boolean;
+  conversationMode?: "chat" | "code";
 };
+
+export const CHAT_THINKING_OPTION_IDS = new Set([
+  "effort",
+  "reasoning",
+  "reasoningEffort",
+  "thinking",
+  "variant",
+]);
 
 export function getComposerPromptInjectionState(prompt: string): ComposerPromptInjectionState {
   return isClaudeUltrathinkPrompt(prompt) ? "ultrathink" : "none";
@@ -62,9 +72,12 @@ export function getComposerProviderState(input: ComposerProviderStateInput): Com
     modelOptions,
     promptInjectionState = "none",
     planModeEnabled,
+    conversationMode = "code",
   } = input;
   const caps = getProviderModelCapabilities(models, model, provider, planModeEnabled);
-  const descriptors = getProviderOptionDescriptors({ caps, selections: modelOptions });
+  const descriptors = getProviderOptionDescriptors({ caps, selections: modelOptions }).filter(
+    (descriptor) => conversationMode !== "chat" || CHAT_THINKING_OPTION_IDS.has(descriptor.id),
+  );
   const primarySelectDescriptor = descriptors.find(
     (descriptor): descriptor is Extract<(typeof descriptors)[number], { type: "select" }> =>
       descriptor.type === "select",
@@ -104,6 +117,7 @@ function renderTraitsControl(
     prompt,
     onPromptChange,
     planModeEnabled,
+    conversationMode = "code",
   } = input;
   const hasTarget = threadRef !== undefined || draftId !== undefined;
   if (
@@ -115,6 +129,7 @@ function renderTraitsControl(
       modelOptions,
       prompt,
       planModeEnabled,
+      ...(conversationMode === "chat" ? { allowedDescriptorIds: CHAT_THINKING_OPTION_IDS } : {}),
     })
   ) {
     return null;
@@ -131,6 +146,7 @@ function renderTraitsControl(
       prompt={prompt}
       onPromptChange={onPromptChange}
       planModeEnabled={planModeEnabled}
+      {...(conversationMode === "chat" ? { allowedDescriptorIds: CHAT_THINKING_OPTION_IDS } : {})}
     />
   );
 }

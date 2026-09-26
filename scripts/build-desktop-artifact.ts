@@ -27,7 +27,7 @@ import {
   WINDOWS_PUBLISHER_NAME,
   validateDesktopNativeBuildHost,
 } from "./lib/desktop-platform-build-config.ts";
-import { modestoBundleId } from "@modesto/shared/desktopIdentity";
+import { MODESTO_DESKTOP_UPDATE_FEED_URL, modestoBundleId } from "@modesto/shared/desktopIdentity";
 import { parseBooleanEnvValue } from "./lib/env-bool.ts";
 import { finalizeMacUpdateZip } from "./lib/mac-update-zip-finalize.ts";
 import { stageProviderRuntimes } from "./lib/provider-runtime-stage.ts";
@@ -570,28 +570,10 @@ export function omitBundledWorkspaceDependencies(
   );
 }
 
-function resolveGitHubPublishConfig():
-  | {
-      readonly provider: "github";
-      readonly owner: string;
-      readonly repo: string;
-      readonly releaseType: "release";
-    }
-  | undefined {
-  const rawRepo =
-    process.env.MODESTO_DESKTOP_UPDATE_REPOSITORY?.trim() ||
-    process.env.GITHUB_REPOSITORY?.trim() ||
-    "Syphon1205/Modesto";
-  if (!rawRepo) return undefined;
-
-  const [owner, repo, ...rest] = rawRepo.split("/");
-  if (!owner || !repo || rest.length > 0) return undefined;
-
+function resolveModestoPublishConfig(): { readonly provider: "generic"; readonly url: string } {
   return {
-    provider: "github",
-    owner,
-    repo,
-    releaseType: "release",
+    provider: "generic",
+    url: process.env.MODESTO_DESKTOP_UPDATE_FEED_URL?.trim() || MODESTO_DESKTOP_UPDATE_FEED_URL,
   };
 }
 
@@ -643,16 +625,15 @@ const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     compression: "maximum",
     electronLanguages: ["en-US", "en"],
   };
-  const publishConfig = resolveGitHubPublishConfig();
-  if (publishConfig) {
-    buildConfig.publish = [publishConfig];
-  } else if (mockUpdates) {
+  if (mockUpdates) {
     buildConfig.publish = [
       {
         provider: "generic",
         url: `http://localhost:${mockUpdateServerPort ?? 3000}`,
       },
     ];
+  } else {
+    buildConfig.publish = [resolveModestoPublishConfig()];
   }
 
   const windowsAzureSignOptions =

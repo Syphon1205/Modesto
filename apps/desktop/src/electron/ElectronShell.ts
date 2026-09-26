@@ -24,6 +24,18 @@ const isRemoteEditorUrl = (url: URL) =>
   url.pathname.startsWith("/ssh-remote+") &&
   url.pathname.length > "/ssh-remote+".length;
 
+/** VS Code's documented extension install deep link. Keep this deliberately
+ * narrower than arbitrary vscode: commands: it accepts exactly one marketplace
+ * identifier and no query, fragment, credentials, or extra path segments. */
+const isVsCodeExtensionUrl = (url: URL) =>
+  url.protocol === "vscode:" &&
+  url.username.length === 0 &&
+  url.password.length === 0 &&
+  url.host === "extension" &&
+  /^\/[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*$/i.test(url.pathname) &&
+  url.search === "" &&
+  url.hash === "";
+
 export function parseSafeExternalUrl(rawUrl: unknown): Option.Option<string> {
   if (typeof rawUrl !== "string") {
     return Option.none();
@@ -31,7 +43,9 @@ export function parseSafeExternalUrl(rawUrl: unknown): Option.Option<string> {
 
   try {
     const url = new URL(rawUrl);
-    return SAFE_WEB_PROTOCOLS.has(url.protocol) || isRemoteEditorUrl(url)
+    return SAFE_WEB_PROTOCOLS.has(url.protocol) ||
+      isRemoteEditorUrl(url) ||
+      isVsCodeExtensionUrl(url)
       ? Option.some(url.href)
       : Option.none();
   } catch {

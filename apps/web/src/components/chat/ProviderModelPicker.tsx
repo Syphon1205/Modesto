@@ -34,6 +34,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
   modelOptionsByInstance: ReadonlyMap<ProviderInstanceId, ReadonlyArray<ModelEsque>>;
   activeProviderIconClassName?: string;
   compact?: boolean;
+  textOnly?: boolean;
   disabled?: boolean;
   terminalOpen?: boolean;
   open?: boolean;
@@ -158,7 +159,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
         }
       >
         <span className="flex min-w-0 flex-1 items-center gap-1.5">
-          {activeEntry ? (
+          {activeEntry && !props.textOnly ? (
             <ProviderInstanceIcon
               driverKind={activeEntry.driverKind}
               displayName={activeEntry.displayName}
@@ -180,14 +181,14 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
             <TooltipPopup side="top">{triggerLabel}</TooltipPopup>
           </Tooltip>
         </span>
-        <span aria-hidden="true" className="flex items-center">
+        <span aria-hidden="true" className="flex items-center text-muted-foreground/60">
           <ComposerControlChevron />
         </span>
       </PopoverTrigger>
       <PopoverPopup
         align="start"
-        className="before:hidden [--viewport-inline-padding:0]"
-        viewportClassName="!overflow-hidden rounded-[calc(var(--radius-lg)-1px)] p-0 [clip-path:inset(0_round_calc(var(--radius-lg)-1px))]"
+        className="rounded-xl shadow-xl shadow-black/10 before:hidden [--viewport-inline-padding:0]"
+        viewportClassName="!overflow-hidden rounded-xl p-0"
       >
         <ModelPickerContent
           activeInstanceId={activeInstanceId}

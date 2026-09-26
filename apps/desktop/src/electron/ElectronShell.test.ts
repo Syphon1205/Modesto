@@ -52,6 +52,16 @@ describe("ElectronShell", () => {
     }).pipe(Effect.provide(ElectronShell.layer)),
   );
 
+  it.effect("opens a constrained VS Code extension install URL", () =>
+    Effect.gen(function* () {
+      openExternalMock.mockResolvedValue(undefined);
+      const electronShell = yield* ElectronShell.ElectronShell;
+      const result = yield* electronShell.openExternal("vscode://extension/ms-python.python");
+      assert.equal(result, true);
+      assert.deepEqual(openExternalMock.mock.calls, [["vscode://extension/ms-python.python"]]);
+    }).pipe(Effect.provide(ElectronShell.layer)),
+  );
+
   it.effect("does not open remote editor URLs with userinfo", () =>
     Effect.gen(function* () {
       openExternalMock.mockResolvedValue(undefined);
@@ -91,6 +101,18 @@ describe("ElectronShell", () => {
       );
 
       assert.equal(result, false);
+      assert.equal(openExternalMock.mock.calls.length, 0);
+    }).pipe(Effect.provide(ElectronShell.layer)),
+  );
+
+  it.effect("does not allow commands or arguments through extension deep links", () =>
+    Effect.gen(function* () {
+      const electronShell = yield* ElectronShell.ElectronShell;
+      const results = yield* Effect.all([
+        electronShell.openExternal("vscode://extension/ms-python.python/command"),
+        electronShell.openExternal("vscode://extension/ms-python.python?argument=attacker"),
+      ]);
+      assert.deepEqual(results, [false, false]);
       assert.equal(openExternalMock.mock.calls.length, 0);
     }).pipe(Effect.provide(ElectronShell.layer)),
   );

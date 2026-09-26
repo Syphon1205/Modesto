@@ -3,13 +3,16 @@ import { assert, it } from "@effect/vitest";
 
 import {
   buildOpenCodeCustomProviderConfig,
+  discoverCustomModelEndpointModels,
   customModelEndpointEnvVar,
   customModelEndpointModelSlug,
   mergeOpenCodeCustomProviderConfig,
+  normalizeCustomModelEndpointBaseUrl,
   parseCustomModelEndpointModelSlug,
   slugifyCustomModelEndpointId,
   uniqueCustomModelEndpointId,
 } from "./customModelEndpoints.ts";
+import { vi } from "vite-plus/test";
 
 function endpoint(overrides: Partial<CustomModelEndpointConfig>): CustomModelEndpointConfig {
   return {
@@ -35,6 +38,48 @@ it("derives a per-endpoint env var name from the id", () => {
   assert.strictEqual(
     customModelEndpointEnvVar("openrouter-prod"),
     "MODESTO_CUSTOM_ENDPOINT_OPENROUTER_PROD_API_KEY",
+  );
+});
+
+it("discovers OpenAI-compatible models without an API key", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [{ id: "Qwen/Qwen3-Coder" }] }), { status: 200 }),
+    );
+
+  const models = await discoverCustomModelEndpointModels("http://127.0.0.1:8000/v1");
+  assert.deepStrictEqual(models, ["Qwen/Qwen3-Coder"]);
+  assert.strictEqual(fetchMock.mock.calls[0]?.[0], "http://127.0.0.1:8000/v1/models");
+  assert.strictEqual(fetchMock.mock.calls[0]?.[1]?.headers, undefined);
+  fetchMock.mockRestore();
+});
+
+it("accepts a copied model-catalog URL without duplicating operation paths", async () => {
+  const fetchMock = vi
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ data: [{ id: "local-model" }] }), { status: 200 }),
+    );
+
+  const models = await discoverCustomModelEndpointModels("http://192.168.1.135:8000/v1/models");
+  assert.deepStrictEqual(models, ["local-model"]);
+  assert.strictEqual(fetchMock.mock.calls[0]?.[0], "http://192.168.1.135:8000/v1/models");
+  fetchMock.mockRestore();
+});
+
+it("normalizes copied OpenAI operation URLs to their API base", () => {
+  assert.strictEqual(
+    normalizeCustomModelEndpointBaseUrl("http://192.168.1.135:8000/v1/models"),
+    "http://192.168.1.135:8000/v1",
+  );
+  assert.strictEqual(
+    normalizeCustomModelEndpointBaseUrl("http://127.0.0.1:1234/v1/chat/completions?debug=1"),
+    "http://127.0.0.1:1234/v1",
+  );
+  assert.strictEqual(
+    normalizeCustomModelEndpointBaseUrl("http://192.168.1.135:8000/v1/models/responses"),
+    "http://192.168.1.135:8000/v1",
   );
 });
 
@@ -92,13 +137,26 @@ it("builds an OpenCode provider block matching OpenCode's documented shape", () 
   });
 });
 
-it("maps the Responses wire API onto OpenCode's @ai-sdk/openai package", () => {
+it("uses OpenCode's normal compatibility provider regardless of legacy wire metadata", () => {
   const config = buildOpenCodeCustomProviderConfig([endpoint({ wireApi: "responses" })], new Map());
   assert.ok(config);
 
   assert.strictEqual(
     (config.provider["openrouter"] as { readonly npm: string }).npm,
-    "@ai-sdk/openai",
+    "@ai-sdk/openai-compatible",
+  );
+});
+
+it("normalizes legacy saved operation URLs in OpenCode config", () => {
+  const config = buildOpenCodeCustomProviderConfig(
+    [endpoint({ baseUrl: "http://192.168.1.135:8000/v1/models" })],
+    new Map(),
+  );
+  assert.ok(config);
+  assert.strictEqual(
+    (config.provider["openrouter"] as { readonly options: { readonly baseURL: string } }).options
+      .baseURL,
+    "http://192.168.1.135:8000/v1",
   );
 });
 

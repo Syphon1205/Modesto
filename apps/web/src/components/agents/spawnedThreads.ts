@@ -51,6 +51,70 @@ export function selectSpawnedThreadsForParent<T extends SpawnedThreadLike>(
     );
 }
 
+export type SpawnedThreadTreeEntry<T extends SpawnedThreadLike> = {
+  readonly thread: T;
+  readonly depth: number;
+};
+
+/**
+ * Flatten an attached-session tree in stable spawn order.
+ *
+ * A spawned thread can run `/multiagent` itself, so consumers must not stop
+ * at the first generation. The visited set also makes old/corrupt parent
+ * cycles harmless instead of recursing forever in the sidebar.
+ */
+export function selectSpawnedThreadTree<T extends SpawnedThreadLike>(
+  threads: ReadonlyArray<T>,
+  parentThreadId: ThreadId,
+): Array<SpawnedThreadTreeEntry<T>> {
+  const childrenByParent = new Map<ThreadId, T[]>();
+  for (const thread of threads) {
+    const parentId = threadParentId(thread);
+    if (parentId === null || thread.deletedAt != null || thread.archivedAt != null) continue;
+    const children = childrenByParent.get(parentId);
+    if (children) children.push(thread);
+    else childrenByParent.set(parentId, [thread]);
+  }
+  for (const children of childrenByParent.values()) {
+    children.sort(
+      (left, right) =>
+        left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id),
+    );
+  }
+
+  const result: Array<SpawnedThreadTreeEntry<T>> = [];
+  const visited = new Set<ThreadId>([parentThreadId]);
+  const visit = (parentId: ThreadId, depth: number) => {
+    for (const child of childrenByParent.get(parentId) ?? []) {
+      if (visited.has(child.id)) continue;
+      visited.add(child.id);
+      result.push({ thread: child, depth });
+      visit(child.id, depth + 1);
+    }
+  };
+  visit(parentThreadId, 0);
+  return result;
+}
+
+/** All currently running attached sessions, independent of chat/code mode. */
+export function selectActiveSpawnedThreads<T extends SpawnedThreadLike>(
+  threads: ReadonlyArray<T>,
+): T[] {
+  return threads
+    .filter(
+      (thread) =>
+        threadParentId(thread) !== null &&
+        thread.deletedAt == null &&
+        thread.archivedAt == null &&
+        spawnedThreadIsLive(thread),
+    )
+    .slice()
+    .toSorted(
+      (left, right) =>
+        left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id),
+    );
+}
+
 export function spawnedThreadIsLive(thread: Pick<SpawnedThreadLike, "latestTurn">): boolean {
   return thread.latestTurn?.state === "running";
 }

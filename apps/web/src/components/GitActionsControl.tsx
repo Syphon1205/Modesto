@@ -1,3 +1,4 @@
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { useAtomValue } from "@effect/atom-react";
 import { type ScopedThreadRef } from "@modesto/contracts";
 import {
@@ -15,7 +16,6 @@ import type {
   SourceControlRepositoryVisibility,
   VcsStatusResult,
 } from "@modesto/contracts";
-import { useNavigate } from "@tanstack/react-router";
 import * as Option from "effect/Option";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -380,7 +380,7 @@ interface PublishRepositoryDialogProps {
 }
 
 function PublishRepositoryDialog(props: PublishRepositoryDialogProps) {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const sourceControlDiscovery = useEnvironmentQuery(
     props.environmentId === null
       ? null

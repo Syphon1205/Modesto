@@ -9,9 +9,8 @@
  * mechanisms - there is no shared "custom endpoint" protocol to lean on:
  *
  * - **Codex** via `-c model_providers.<id>.*` app-server launch args, which
- *   is Codex CLI's own documented config surface. Its `wire_api` field is
- *   what the "Chat Completions" / "Responses" choice in the settings UI maps
- *   to. See `CodexAdapter.ts`.
+ *   is Codex CLI's own documented config surface. Codex custom providers use
+ *   its tool-capable Responses contract; see `CodexAdapter.ts`.
  * - **OpenCode and Kilo** (Kilo forks OpenCode's config schema wholesale) via
  *   the `provider` block of `OPENCODE_CONFIG_CONTENT` / `KILO_CONFIG_CONTENT`.
  *   See `buildOpenCodeCustomProviderConfig` below.
@@ -26,6 +25,100 @@ import type { CustomModelEndpointConfig } from "@modesto/contracts";
 import { CUSTOM_MODEL_ENDPOINT_MODEL_SLUG_PREFIX } from "@modesto/shared/customModelEndpoint";
 
 const MAX_ID_LENGTH = 64;
+const MODEL_DISCOVERY_TIMEOUT_MS = 5_000;
+
+const TERMINAL_OPENAI_ENDPOINT_PATHS = [
+  "/chat/completions",
+  "/completions",
+  "/responses",
+  "/models",
+  "/api/tags",
+] as const;
+
+/**
+ * Accept the URLs people naturally copy from server docs and error messages,
+ * while storing/passing the API base expected by Codex and the AI SDK.
+ * Both runtimes append their own operation path, so leaving `/models` or
+ * `/responses` here would produce malformed URLs such as
+ * `/v1/models/responses`.
+ */
+export function normalizeCustomModelEndpointBaseUrl(baseUrl: string): string {
+  const url = new URL(baseUrl.trim());
+  let pathname = url.pathname.replace(/\/+$/, "");
+  let terminalPath = TERMINAL_OPENAI_ENDPOINT_PATHS.find((candidate) =>
+    pathname.toLocaleLowerCase().endsWith(candidate),
+  );
+  while (terminalPath) {
+    pathname = pathname.slice(0, -terminalPath.length);
+    terminalPath = TERMINAL_OPENAI_ENDPOINT_PATHS.find((candidate) =>
+      pathname.toLocaleLowerCase().endsWith(candidate),
+    );
+  }
+  url.pathname = pathname || "/";
+  url.search = "";
+  url.hash = "";
+  return url.toString().replace(/\/$/, pathname ? "" : "/");
+}
+
+function endpointUrl(baseUrl: string, path: string): string {
+  const url = new URL(normalizeCustomModelEndpointBaseUrl(baseUrl));
+  url.pathname = path === "/api/tags" ? path : `${url.pathname.replace(/\/$/, "")}${path}`;
+  url.search = "";
+  url.hash = "";
+  return url.toString();
+}
+
+function modelIdsFromDiscoveryPayload(payload: unknown): ReadonlyArray<string> {
+  if (!payload || typeof payload !== "object") return [];
+  const record = payload as Record<string, unknown>;
+  const candidates = Array.isArray(record.data)
+    ? record.data
+    : Array.isArray(record.models)
+      ? record.models
+      : [];
+  return [
+    ...new Set(
+      candidates.flatMap((candidate) => {
+        if (typeof candidate === "string") return candidate.trim() ? [candidate.trim()] : [];
+        if (!candidate || typeof candidate !== "object") return [];
+        const entry = candidate as Record<string, unknown>;
+        const value =
+          typeof entry.id === "string"
+            ? entry.id
+            : typeof entry.name === "string"
+              ? entry.name
+              : typeof entry.model === "string"
+                ? entry.model
+                : null;
+        return value?.trim() ? [value.trim()] : [];
+      }),
+    ),
+  ];
+}
+
+/** Discover models from OpenAI-compatible `/models`, with Ollama's native catalog as fallback. */
+export async function discoverCustomModelEndpointModels(
+  baseUrl: string,
+  apiKey?: string,
+): Promise<ReadonlyArray<string>> {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
+  const paths = ["/models", "/api/tags"] as const;
+  for (const path of paths) {
+    try {
+      const response = await fetch(endpointUrl(baseUrl, path), {
+        headers,
+        signal: AbortSignal.timeout(MODEL_DISCOVERY_TIMEOUT_MS),
+      });
+      if (!response.ok) continue;
+      const models = modelIdsFromDiscoveryPayload(await response.json());
+      if (models.length > 0) return models;
+    } catch {
+      // Try the next well-known catalog. Saving a manually entered model must
+      // remain possible when discovery is unsupported or temporarily offline.
+    }
+  }
+  return [];
+}
 
 export function customModelEndpointSecretName(id: string): string {
   return `customEndpointApiKey:${id}`;
@@ -105,18 +198,12 @@ export function parseCustomModelEndpointModelSlug(
 /* -------------------------------------------------------------------------- */
 
 /**
- * OpenCode resolves a provider's wire protocol from the npm package named in
- * `provider.<id>.npm`, so the same "Chat Completions" / "Responses" choice
- * Codex expresses as `wire_api` maps onto a package choice here. Both values
- * are taken from OpenCode's own docs (`packages/web/src/content/docs/`):
- * `@ai-sdk/openai-compatible` serves `/chat/completions`, `@ai-sdk/openai`
- * serves `/responses`.
- */
-function openCodeNpmPackageForWireApi(wireApi: "chat" | "responses"): string {
-  return wireApi === "responses" ? "@ai-sdk/openai" : "@ai-sdk/openai-compatible";
-}
-
-/**
+ * OpenCode-compatible runtimes deliberately use the generic compatibility
+ * provider here. Their documented custom-provider flow treats the model like
+ * any other model and owns the `/chat/completions` route internally; users do
+ * not need to select an HTTP protocol. Codex separately uses its required
+ * Responses transport for the same saved endpoint.
+ *
  * Builds the `provider` block OpenCode/Kilo need to serve a custom endpoint,
  * shaped exactly like the custom-provider example in OpenCode's own docs:
  *
@@ -155,10 +242,10 @@ export function buildOpenCodeCustomProviderConfig(
     }
     const apiKey = apiKeyByEndpointId.get(endpoint.id);
     provider[endpoint.id] = {
-      npm: openCodeNpmPackageForWireApi(endpoint.wireApi),
+      npm: "@ai-sdk/openai-compatible",
       name: endpoint.label,
       options: {
-        baseURL: endpoint.baseUrl,
+        baseURL: normalizeCustomModelEndpointBaseUrl(endpoint.baseUrl),
         // OpenAI-compatible servers that ignore auth (vLLM, LM Studio) still
         // expect the header to exist; the AI SDK omits it entirely when the
         // key is absent, which some of them reject.

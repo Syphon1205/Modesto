@@ -21,7 +21,15 @@ const mergeProviderModels = (
   cachedModels: ReadonlyArray<ServerProvider["models"][number]>,
 ): ReadonlyArray<ServerProvider["models"][number]> => {
   const fallbackSlugs = new Set(fallbackModels.map((model) => model.slug));
-  return [...fallbackModels, ...cachedModels.filter((model) => !fallbackSlugs.has(model.slug))];
+  // Custom-endpoint models are derived from current `customModelEndpoints`
+  // settings, not from anything the cache file could go stale on - carrying
+  // one over from a boot-time disk cache would resurrect a deleted/renamed
+  // endpoint's model forever, selectable but always rejected by
+  // `CodexAdapter`'s router-slug lookup against live settings.
+  return [
+    ...fallbackModels,
+    ...cachedModels.filter((model) => !fallbackSlugs.has(model.slug) && !model.isCustom),
+  ];
 };
 
 export const orderProviderSnapshots = (

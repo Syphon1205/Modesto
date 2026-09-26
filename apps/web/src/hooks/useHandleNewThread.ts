@@ -102,6 +102,7 @@ export function useNewThreadHandler() {
         setConversationMode,
         setLogicalProjectDraftThreadId,
         setModelSelection,
+        setRuntimeMode,
       } = useComposerDraftStore.getState();
       const currentRouteTarget = getCurrentRouteTarget();
       // A new thread carries the user's *working mode* from the thread being
@@ -164,8 +165,11 @@ export function useNewThreadHandler() {
       const applyConversationMode = (destinationDraftId: DraftId) => {
         if (options?.conversationMode) {
           setConversationMode(destinationDraftId, options.conversationMode, {
-            selectable: options.conversationMode === "chat",
+            selectable: false,
           });
+          if (options.conversationMode === "chat") {
+            setRuntimeMode(destinationDraftId, "approval-required");
+          }
         }
       };
       const project = projects.find(

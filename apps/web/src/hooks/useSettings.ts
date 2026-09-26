@@ -22,6 +22,7 @@ import {
   type ClientSettings,
   DEFAULT_CLIENT_SETTINGS,
   type EnvironmentIdentificationMode,
+  type InterfaceStyle,
   type UnifiedSettings,
 } from "@modesto/contracts/settings";
 import { safeErrorLogAttributes } from "@modesto/client-runtime/errors";
@@ -182,7 +183,7 @@ function splitPatch(patch: UnifiedSettingsPatch): {
  * settings without subscribing.
  */
 export function getClientSettings(): ClientSettings {
-  return getClientSettingsSnapshot();
+  return resolveClientInterfaceSettings(getClientSettingsSnapshot());
 }
 
 /**
@@ -205,18 +206,26 @@ export function useClientSettingsHydrated(): boolean {
 }
 
 function useClientSettingsValue(): ClientSettings {
-  return useSyncExternalStore(
+  const storedSettings = useSyncExternalStore(
     subscribeClientSettings,
     getClientSettingsSnapshot,
     () => DEFAULT_CLIENT_SETTINGS,
   );
+  return useMemo(() => resolveClientInterfaceSettings(storedSettings), [storedSettings]);
+}
+
+/** Resolve the shell once for every consumer, including composer and route settings.
+ * Keep the persisted snapshot unchanged so the legacy preference remains reversible. */
+export function resolveClientInterfaceSettings(settings: ClientSettings): ClientSettings {
+  const interfaceStyle = resolveInterfaceStyle(settings);
+  return interfaceStyle === settings.interfaceStyle ? settings : { ...settings, interfaceStyle };
 }
 
 export function mergeEnvironmentSettings(
   serverSettings: ServerSettings,
   clientSettings: ClientSettings,
 ): UnifiedSettings {
-  return { ...serverSettings, ...clientSettings };
+  return { ...serverSettings, ...resolveClientInterfaceSettings(clientSettings) };
 }
 
 function useMergedSettings<T>(
@@ -285,8 +294,27 @@ export function useEnvironmentIdentificationMode(): EnvironmentIdentificationMod
  */
 export function useLegacySidebarEnabled(): boolean {
   const settingsHydrated = useClientSettingsHydrated();
-  const legacySidebarEnabled = useClientSettingsValue().legacySidebarEnabled;
-  return settingsHydrated && legacySidebarEnabled;
+  const settings = useClientSettingsValue();
+  return settingsHydrated && resolveInterfaceStyle(settings) === "classic";
+}
+
+/** Resolve the old sidebar opt-in into the named classic style. */
+export function resolveInterfaceStyle(
+  settings: Pick<ClientSettings, "interfaceStyle" | "legacySidebarEnabled">,
+): InterfaceStyle {
+  if (settings.interfaceStyle === "claude") return "claude";
+  if (settings.interfaceStyle === "codex") return "codex";
+  if (settings.interfaceStyle === "cursor") return "cursor";
+  if (settings.interfaceStyle === "opencode") return "opencode";
+  if (settings.interfaceStyle === "classic") return "classic";
+  if (settings.interfaceStyle === "modesto" && settings.legacySidebarEnabled) return "classic";
+  return "github";
+}
+
+export function useInterfaceStyle(): InterfaceStyle {
+  const settingsHydrated = useClientSettingsHydrated();
+  const settings = useClientSettingsValue();
+  return settingsHydrated ? resolveInterfaceStyle(settings) : "github";
 }
 
 /** Read current settings for one environment, merged with client-local preferences. */

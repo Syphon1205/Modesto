@@ -3,20 +3,22 @@ import {
   type ProviderDriverKind,
   type ResolvedKeybindingsConfig,
 } from "@modesto/contracts";
-import { isCustomModelEndpointModelSlug } from "@modesto/shared/customModelEndpoint";
 import { resolveSelectableModel } from "@modesto/shared/model";
+import {
+  customModelEndpointIdFromModelSlug,
+  isCustomModelEndpointModelSlug,
+} from "@modesto/shared/customModelEndpoint";
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
 import { memo, useMemo, useState, useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import { ChevronRightIcon, SearchIcon } from "lucide-react";
 import { ModelListRow } from "./ModelListRow";
-import { ModelPickerSidebar, type ModelPickerCustomEndpointEntry } from "./ModelPickerSidebar";
+import { ModelPickerSidebar } from "./ModelPickerSidebar";
 import {
   modelPickerLegacySectionKey,
   modelPickerModelKey,
   parseModelPickerLegacySectionKey,
   parseModelPickerModelKey,
 } from "./modelPickerKeys";
-import { isModelPickerNewModel } from "./modelPickerModelHighlights";
 import { buildModelPickerSearchText, scoreModelPickerSearch } from "./modelPickerSearch";
 import {
   Combobox,
@@ -34,6 +36,7 @@ import {
 } from "../../keybindings";
 import { useClientSettings, useUpdateClientSettings } from "~/hooks/useSettings";
 import { cn } from "~/lib/utils";
+import { disclosureChevronClassName } from "~/lib/disclosureMotion";
 import { getVirtualizedScrollFadeClassName } from "../ui/scroll-area";
 import { TooltipProvider } from "../ui/tooltip";
 import {
@@ -102,22 +105,18 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
     onInstanceModelChange,
   } = props;
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedInstanceId, setSelectedInstanceId] = useState<ProviderInstanceId | "favorites">(
+    props.activeInstanceId,
+  );
+  const [selectedCustomEndpointId, setSelectedCustomEndpointId] = useState<string | null>(() =>
+    customModelEndpointIdFromModelSlug(props.model),
+  );
   const [showTopScrollFade, setShowTopScrollFade] = useState(false);
   const [showBottomScrollFade, setShowBottomScrollFade] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const modelListRef = useRef<LegendListRef | null>(null);
   const highlightedModelKeyRef = useRef<string | null>(null);
   const favorites = useClientSettings((s) => s.favorites ?? []);
-  const [selectedInstanceId, setSelectedInstanceId] = useState<ProviderInstanceId | "favorites">(
-    () => {
-      if (props.lockedProvider !== null) {
-        // When locked, prime the sidebar to the currently-active instance
-        // so jumping into the picker keeps the focused instance visible.
-        return props.activeInstanceId;
-      }
-      return favorites.length > 0 ? "favorites" : props.activeInstanceId;
-    },
-  );
   const [expandedLegacyInstances, setExpandedLegacyInstances] = useState(
     () =>
       new Set<ProviderInstanceId>(
@@ -133,41 +132,9 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
     [providedKeybindings],
   );
   const updateSettings = useUpdateClientSettings();
-  // Custom endpoints (Settings > Providers > Custom endpoints) aren't a
-  // separate provider instance - their models are appended to whichever
-  // Codex instance(s) they're configured on (see `appendCustomModelEndpointModels`
-  // server-side), tagged with the `router:` slug prefix and `subProvider` set
-  // to the endpoint's label. Tracked independently of `selectedInstanceId` so
-  // selecting one doesn't have to fake a `ProviderInstanceId` that doesn't
-  // exist.
-  const [selectedCustomEndpointLabel, setSelectedCustomEndpointLabel] = useState<string | null>(
-    null,
-  );
-
   const focusSearchInput = useCallback(() => {
     searchInputRef.current?.focus({ preventScroll: true });
   }, []);
-
-  const handleSelectInstance = useCallback(
-    (instanceId: ProviderInstanceId | "favorites") => {
-      setSelectedInstanceId(instanceId);
-      setSelectedCustomEndpointLabel(null);
-      window.requestAnimationFrame(() => {
-        focusSearchInput();
-      });
-    },
-    [focusSearchInput],
-  );
-
-  const handleSelectCustomEndpoint = useCallback(
-    (label: string) => {
-      setSelectedCustomEndpointLabel(label);
-      window.requestAnimationFrame(() => {
-        focusSearchInput();
-      });
-    },
-    [focusSearchInput],
-  );
 
   useLayoutEffect(() => {
     focusSearchInput();
@@ -257,78 +224,72 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
     return out;
   }, [modelOptionsByInstance, entryByInstanceId, readyInstanceSet]);
 
-  // One rail entry per distinct custom-endpoint label found among the
-  // flattened models, in first-seen order. Editing a message locks the
-  // picker to a single provider/thread, so custom-endpoint switching isn't
-  // offered there — same simplification the sidebar already applies to
-  // favorites/instance context in that mode.
-  const isLocked = props.lockedProvider !== null;
-  const customEndpointEntries = useMemo<ReadonlyArray<ModelPickerCustomEndpointEntry>>(() => {
-    if (isLocked) {
-      return [];
-    }
-    const labels: string[] = [];
-    const seen = new Set<string>();
+  const sidebarEntries = useMemo(
+    () => instanceEntries.filter(isProviderInstancePickerVisible),
+    [instanceEntries],
+  );
+  const customEndpointEntries = useMemo(() => {
+    const entries = new Map<string, string>();
     for (const model of flatModels) {
-      if (!model.subProvider || !isCustomModelEndpointModelSlug(model.slug)) {
-        continue;
-      }
-      if (seen.has(model.subProvider)) {
-        continue;
-      }
-      seen.add(model.subProvider);
-      labels.push(model.subProvider);
+      const endpointId = customModelEndpointIdFromModelSlug(model.slug);
+      if (!endpointId) continue;
+      entries.set(endpointId, model.subProvider?.trim() || endpointId);
     }
-    return labels.map((label) => ({ label }));
-  }, [flatModels, isLocked]);
-  useEffect(() => {
-    if (
-      selectedCustomEndpointLabel &&
-      !customEndpointEntries.some((e) => e.label === selectedCustomEndpointLabel)
-    ) {
-      // The endpoint was deleted/renamed out from under an open picker.
-      setSelectedCustomEndpointLabel(null);
-    }
-  }, [customEndpointEntries, selectedCustomEndpointLabel]);
+    return [...entries].map(([id, label]) => ({ id, label }));
+  }, [flatModels]);
+  const disabledInstanceIds = useMemo(
+    () =>
+      new Set(
+        instanceEntries
+          .filter((entry) => !matchesLockedProvider(entry))
+          .map((entry) => entry.instanceId),
+      ),
+    [instanceEntries, matchesLockedProvider],
+  );
+  const selectedProviderLabel =
+    selectedInstanceId === "favorites"
+      ? "Favorites"
+      : selectedCustomEndpointId
+        ? (customEndpointEntries.find((entry) => entry.id === selectedCustomEndpointId)?.label ??
+          "Custom endpoint")
+        : (entryByInstanceId.get(selectedInstanceId)?.displayName ?? "Models");
+  const handleSelectInstance = useCallback(
+    (instanceId: ProviderInstanceId | "favorites") => {
+      setSelectedCustomEndpointId(null);
+      setSelectedInstanceId(instanceId);
+      setSearchQuery("");
+      focusSearchInput();
+    },
+    [focusSearchInput],
+  );
+  const handleSelectCustomEndpoint = useCallback(
+    (endpointId: string) => {
+      setSelectedCustomEndpointId(endpointId);
+      setSearchQuery("");
+      focusSearchInput();
+    },
+    [focusSearchInput],
+  );
 
+  const isLocked = props.lockedProvider !== null;
   const isSearching = searchQuery.trim().length > 0;
-  const lockedDisabledInstanceIds = useMemo(() => {
-    if (!isLocked) {
-      return undefined;
-    }
-    const disabled = new Set<ProviderInstanceId>();
-    for (const entry of instanceEntries) {
-      if (!matchesLockedProvider(entry)) {
-        disabled.add(entry.instanceId);
-      }
-    }
-    return disabled;
-  }, [instanceEntries, isLocked, matchesLockedProvider]);
-  const sidebarInstanceEntries = useMemo(() => {
-    const enabledEntries = instanceEntries.filter(isProviderInstancePickerVisible);
-    if (!isLocked) {
-      return enabledEntries;
-    }
-    const available: ProviderInstanceEntry[] = [];
-    const disabled: ProviderInstanceEntry[] = [];
-    for (const entry of enabledEntries) {
-      if (matchesLockedProvider(entry)) {
-        available.push(entry);
-      } else {
-        disabled.push(entry);
-      }
-    }
-    return [...available, ...disabled];
-  }, [instanceEntries, isLocked, matchesLockedProvider]);
-  const showSidebar = !isSearching && sidebarInstanceEntries.length > 0;
   const instanceOrder = useMemo(
     () => instanceEntries.map((entry) => entry.instanceId),
     [instanceEntries],
   );
 
-  // Filter models based on search query and selected instance
+  // Search stays within the chosen provider so the navigation remains predictable.
   const filteredModels = useMemo(() => {
-    let result = flatModels;
+    let result = flatModels.filter((model) => {
+      if (!matchesLockedProvider(model)) return false;
+      if (selectedCustomEndpointId) {
+        return customModelEndpointIdFromModelSlug(model.slug) === selectedCustomEndpointId;
+      }
+      if (isCustomModelEndpointModelSlug(model.slug)) return false;
+      return selectedInstanceId === "favorites"
+        ? favoritesSet.has(providerModelKey(model.instanceId, model.slug))
+        : model.instanceId === selectedInstanceId;
+    });
 
     // Apply tokenized fuzzy search across the combined provider/model search fields.
     if (searchQuery.trim()) {
@@ -366,9 +327,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
           } => rankedModel.score !== null,
         );
 
-      // When searching, we only respect locked provider (by driver kind),
-      // ignoring sidebar selection so account-scoped searches can find a
-      // model before the user chooses a specific instance rail item.
+      // Search preserves the thread's provider restrictions.
       if (props.lockedProvider !== null) {
         const lockedProviderMatches: Array<(typeof rankedMatches)[number]> = [];
         for (const rankedModel of rankedMatches) {
@@ -404,39 +363,24 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
         .map((rankedModel) => rankedModel.model);
     }
 
-    if (selectedCustomEndpointLabel) {
-      // Locked-provider mode never reaches here — `customEndpointEntries` is
-      // forced empty while locked, so nothing can set this state then.
-      result = result.filter(
-        (m) =>
-          isCustomModelEndpointModelSlug(m.slug) && m.subProvider === selectedCustomEndpointLabel,
-      );
-    } else if (props.lockedProvider !== null) {
-      result = result.filter((m) => matchesLockedProvider(m));
-      if (selectedInstanceId === "favorites") {
-        result = result.filter((m) => favoritesSet.has(providerModelKey(m.instanceId, m.slug)));
-      } else {
-        result = result.filter((m) => m.instanceId === selectedInstanceId);
-      }
-    } else if (selectedInstanceId === "favorites") {
-      result = result.filter((m) => favoritesSet.has(providerModelKey(m.instanceId, m.slug)));
-    } else {
-      result = result.filter((m) => m.instanceId === selectedInstanceId);
+    if (props.lockedProvider !== null) {
+      result = result.filter((model) => matchesLockedProvider(model));
     }
 
-    return sortProviderModelItems(result, {
+    const ordered = sortProviderModelItems(result, {
       favoriteModelKeys: favoritesSet,
-      groupFavorites: selectedInstanceId !== "favorites",
-      instanceOrder: selectedInstanceId === "favorites" ? instanceOrder : [],
+      groupFavorites: true,
+      instanceOrder,
     });
+    return ordered;
   }, [
     favoritesSet,
     flatModels,
-    selectedCustomEndpointLabel,
     instanceOrder,
     matchesLockedProvider,
     props.lockedProvider,
     searchQuery,
+    selectedCustomEndpointId,
     selectedInstanceId,
   ]);
 
@@ -444,8 +388,11 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
     if (isSearching || selectedInstanceId === "favorites") {
       return null;
     }
-    const currentModels = filteredModels.filter((model) => !model.isLegacy);
-    const legacyModels = filteredModels.filter((model) => model.isLegacy);
+    const isHiddenLegacy = (model: ModelPickerItem) =>
+      model.isLegacy &&
+      !(model.instanceId === props.activeInstanceId && model.slug === props.model);
+    const currentModels = filteredModels.filter((model) => !isHiddenLegacy(model));
+    const legacyModels = filteredModels.filter(isHiddenLegacy);
     if (legacyModels.length === 0) {
       return null;
     }
@@ -455,7 +402,14 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
       legacyModels,
       isExpanded: expandedLegacyInstances.has(selectedInstanceId),
     };
-  }, [expandedLegacyInstances, filteredModels, isSearching, selectedInstanceId]);
+  }, [
+    expandedLegacyInstances,
+    filteredModels,
+    isSearching,
+    props.activeInstanceId,
+    props.model,
+    selectedInstanceId,
+  ]);
 
   const visibleModels = useMemo(() => {
     if (!legacySection) {
@@ -662,29 +616,22 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
   return (
     <TooltipProvider delay={0}>
       <div
-        className="relative flex h-screen max-h-86.5 w-screen max-w-90 flex-row overflow-hidden"
+        className="relative flex h-[390px] max-h-[min(440px,70dvh)] w-[460px] max-w-[calc(100vw-24px)] flex-row overflow-hidden bg-popover"
         data-model-picker-content="true"
       >
-        {/* Sidebar */}
-        {showSidebar && (
-          <ModelPickerSidebar
-            selectedInstanceId={selectedInstanceId}
-            onSelectInstance={handleSelectInstance}
-            instanceEntries={sidebarInstanceEntries}
-            showFavorites
-            customEndpointEntries={customEndpointEntries}
-            selectedCustomEndpointLabel={selectedCustomEndpointLabel}
-            onSelectCustomEndpoint={handleSelectCustomEndpoint}
-            {...(lockedDisabledInstanceIds
-              ? {
-                  disabledInstanceIds: lockedDisabledInstanceIds,
-                  getDisabledInstanceTooltip: (entry: ProviderInstanceEntry) =>
-                    `${entry.displayName} is unavailable in this thread. Start a new thread to switch providers.`,
-                }
-              : {})}
-          />
-        )}
-
+        <ModelPickerSidebar
+          selectedInstanceId={selectedInstanceId}
+          onSelectInstance={handleSelectInstance}
+          instanceEntries={sidebarEntries}
+          showFavorites={favorites.length > 0}
+          disabledInstanceIds={disabledInstanceIds}
+          getDisabledInstanceTooltip={(entry) =>
+            `${entry.displayName} is unavailable in this thread. Start a new thread to switch providers.`
+          }
+          customEndpointEntries={customEndpointEntries}
+          selectedCustomEndpointId={selectedCustomEndpointId}
+          onSelectCustomEndpoint={handleSelectCustomEndpoint}
+        />
         {/* Main content area */}
         <Combobox
           inline
@@ -719,20 +666,19 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
             }
           }}
         >
-          <div
-            className={cn(
-              "flex min-h-0 flex-1 flex-col overflow-hidden bg-muted/40",
-              showSidebar && "border-l border-border/70",
-            )}
-          >
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-1">
+              <span className="truncate text-xs font-semibold">{selectedProviderLabel}</span>
+              <span className="shrink-0 text-[10px] text-muted-foreground">Select a model</span>
+            </div>
             {/* Search bar */}
-            <div className="px-2 pt-2">
-              <div className="border-b border-border/70 pb-2.5 transition-colors focus-within:border-ring">
+            <div className="px-3 pt-3 pb-2">
+              <div className="rounded-lg bg-foreground/[0.035] px-2.5 py-1.5 ring-1 ring-inset ring-border/40 transition-[background-color,box-shadow] duration-150 ease-[var(--ease-fluid)] motion-reduce:transition-none focus-within:ring-ring/50">
                 <ComboboxInput
                   ref={searchInputRef}
                   className="[&_input]:h-6.5 [&_input]:font-sans [&_input]:leading-6.5"
                   inputClassName="rounded-none bg-transparent text-sm"
-                  placeholder="Search models..."
+                  placeholder="Search models"
                   showTrigger={false}
                   startAddon={
                     <SearchIcon className="-translate-x-0.5 size-4 shrink-0 text-muted-foreground opacity-70" />
@@ -801,10 +747,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
                             </div>
                           </div>
                           <ChevronRightIcon
-                            className={cn(
-                              "size-4 transition-transform",
-                              legacySection.isExpanded && "rotate-90",
-                            )}
+                            className={disclosureChevronClassName(legacySection.isExpanded)}
                           />
                         </ComboboxItem>
                       );
@@ -830,10 +773,11 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
                         isSelected={
                           modelKey === modelPickerModelKey(props.activeInstanceId, props.model)
                         }
-                        showProvider
+                        showProvider={
+                          selectedInstanceId === "favorites" || Boolean(model.subProvider)
+                        }
                         preferShortName={!isLocked}
                         useTriggerLabel={false}
-                        showNewBadge={isModelPickerNewModel(model.driverKind, model.slug)}
                         jumpLabel={modelJumpLabelByKey.get(modelKey) ?? null}
                         disabledReason={disabledReason}
                         onToggleFavorite={() => toggleFavorite(model.instanceId, model.slug)}
@@ -843,7 +787,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
                   estimatedItemSize={52}
                   drawDistance={480}
                   recycleItems
-                  contentContainerClassName="pl-2 pr-px"
+                  contentContainerClassName="px-1.5"
                   ItemSeparatorComponent={ModelListSeparator}
                   onLayout={updateModelListScrollFades}
                   onScroll={updateModelListScrollFades}
@@ -858,7 +802,7 @@ export const ModelPickerContent = memo(function ModelPickerContent(props: {
               </ComboboxListVirtualized>
             </div>
             <ComboboxEmpty className="not-empty:py-6 empty:h-0 text-xs font-normal leading-snug">
-              No models found
+              {isSearching ? "No matching models" : "No models available"}
             </ComboboxEmpty>
           </div>
         </Combobox>

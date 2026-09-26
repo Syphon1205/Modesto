@@ -51,6 +51,8 @@ contextBridge.exposeInMainWorld("desktopBridge", {
   getClientSettings: () => ipcRenderer.invoke(IpcChannels.GET_CLIENT_SETTINGS_CHANNEL),
   setClientSettings: (settings) =>
     ipcRenderer.invoke(IpcChannels.SET_CLIENT_SETTINGS_CHANNEL, settings),
+  playSystemSound: (sound, volume) =>
+    ipcRenderer.invoke(IpcChannels.PLAY_SYSTEM_SOUND_CHANNEL, { sound, volume }),
   getMicrophoneStatus: () => ipcRenderer.invoke(IpcChannels.MICROPHONE_STATUS_CHANNEL),
   requestMicrophone: () => ipcRenderer.invoke(IpcChannels.REQUEST_MICROPHONE_CHANNEL),
   listListeningLibraries: () =>

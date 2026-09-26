@@ -1271,6 +1271,25 @@ export const DesktopPreviewAutomationWaitForInputSchema = Schema.Struct({
   input: PreviewAutomationWaitForInput,
 });
 
+export const DesktopSystemSoundSchema = Schema.Literals([
+  "basso",
+  "funk",
+  "glass",
+  "hero",
+  "ping",
+  "pop",
+  "purr",
+  "sosumi",
+  "submarine",
+  "tink",
+]);
+export type DesktopSystemSound = typeof DesktopSystemSoundSchema.Type;
+
+export const DesktopPlaySystemSoundInputSchema = Schema.Struct({
+  sound: DesktopSystemSoundSchema,
+  volume: Schema.Number.check(Schema.isBetween({ minimum: 0, maximum: 100 })),
+});
+
 export interface DesktopBridge {
   getAppBranding: () => DesktopAppBranding | null;
   /**
@@ -1287,6 +1306,8 @@ export interface DesktopBridge {
   getLocalEnvironmentBearerToken: () => Promise<string>;
   getClientSettings: () => Promise<ClientSettings | null>;
   setClientSettings: (settings: ClientSettings) => Promise<void>;
+  /** Plays a validated native notification sound. Optional for older desktop shells. */
+  playSystemSound?: (sound: DesktopSystemSound, volume: number) => Promise<boolean>;
   getConnectionCatalog?: () => Promise<string | null>;
   setConnectionCatalog?: (catalog: string) => Promise<boolean>;
   clearConnectionCatalog?: () => Promise<void>;

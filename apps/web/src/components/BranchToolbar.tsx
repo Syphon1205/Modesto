@@ -1,4 +1,5 @@
 import { scopeProjectRef, scopeThreadRef } from "@modesto/client-runtime/environment";
+import type { ProviderLayout } from "~/providerLayouts";
 import type { EnvironmentId, ThreadId } from "@modesto/contracts";
 import {
   ChevronDownIcon,
@@ -9,7 +10,16 @@ import {
   HistoryIcon,
   MonitorIcon,
 } from "lucide-react";
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { useComposerDraftStore, type DraftId } from "../composerDraftStore";
 import { useProject, useThread, useThreadShellsForProjectRefs } from "../state/entities";
@@ -28,6 +38,7 @@ import {
 import { BranchToolbarBranchSelector } from "./BranchToolbarBranchSelector";
 import { BranchToolbarEnvironmentSelector } from "./BranchToolbarEnvironmentSelector";
 import { BranchToolbarEnvModeSelector } from "./BranchToolbarEnvModeSelector";
+import { OpenCodeProjectAvatar } from "./OpenCodeProjectAvatar";
 import { Button } from "./ui/button";
 import {
   Menu,
@@ -57,6 +68,8 @@ interface BranchToolbarProps {
   onComposerFocusRequest?: () => void;
   availableEnvironments?: readonly EnvironmentOption[];
   onEnvironmentChange?: (environmentId: EnvironmentId) => void;
+  appearance?: "default" | "copilot" | "opencode" | ProviderLayout;
+  leadingControl?: ReactNode;
 }
 
 interface MobileRunContextSelectorProps {
@@ -72,6 +85,7 @@ interface MobileRunContextSelectorProps {
   onEnvModeChange: (mode: EnvMode) => void;
   previousWorktreeLabel: string | null;
   onUsePreviousWorktree: () => void;
+  copilotAppearance: boolean;
 }
 
 const MobileRunContextSelector = memo(function MobileRunContextSelector({
@@ -87,6 +101,7 @@ const MobileRunContextSelector = memo(function MobileRunContextSelector({
   onEnvModeChange,
   previousWorktreeLabel,
   onUsePreviousWorktree,
+  copilotAppearance,
 }: MobileRunContextSelectorProps) {
   const activeEnvironment = useMemo(
     () => availableEnvironments?.find((env) => env.environmentId === environmentId) ?? null,
@@ -171,7 +186,9 @@ const MobileRunContextSelector = memo(function MobileRunContextSelector({
           </>
         ) : null}
         <MenuGroup>
-          <MenuGroupLabel>Workspace</MenuGroupLabel>
+          <MenuGroupLabel>
+            {copilotAppearance ? "Where to run this session" : "Workspace"}
+          </MenuGroupLabel>
           <MenuRadioGroup
             value={effectiveEnvMode}
             onValueChange={(value) => {
@@ -182,6 +199,19 @@ const MobileRunContextSelector = memo(function MobileRunContextSelector({
               onEnvModeChange(value as EnvMode);
             }}
           >
+            <MenuRadioItem disabled={envModeLocked} value="worktree">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <FolderGit2Icon className="size-3" />
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate">{resolveEnvModeLabel("worktree")}</span>
+                  {copilotAppearance ? (
+                    <span className="text-[11px] font-normal text-muted-foreground">
+                      Creates a separate copy for this session
+                    </span>
+                  ) : null}
+                </span>
+              </span>
+            </MenuRadioItem>
             <MenuRadioItem disabled={envModeLocked} value="local">
               <span className="flex min-w-0 items-center gap-1.5">
                 {activeWorktreePath ? (
@@ -189,15 +219,18 @@ const MobileRunContextSelector = memo(function MobileRunContextSelector({
                 ) : (
                   <FolderIcon className="size-3" />
                 )}
-                <span className="min-w-0 truncate">
-                  {resolveCurrentWorkspaceLabel(activeWorktreePath)}
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate">
+                    {copilotAppearance && !activeWorktreePath
+                      ? "Local repository"
+                      : resolveCurrentWorkspaceLabel(activeWorktreePath)}
+                  </span>
+                  {copilotAppearance && !activeWorktreePath ? (
+                    <span className="text-[11px] font-normal text-muted-foreground">
+                      Works in the repository already on your machine
+                    </span>
+                  ) : null}
                 </span>
-              </span>
-            </MenuRadioItem>
-            <MenuRadioItem disabled={envModeLocked} value="worktree">
-              <span className="flex min-w-0 items-center gap-1.5">
-                <FolderGit2Icon className="size-3" />
-                <span className="min-w-0 truncate">{resolveEnvModeLabel("worktree")}</span>
               </span>
             </MenuRadioItem>
             {previousWorktreeLabel ? (
@@ -389,6 +422,8 @@ export const BranchToolbar = memo(function BranchToolbar({
   onComposerFocusRequest,
   availableEnvironments,
   onEnvironmentChange,
+  appearance = "default",
+  leadingControl,
 }: BranchToolbarProps) {
   const threadRef = useMemo(
     () => scopeThreadRef(environmentId, threadId),
@@ -469,8 +504,21 @@ export const BranchToolbar = memo(function BranchToolbar({
     <div
       ref={setStripElement}
       data-compact={labelsOverflow ? "" : undefined}
+      data-appearance={appearance}
       className="chat-composer-context-strip group/composer-context -mt-4 mx-auto flex w-[calc(100%-2.75rem)] max-w-[calc(48rem-2.75rem)] items-center gap-2 overflow-x-clip overflow-y-visible ps-1 pe-2 pt-5 pb-1"
     >
+      {leadingControl ? (
+        <>
+          <div className="flex shrink-0 items-center" data-composer-context-control>
+            {leadingControl}
+          </div>
+          <Separator
+            orientation="vertical"
+            className="mx-0.5 h-3.5!"
+            data-composer-context-control
+          />
+        </>
+      ) : null}
       {isMobile && showGitControls ? (
         <MobileRunContextSelector
           envLocked={envLocked}
@@ -485,6 +533,7 @@ export const BranchToolbar = memo(function BranchToolbar({
           onEnvModeChange={onEnvModeChange}
           previousWorktreeLabel={previousWorktreeLabel}
           onUsePreviousWorktree={onUsePreviousWorktree}
+          copilotAppearance={appearance === "copilot"}
         />
       ) : (
         <div className="flex min-w-0 flex-1 items-center gap-1">
@@ -513,6 +562,20 @@ export const BranchToolbar = memo(function BranchToolbar({
               onEnvModeChange={onEnvModeChange}
               previousWorktreeLabel={previousWorktreeLabel}
               onUsePreviousWorktree={onUsePreviousWorktree}
+              copilotAppearance={appearance === "copilot"}
+              {...(appearance === "opencode"
+                ? {
+                    displayLabel: activeProject.title,
+                    displayIcon: (
+                      <OpenCodeProjectAvatar
+                        environmentId={environmentId}
+                        cwd={activeProject.workspaceRoot}
+                        faviconPath={activeProject.faviconPath}
+                        label={activeProject.title}
+                      />
+                    ),
+                  }
+                : {})}
             />
           ) : null}
         </div>

@@ -24,9 +24,9 @@ describe("ComposerPendingApprovalPanel", () => {
     expect(markup).toContain('role="group"');
     expect(markup).toContain('tabindex="0"');
     expect(markup).toContain(detail);
-    expect(markup).toContain("max-h-20");
+    expect(markup).toContain("max-h-24");
     expect(markup).toContain("overflow-auto");
-    expect(markup).toContain("whitespace-pre");
+    expect(markup).toContain("whitespace-pre-wrap");
     expect(markup).toContain("[scrollbar-width:thin]");
     expect(markup).toContain("[&amp;::-webkit-scrollbar]:h-1.5");
     expect(markup).not.toContain("truncate");

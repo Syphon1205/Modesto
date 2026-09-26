@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/providerLayouts.css";
 
 @custom-variant dark (&:is(.dark, .dark *));
 @custom-variant light (&:not(.dark, .dark *));
@@ -150,6 +151,1114 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --workspace-native-controls-inset: calc(
     100vw - env(titlebar-area-width, 100vw) - env(titlebar-area-x, 0px) + 0.75rem
   );
+}
+
+/* OpenCode v2 shell. Geometry and surfaces follow the current upstream
+   desktop source: 36px titlebar, 64px project rail, 288px session panel and a
+   raised 12px-start-radius workspace. Modesto's domain actions stay behind
+   these controls; only their presentation changes. */
+html[data-interface-style="opencode"] {
+  --control-radius: 0.375rem;
+  --sidebar-content-inset: 0.5rem;
+  --sidebar-row-content-inset: 0.5rem;
+  --workspace-topbar-height: 44px;
+  --opencode-titlebar-height: 36px;
+  --opencode-bg-deep: #fafafa;
+  --opencode-bg-base: #ffffff;
+  --opencode-bg-layer-01: #f7f7f7;
+  --opencode-bg-layer: #f2f2f2;
+  --opencode-border: rgb(0 0 0 / 10%);
+  --opencode-muted: #808080;
+  --sidebar: var(--opencode-bg-deep);
+  --background: var(--opencode-bg-base);
+}
+
+html.dark[data-interface-style="opencode"] {
+  --opencode-bg-deep: #080808;
+  --opencode-bg-base: #161616;
+  --opencode-bg-layer-01: #242424;
+  --opencode-bg-layer: #2e2e2e;
+  --opencode-border: rgb(255 255 255 / 10%);
+  --opencode-muted: #808080;
+}
+
+html[data-interface-style="opencode"] [data-interface-shell="opencode"] {
+  padding-top: var(--opencode-titlebar-height);
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar] {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  display: flex;
+  height: var(--opencode-titlebar-height);
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 0 var(--workspace-controls-left, 8px);
+  background: var(--opencode-bg-deep);
+  -webkit-app-region: drag;
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar] button {
+  display: grid;
+  width: 28px;
+  height: 24px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  -webkit-app-region: no-drag;
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar] button:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar] svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar] > button:first-child {
+  width: 36px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-titlebar-drag] {
+  flex: 1;
+}
+
+html[data-interface-style="opencode"]
+  [data-interface-sidebar="opencode"][data-slot="sidebar-container"] {
+  top: var(--opencode-titlebar-height);
+  height: calc(100svh - var(--opencode-titlebar-height));
+  border: 0;
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"]
+  [data-interface-sidebar="opencode"]
+  [data-slot="sidebar-inner"] {
+  background: transparent;
+  background-image: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-sidebar] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  isolation: isolate;
+  contain: paint;
+  clip-path: inset(0 round 12px);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-rail] {
+  display: flex;
+  width: 64px;
+  flex: 0 0 64px;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"] [data-opencode-projects],
+html[data-interface-style="opencode"] [data-opencode-rail-footer] {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-projects] {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-rail-footer] {
+  flex: 0 0 auto;
+  gap: 8px;
+  padding-bottom: 24px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-projects] button,
+html[data-interface-style="opencode"] [data-opencode-rail-footer] button,
+html[data-interface-style="opencode"] [data-opencode-rail-footer] a {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--muted-foreground);
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+html[data-interface-style="opencode"] [data-opencode-projects] button:hover,
+html[data-interface-style="opencode"] [data-opencode-projects] button[data-active],
+html[data-interface-style="opencode"] [data-opencode-rail-footer] button:hover,
+html[data-interface-style="opencode"] [data-opencode-rail-footer] a:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-projects] button > svg,
+html[data-interface-style="opencode"] [data-opencode-projects] button > img,
+html[data-interface-style="opencode"] [data-opencode-projects] button > span {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-rail-footer] svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-panel] {
+  display: flex;
+  width: 288px;
+  min-width: 0;
+  flex: 1 1 288px;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 10px 8px 16px;
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"]
+  [data-interface-shell="opencode"][data-opencode-panel="closed"]
+  [data-opencode-session-panel] {
+  display: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-heading] {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-heading] strong {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-heading] button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-search] {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  gap: 7px;
+  margin: 2px 4px 6px;
+  padding: 0 8px;
+  border: 1px solid var(--opencode-border);
+  border-radius: 6px;
+  background: var(--opencode-bg-base);
+}
+
+html[data-interface-style="opencode"] [data-opencode-search] > svg,
+html[data-interface-style="opencode"] [data-opencode-search] button svg {
+  width: 13px;
+  height: 13px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-search] [data-slot="input"] {
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-new-session],
+html[data-interface-style="opencode"] [data-opencode-session-list] > button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  text-align: left;
+}
+
+html[data-interface-style="opencode"] [data-opencode-new-session] {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+html[data-interface-style="opencode"] [data-opencode-new-session]:hover,
+html[data-interface-style="opencode"] [data-opencode-session-list] > button:hover,
+html[data-interface-style="opencode"] [data-opencode-session-list] > button[data-active] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+html[data-interface-style="opencode"] [data-opencode-new-session] svg {
+  width: 16px;
+  height: 16px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-new-session] kbd {
+  margin-inline-start: auto;
+  color: var(--opencode-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-label] {
+  padding: 14px 8px 5px;
+  color: var(--opencode-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-list] {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-list] > button {
+  height: 28px;
+  padding: 4px 8px;
+  color: var(--muted-foreground);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-list] > button[data-active] {
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-list] > button > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-interface-style="opencode"] [data-opencode-session-list] > p {
+  padding: 16px 8px;
+  color: var(--opencode-muted);
+  font-size: 12px;
+}
+
+html[data-interface-style="opencode"] [data-slot="sidebar-inset"] {
+  min-height: 0;
+  overflow: hidden;
+  border-block-start: 1px solid var(--opencode-border);
+  border-inline-start: 1px solid var(--opencode-border);
+  border-start-start-radius: 12px;
+  background: var(--opencode-bg-base);
+  background-image: none;
+}
+
+html[data-interface-style="opencode"] [data-chat-header] {
+  border-bottom-color: var(--opencode-border);
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  left: calc(var(--workspace-controls-left, 8px) + 44px);
+  z-index: 61;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+/* OpenCode's sidebar is a full home screen, not persistent application
+   chrome. Sessions and new-session drafts use the entire raised canvas. */
+html[data-interface-style="opencode"]
+  [data-interface-shell="opencode"]
+  > [data-slot="sidebar-inset"] {
+  margin: 8px;
+  width: calc(100% - 16px);
+  height: calc(100dvh - var(--opencode-titlebar-height) - 16px) !important;
+  border: 1px solid var(--opencode-border);
+  border-radius: 10px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home] {
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-surface] {
+  display: grid;
+  min-height: 100%;
+  flex: 1;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 12px;
+  overflow-y: auto;
+  background: var(--opencode-bg-base);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-projects] {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-section-heading],
+html[data-interface-style="opencode"] [data-opencode-home-new-session] {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 0 6px;
+  color: var(--opencode-muted);
+  font-size: 14px;
+  font-weight: 530;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-section-heading] button,
+html[data-interface-style="opencode"] [data-opencode-home-new-session] button {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--muted-foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-section-heading] button:hover,
+html[data-interface-style="opencode"] [data-opencode-home-new-session] button:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-section-heading] svg,
+html[data-interface-style="opencode"] [data-opencode-home-new-session] svg {
+  width: 15px;
+  height: 15px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-list] {
+  min-height: 0;
+  flex: 0 1 auto;
+  padding-right: 12px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-row] > button:first-child,
+html[data-interface-style="opencode"] [data-opencode-home-utility] > button,
+html[data-interface-style="opencode"] [data-opencode-home-utility] > a {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  border-radius: 5px;
+  padding: 0 6px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  text-align: left;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-row] > button:first-child:hover,
+html[data-interface-style="opencode"]
+  [data-opencode-home-project-row][data-active]
+  > button:first-child {
+  background: var(--opencode-bg-layer);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-row] {
+  position: relative;
+  display: flex;
+  height: 28px;
+  min-width: 0;
+  align-items: center;
+  border-radius: 6px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-row] > button:first-child {
+  padding-right: 58px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-new-session] {
+  position: absolute;
+  right: 28px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--opencode-muted);
+  opacity: 0;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-home-project-row]:hover
+  [data-opencode-project-new-session],
+html[data-interface-style="opencode"] [data-opencode-project-new-session]:focus-visible,
+html[data-interface-style="opencode"]
+  [data-opencode-home-project-row]:hover
+  [data-opencode-project-more],
+html[data-interface-style="opencode"] [data-opencode-project-more]:focus-visible,
+html[data-interface-style="opencode"] [data-opencode-project-more][data-popup-open] {
+  opacity: 1;
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-new-session]:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-new-session] svg {
+  width: 13px;
+  height: 13px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-more] {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 4px;
+  color: var(--opencode-muted);
+  opacity: 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-more]:hover {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-more] svg {
+  width: 13px;
+  height: 13px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-list] img,
+html[data-interface-style="opencode"]
+  [data-opencode-home-project-list]
+  [data-slot="project-favicon"],
+html[data-interface-style="opencode"] [data-opencode-project-avatar] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-project-avatar] {
+  display: grid;
+  flex: 0 0 16px;
+  place-items: center;
+  color: rgb(255 255 255 / 92%);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-project-list] span,
+html[data-interface-style="opencode"] [data-opencode-home-session-group] button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-utility] {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+  padding-bottom: 32px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-utility][data-mobile] {
+  margin-top: 0;
+  padding-bottom: 8px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-utility] svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-sessions] {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  padding-top: 24px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-search] {
+  display: flex;
+  height: 36px;
+  flex: 0 0 36px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 7px;
+  padding: 0 12px;
+  background: var(--opencode-bg-layer);
+  color: var(--opencode-muted);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-search] svg {
+  width: 15px;
+  height: 15px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-search] input {
+  min-width: 0;
+  flex: 1;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 14px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-new-session] {
+  margin-top: 18px;
+  padding-inline: 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-list] {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 48px;
+  scrollbar-width: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-group] {
+  margin-bottom: 26px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-group] h2 {
+  margin-bottom: 14px;
+  color: var(--opencode-muted);
+  font-size: 13px;
+  font-weight: 440;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-group] button {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  align-items: center;
+  gap: 9px;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-group] button:hover {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-group] img,
+html[data-interface-style="opencode"]
+  [data-opencode-home-session-group]
+  [data-slot="project-favicon"],
+html[data-interface-style="opencode"]
+  [data-opencode-home-session-group]
+  [data-opencode-project-avatar] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 4px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-home-session-list] > p {
+  padding-top: 40px;
+  color: var(--opencode-muted);
+  font-size: 13px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-route="draft"] [data-chat-header] {
+  display: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-wordmark] {
+  display: block;
+  width: min(100%, 720px);
+  height: auto;
+  margin: 0 auto;
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"] [data-opencode-route="draft"] .chat-composer-glass-shell {
+  max-width: 720px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-route="draft"] .chat-composer-glass-host {
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--chat-composer-glass-surface) var(--glass-opacity),
+    transparent
+  );
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-glass-shell-with-context::before {
+  display: none;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-context-strip[data-appearance="opencode"] {
+  width: max-content;
+  max-width: 100%;
+  margin-top: 20px;
+  gap: 8px;
+  padding: 0;
+  overflow: visible;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-context-strip[data-appearance="opencode"]::before {
+  display: none;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-context-strip[data-appearance="opencode"]
+  > div:first-child {
+  flex: none;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-context-strip[data-appearance="opencode"]
+  > div:first-child::after {
+  margin-left: 8px;
+  color: var(--opencode-muted);
+  content: "/";
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  .chat-composer-context-strip[data-appearance="opencode"]
+  [data-opencode-project-avatar] {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+html[data-interface-style="opencode"] [data-chat-composer-input-region] {
+  padding: 14px 14px 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-route="draft"] {
+  --opencode-wordmark-height: min(calc((100vw - 48px) * 0.20031), 129px);
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-route="draft"]
+  [data-chat-composer-overlay="true"] {
+  align-items: flex-start;
+  padding-top: calc(25.375dvh + var(--opencode-wordmark-height) + 32px);
+}
+
+html[data-interface-style="opencode"] [data-testid="composer-editor"] {
+  min-height: 42px;
+  max-height: 120px;
+}
+
+html[data-interface-style="opencode"] [data-chat-composer-footer] {
+  position: relative;
+  padding: 0 10px 8px 40px;
+}
+
+html[data-interface-style="opencode"]
+  [data-chat-composer-actions="right"]
+  button[aria-label="Attach files"] {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+}
+
+html[data-interface-style="opencode"]
+  [data-chat-composer-actions="right"]
+  button[aria-label^="Context window"] {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  html[data-interface-style="opencode"] [data-opencode-home-surface] {
+    grid-template-columns: 280px minmax(0, 720px);
+    grid-template-rows: 1fr;
+    gap: 32px;
+    padding: 0 24px;
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-home-projects] {
+    height: calc(100cqh - 56px);
+    align-self: start;
+    margin-top: 56px;
+    padding-top: 52px;
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-home-sessions] {
+    padding-top: 48px;
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-home-utility][data-mobile] {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  html[data-interface-style="opencode"]
+    [data-opencode-home-projects]
+    [data-opencode-home-utility]:not([data-mobile]) {
+    display: none;
+  }
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] > [role="tab"] {
+  height: 28px;
+  width: 224px;
+  min-width: 28px;
+  max-width: 224px;
+  flex-shrink: 1;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  gap: 6px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] > [role="tab"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--opencode-bg-layer) 88%, var(--foreground) 12%);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"]
+  [data-chat-tab-strip]
+  > [role="tab"]:hover:not([aria-selected="true"]) {
+  background: var(--opencode-bg-layer);
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] > [role="tab"] > button:last-of-type {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+}
+
+html[data-interface-style="opencode"]
+  [data-chat-tab-strip]
+  > [role="tab"]:is(:hover, [aria-selected="true"])
+  > button:last-of-type {
+  opacity: 1;
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] [data-opencode-project-avatar],
+html[data-interface-style="opencode"] [data-chat-tab-strip] [data-slot="project-favicon"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 3px;
+}
+
+html[data-interface-style="opencode"] [data-chat-tab-strip] > button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+}
+
+@media (min-width: 48rem) {
+  html[data-interface-style="opencode"] [data-slot="sidebar-inset"] {
+    height: calc(100dvh - var(--opencode-titlebar-height)) !important;
+    min-height: 0 !important;
+  }
+}
+
+/* OpenCode settings v2 is a centered 980x600 dialog surface with a 240px
+   navigation rail. The route remains addressable in Modesto, while this shell
+   mirrors the upstream desktop geometry and row system. */
+html[data-interface-style="opencode"] [data-opencode-settings] {
+  --opencode-settings-height: min(calc(100dvh - 92px), 600px);
+  --opencode-settings-width: min(calc(100vw - 32px), 980px);
+
+  position: relative;
+  overflow: hidden;
+  background: var(--opencode-bg-deep);
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-slot="sidebar-gap"] {
+  display: none;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-app-sidebar][data-slot="sidebar-container"] {
+  position: fixed;
+  top: calc(50% - var(--opencode-settings-height) / 2 + var(--opencode-titlebar-height) / 2);
+  left: calc(50% - var(--opencode-settings-width) / 2);
+  z-index: 45;
+  width: min(240px, 30vw) !important;
+  height: var(--opencode-settings-height);
+  border: 1px solid var(--opencode-border);
+  border-right: 0;
+  border-radius: 6px 0 0 6px;
+  background: var(--opencode-bg-layer-01);
+  overflow: hidden;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-app-sidebar]
+  [data-slot="sidebar-inner"] {
+  border-radius: inherit;
+  background: var(--opencode-bg-layer-01);
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-app-sidebar]
+  [data-slot="sidebar-header"] {
+  display: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-nav] {
+  padding: 12px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-nav] > div {
+  gap: 12px;
+  padding: 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-search] {
+  display: none;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu"] {
+  gap: 6px;
+  padding: 0;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-item"] {
+  padding-top: 0;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-item"]
+  > p {
+  padding: 0 0 0 4px;
+  color: var(--opencode-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-button"] {
+  height: 28px;
+  gap: 6px;
+  border-radius: 4px;
+  padding: 0 6px;
+  color: var(--opencode-muted);
+  font-size: 13px;
+  font-weight: 440;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-button"]:is(:hover, [data-active="true"]) {
+  background: color-mix(in srgb, var(--foreground) 9%, transparent);
+  color: var(--foreground);
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-button"]
+  svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-footer] {
+  padding: 12px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-content] {
+  position: fixed;
+  top: calc(50% - var(--opencode-settings-height) / 2 + var(--opencode-titlebar-height) / 2);
+  left: calc(50% - var(--opencode-settings-width) / 2 + min(240px, 30vw));
+  z-index: 44;
+  width: calc(var(--opencode-settings-width) - min(240px, 30vw));
+  height: var(--opencode-settings-height) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  border: 1px solid var(--opencode-border);
+  border-radius: 0 6px 6px 0;
+  background: var(--opencode-bg-base);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 32%);
+  overflow: hidden;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-header] {
+  height: auto;
+  min-height: 0;
+  padding: 40px 40px 32px;
+  font-size: 15px;
+  font-weight: 640;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-header]
+  [aria-label="Settings section"] {
+  font-size: 15px;
+  font-weight: 640;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-opencode-settings-header]
+  button {
+  display: none;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-page-scroll] > div {
+  max-width: none;
+  gap: 36px;
+  padding: 0 40px 40px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-section] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-settings-section]
+  > div:first-child {
+  min-height: 0;
+  padding: 0 0 8px;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-settings-section]
+  > div:first-child
+  h2 {
+  font-size: 15px;
+  font-weight: 640;
+  letter-spacing: 0;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-settings-section]
+  > div:nth-child(2) {
+  padding: 0 20px;
+  border-radius: 8px;
+  background: var(--opencode-bg-layer-01);
+  box-shadow: inset 0 0 0 0.5px var(--opencode-border);
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-row] {
+  border-bottom: 0.5px solid var(--opencode-border);
+  border-radius: 0;
+  padding: 20px 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-row]:last-child {
+  border-bottom: 0;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-row] h3 {
+  font-size: 13px;
+  font-weight: 530;
+  letter-spacing: -0.04px;
+}
+
+html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-row] p {
+  font-size: 13px;
+  font-weight: 440;
+  line-height: 20px;
+}
+
+html[data-interface-style="opencode"]
+  [data-opencode-settings]
+  [data-settings-section]#appearance
+  > div:first-child {
+  display: none;
+}
+
+@media (max-width: 639px) {
+  html[data-interface-style="opencode"]
+    [data-opencode-settings]
+    [data-app-sidebar][data-slot="sidebar-container"] {
+    width: 144px !important;
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-content] {
+    left: calc(50% - var(--opencode-settings-width) / 2 + 144px);
+    width: calc(var(--opencode-settings-width) - 144px);
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-settings] [data-opencode-settings-header] {
+    padding: 28px 24px 24px;
+  }
+
+  html[data-interface-style="opencode"] [data-opencode-settings] [data-settings-page-scroll] > div {
+    padding: 0 24px 32px;
+  }
 }
 
 /* The font tokens are declared outside the inline theme so utilities reference
@@ -1036,6 +2145,16 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     --chat-composer-attached-tint: color-mix(in srgb, var(--warning) 8%, transparent);
   }
 
+  .chat-composer-top-drawer[data-pending-approval="true"] {
+    --chat-composer-drawer-inset: 0px;
+    --chat-composer-attached-outline: var(--chat-composer-outline);
+    --chat-composer-attached-tint: color-mix(in srgb, var(--warning) 3%, transparent);
+  }
+
+  .chat-composer-top-drawer[data-pending-approval="true"]::before {
+    box-shadow: 0 14px 34px -24px rgb(0 0 0 / 55%);
+  }
+
   .chat-composer-glass-shell {
     --chat-composer-attachment-overlap: calc(1rem + 1px);
     --chat-composer-glass-surface: var(--card);
@@ -1112,6 +2231,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 
   .chat-composer-glass-host {
     box-shadow: 0 12px 28px -18px rgb(0 0 0 / 40%);
+    transition: box-shadow var(--motion-fast) var(--ease-fluid);
 
     @variant dark {
       box-shadow: none;
@@ -1122,6 +2242,10 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     }
   }
 
+  .chat-composer-glass-shell:focus-within .chat-composer-glass-host {
+    box-shadow: 0 16px 34px -18px color-mix(in srgb, var(--foreground) 24%, transparent);
+  }
+
   .chat-composer-glass-host::after {
     pointer-events: none;
     position: absolute;
@@ -1130,6 +2254,69 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     border: 1px solid var(--chat-composer-outline);
     border-radius: inherit;
     content: "";
+    transition:
+      border-color var(--motion-fast) var(--ease-fluid),
+      box-shadow var(--motion-fast) var(--ease-fluid);
+  }
+
+  .chat-composer-glass-shell:focus-within .chat-composer-glass-host::after {
+    border-color: color-mix(in srgb, var(--ring) 36%, var(--chat-composer-outline));
+    box-shadow:
+      inset 0 1px var(--chat-composer-highlight, transparent),
+      0 0 0 1px color-mix(in srgb, var(--ring) 8%, transparent);
+  }
+
+  .chat-composer-docked-overlay::before {
+    pointer-events: none;
+    position: absolute;
+    inset: -4.5rem 0 0;
+    z-index: -1;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      color-mix(in srgb, var(--background) 68%, transparent) 48%,
+      var(--background) 86%
+    );
+    content: "";
+  }
+
+  .chat-user-message-bubble {
+    border: 1px solid color-mix(in srgb, var(--foreground) 5%, transparent);
+    background: color-mix(in srgb, var(--foreground) 4.5%, var(--background));
+    box-shadow:
+      inset 0 1px color-mix(in srgb, white 25%, transparent),
+      0 1px 2px color-mix(in srgb, var(--foreground) 3%, transparent);
+    transition:
+      background-color var(--motion-fast) var(--ease-fluid),
+      border-color var(--motion-fast) var(--ease-fluid),
+      box-shadow var(--motion-fast) var(--ease-fluid);
+
+    @variant dark {
+      border-color: color-mix(in srgb, white 5%, transparent);
+      background: color-mix(in srgb, var(--foreground) 7%, var(--background));
+      box-shadow:
+        inset 0 1px color-mix(in srgb, white 3%, transparent),
+        0 1px 3px rgb(0 0 0 / 16%);
+    }
+  }
+
+  .group\/user-message:hover .chat-user-message-bubble,
+  .group\/user-message:focus-within .chat-user-message-bubble {
+    border-color: color-mix(in srgb, var(--foreground) 8%, transparent);
+    background: color-mix(in srgb, var(--foreground) 5.5%, var(--background));
+
+    @variant dark {
+      border-color: color-mix(in srgb, white 8%, transparent);
+      background: color-mix(in srgb, var(--foreground) 8.5%, var(--background));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chat-composer-glass-host::after,
+    .chat-composer-glass-host,
+    .chat-user-message-bubble {
+      transition: none;
+    }
   }
 
   /* A top attachment cannot share the shell's single clipped backdrop: it
@@ -2612,6 +3799,538 @@ code {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * GitHub Copilot desktop shell
+ *
+ * The installed Copilot app is the visual contract here: a quiet 280px
+ * session rail, 40px utility headers, one-pixel separators, compact controls,
+ * and content that never visually competes with the transcript. Colors keep
+ * flowing through Modesto's theme roles so imported VS Code themes still tint
+ * the complete application instead of only the editor surfaces.
+ * ------------------------------------------------------------------------- */
+html[data-interface-style="github"] {
+  --workspace-topbar-height: 40px;
+  --sidebar-width: 280px;
+  --sidebar-content-inset: 8px;
+  --sidebar-row-content-inset: 8px;
+  --control-radius: 6px;
+  --github-hairline: color-mix(in srgb, var(--border) 76%, transparent);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+}
+
+html[data-interface-style="github"] [data-interface-shell="github"] {
+  background: var(--background);
+}
+
+html[data-interface-style="github"]
+  [data-interface-sidebar="github"][data-slot="sidebar-container"] {
+  width: var(--sidebar-width) !important;
+  border-inline-end: 1px solid var(--github-hairline);
+  background: var(--sidebar);
+}
+
+html[data-interface-style="github"] [data-interface-sidebar="github"] [data-slot="sidebar-inner"] {
+  border: 0;
+  border-radius: 0;
+  background: var(--sidebar);
+  box-shadow: none;
+}
+
+html[data-interface-style="github"] [data-slot="sidebar-header"] {
+  height: 40px;
+  min-height: 40px;
+  border: 0;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-header] {
+  display: grid;
+  grid-template-columns: 1fr 26px 26px;
+  align-items: center;
+  gap: 0;
+  padding: 0 8px;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-header] button {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--sidebar-muted-foreground);
+  -webkit-app-region: no-drag;
+  transition:
+    color 110ms ease-out,
+    background-color 110ms ease-out;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-header] button:hover {
+  background: var(--sidebar-row-hover);
+  color: var(--sidebar-foreground);
+}
+
+html[data-interface-style="github"] [data-github-sidebar-header] svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.8;
+}
+
+html[data-interface-style="github"] [data-slot="sidebar-header"] a[aria-label="Go to threads"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-interface-style="github"] .sidebar-stage-backdrop {
+  display: none;
+}
+
+html[data-interface-style="github"]
+  [data-github-sidebar-content]
+  [data-slot="sidebar-menu-button"] {
+  min-height: 29px;
+  border-radius: 6px;
+  padding-inline: 8px;
+  color: color-mix(in srgb, var(--sidebar-foreground) 72%, transparent);
+  font-size: 12px;
+  font-weight: 450;
+  transition:
+    color 110ms ease-out,
+    background-color 110ms ease-out,
+    transform 110ms ease-out;
+}
+
+html[data-interface-style="github"]
+  [data-github-sidebar-content]
+  [data-slot="sidebar-menu-button"]:hover,
+html[data-interface-style="github"]
+  [data-github-sidebar-content]
+  [data-slot="sidebar-menu-button"][data-active="true"] {
+  background: color-mix(in srgb, var(--sidebar-foreground) 7%, transparent);
+  color: var(--sidebar-foreground);
+}
+
+html[data-interface-style="github"]
+  [data-github-sidebar-content]
+  [data-slot="sidebar-menu-button"]:active {
+  transform: scale(0.985);
+}
+
+html[data-interface-style="github"]
+  [data-github-sidebar-content]
+  [data-slot="sidebar-menu-button"]
+  svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.7;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-search] {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  padding: 0 7px;
+  background: var(--background);
+  color: var(--muted-foreground);
+  box-shadow: 0 0 0 1px transparent;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-search]:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus) 28%, transparent);
+}
+
+html[data-interface-style="github"] [data-github-sidebar-search] svg,
+html[data-interface-style="github"] [data-github-sidebar-search] button {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+html[data-interface-style="github"] [data-github-sidebar-search] [data-slot="input"] {
+  height: auto;
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12px;
+}
+
+html[data-interface-style="github"] [data-github-sessions-heading] {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  color: var(--sidebar-muted-foreground);
+  font-size: 11px;
+}
+
+html[data-interface-style="github"] [data-github-sessions-heading] > div {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+html[data-interface-style="github"] [data-github-sessions-heading] button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 5px;
+  color: var(--sidebar-muted-foreground);
+  transition:
+    color 110ms ease-out,
+    background-color 110ms ease-out;
+}
+
+html[data-interface-style="github"] [data-github-sessions-heading] button:hover {
+  background: var(--sidebar-row-hover);
+  color: var(--sidebar-foreground);
+}
+
+html[data-interface-style="github"] [data-github-sessions-heading] svg {
+  width: 14px;
+  height: 14px;
+}
+
+html[data-interface-style="github"] [data-github-session-list] {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 2px;
+}
+
+html[data-interface-style="github"] [data-slot="sidebar-footer"] {
+  border-top: 0;
+  padding: 8px;
+}
+
+html[data-interface-style="github"] [data-slot="sidebar-inset"] {
+  background: var(--background);
+}
+
+html[data-interface-style="github"] [data-chat-header],
+html[data-interface-style="github"] [data-workspace-page-header] {
+  min-height: 40px;
+  border-bottom: 1px solid var(--github-hairline);
+  background: var(--background);
+}
+
+html[data-interface-style="github"] [data-github-route="draft"] [data-chat-header] {
+  border-bottom-color: transparent;
+  background: transparent;
+}
+
+html[data-interface-style="github"]
+  [data-github-route="draft"]
+  [data-chat-header]
+  [data-slot="breadcrumb"] {
+  visibility: hidden;
+}
+
+html[data-interface-style="github"]
+  [data-github-route="draft"]
+  [data-chat-composer-overlay][data-draft-hero="true"] {
+  padding-top: 0;
+  transform: translateY(15px);
+}
+
+html[data-interface-style="github"] [data-chat-header] [data-slot="button"],
+html[data-interface-style="github"] [data-chat-header] [data-toolbar-control] {
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+html[data-interface-style="github"] .chat-composer-glass-shell {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: min(764px, calc(100% - 32px));
+  max-width: 764px;
+  background: var(--background);
+  box-shadow: none;
+  transition:
+    border-color var(--motion-fast) var(--ease-fluid),
+    box-shadow var(--motion-fast) var(--ease-fluid);
+}
+
+html[data-interface-style="github"] .chat-composer-glass-shell:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 35%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+html[data-interface-style="github"] .chat-composer-glass-host,
+html[data-interface-style="github"] .chat-composer-glass-shell::before,
+html[data-interface-style="github"] .chat-composer-glass-host::after {
+  border-radius: inherit;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html[data-interface-style="github"] [data-chat-composer-form="true"] {
+  width: 100%;
+  margin-inline: auto;
+}
+
+html[data-interface-style="github"] [data-chat-composer-main-surface="true"],
+html[data-interface-style="github"] [data-chat-composer-surface="true"] {
+  border-radius: 13px;
+  background: var(--background);
+  box-shadow: none;
+}
+
+html[data-interface-style="github"] .chat-composer-glass-shell-with-context {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-interface-style="github"]
+  .chat-composer-glass-shell-with-context
+  [data-chat-composer-main-surface="true"] {
+  border: 1px solid var(--border);
+  padding: 0;
+  transition: border-color var(--motion-fast) var(--ease-fluid);
+}
+
+html[data-interface-style="github"]
+  .chat-composer-glass-shell-with-context
+  [data-chat-composer-main-surface="true"]:focus-within {
+  border-color: color-mix(in srgb, var(--foreground) 35%, var(--border));
+}
+
+html[data-interface-style="github"] .chat-composer-context-strip {
+  width: 100%;
+  max-width: none;
+  min-height: 34px;
+  margin: -1px 0 0;
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 0 0 14px 14px;
+  background: color-mix(in srgb, var(--muted) 70%, var(--background));
+  box-shadow: none;
+}
+
+html[data-interface-style="github"] .chat-composer-context-strip::before {
+  display: none;
+}
+
+html[data-interface-style="github"] [data-chat-composer-form="true"] textarea,
+html[data-interface-style="github"] [data-chat-composer-form="true"] [contenteditable="true"] {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+html[data-interface-style="github"] [data-chat-composer-form="true"] [data-slot="button"] {
+  border-radius: 6px;
+}
+
+html[data-interface-style="github"] [data-github-conversation-mode-row] {
+  display: flex;
+  width: min(764px, calc(100% - 32px));
+  min-height: 32px;
+  align-items: center;
+  margin: 6px auto 0;
+  padding-inline: 2px;
+  background: transparent;
+}
+
+html[data-interface-style="github"] [data-github-conversation-mode-row] [role="group"] {
+  padding: 0;
+  background: transparent;
+}
+
+html[data-interface-style="github"] [data-github-conversation-mode-row] [data-slot="toggle"] {
+  height: 24px;
+  border-radius: 5px;
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
+html[data-interface-style="github"] [data-github-draft-hero] {
+  gap: 16px;
+}
+
+html[data-interface-style="github"] [data-chat-composer-input-region="true"] {
+  padding: 10px 12px 0;
+}
+
+html[data-interface-style="github"]
+  [data-chat-composer-input-region="true"]
+  [contenteditable="true"] {
+  min-height: 46px;
+}
+
+html[data-interface-style="github"] [data-chat-composer-footer="true"] {
+  padding: 0 8px 8px;
+  gap: 4px;
+}
+
+html[data-interface-style="github"] [data-chat-composer-footer="true"] button {
+  font-size: 12px;
+}
+
+html[data-interface-style="github"] [data-chat-composer-footer="true"] [data-appearance="plus"] {
+  width: 28px;
+  height: 28px;
+}
+
+html[data-interface-style="github"] [data-chat-composer-footer="true"] [data-composer-send] {
+  width: 24px;
+  height: 24px;
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 50%;
+  transition:
+    background-color var(--motion-fast) var(--ease-fluid),
+    transform var(--motion-fast) var(--ease-fluid);
+}
+
+html[data-interface-style="github"]
+  [data-chat-composer-footer="true"]
+  [data-composer-send]:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-style="github"] .chat-composer-glass-shell,
+  html[data-interface-style="github"] [data-chat-composer-footer="true"] [data-composer-send] {
+    transition: none;
+    transform: none;
+  }
+}
+
+html[data-interface-style="github"]
+  [data-chat-composer-footer="true"]
+  [data-composer-send]:disabled {
+  opacity: 0.4;
+}
+
+html[data-interface-style="github"] [data-chat-composer-footer="true"] [data-slot="separator"] {
+  display: none;
+}
+
+html[data-interface-style="github"] [data-github-suggestions] {
+  width: min(764px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+html[data-interface-style="github"] [data-github-suggestions] .landing-suggestion-card {
+  border-radius: 10px;
+  border-color: var(--border);
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  animation: none;
+}
+
+html[data-interface-style="github"] [data-github-suggestions] .landing-suggestion-card-copy {
+  opacity: 1;
+  clip-path: none;
+  animation: none;
+}
+
+html[data-interface-style="github"] [data-github-suggestions] .landing-suggestion-card:hover {
+  border-color: color-mix(in srgb, var(--foreground) 22%, var(--border));
+  background: color-mix(in srgb, var(--foreground) 2.5%, var(--background));
+  transform: translateY(-1px);
+}
+
+html[data-interface-style="github"] [data-settings-section] {
+  margin-bottom: 22px;
+}
+
+html[data-interface-style="github"] [data-settings-row] {
+  border-radius: 7px;
+}
+
+html[data-interface-style="github"] [data-settings-row]:hover {
+  background: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+}
+
+html[data-interface-style="github"] [data-theme-library-card] {
+  border-radius: 7px;
+  transition:
+    transform 130ms ease-out,
+    border-color 130ms ease-out,
+    background-color 130ms ease-out;
+}
+
+html[data-interface-style="github"] [data-theme-library-card]:hover {
+  transform: translateY(-1px);
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-slot="sidebar-header"] {
+  height: 48px;
+  min-height: 48px;
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-settings-search] {
+  border: 1px solid var(--input);
+  background: var(--background);
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-slot="sidebar-menu-button"] {
+  height: 29px;
+  border-radius: 6px;
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-item"].list-none {
+  padding-top: 0;
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-opencode-settings-nav]
+  [data-slot="sidebar-menu-item"].list-none
+  > p {
+  display: none;
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-slot="sidebar-menu-button"][data-active="true"] {
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+html[data-interface-style="github"]
+  [data-interface-shell="github"][data-opencode-settings]
+  [data-opencode-settings-header] {
+  height: 48px;
+  min-height: 48px;
+  padding-inline: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-interface-style="github"] *,
+  html[data-interface-style="github"] *::before,
+  html[data-interface-style="github"] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 /* Empty-landing starter cards: soft staggered entrance, then rotating copy wipe.
    Ported from the original (pre-migration) Modesto ChatLandingSuggestions. */
 @keyframes landing-suggestion-card-enter {
@@ -2773,4 +4492,315 @@ code {
     opacity: 1;
     transform: none;
   }
+}
+
+/* A shared action treatment for the Copilot workspace pages. */
+html[data-interface-style="github"] .copilot-primary-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  box-shadow: none;
+}
+html[data-interface-style="github"] .copilot-primary-button:hover {
+  background: color-mix(in srgb, var(--primary) 90%, var(--background));
+}
+
+/* Copilot settings is one clipped surface. Workspace geometry never participates
+   in its layout, and the underlying conversation stays mounted. */
+html[data-interface-style="github"] .copilot-settings-dialog {
+  display: flex;
+  flex-direction: row;
+  width: min(920px, calc(100vw - 48px));
+  max-width: 920px;
+  height: min(760px, calc(100dvh - 64px));
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow:
+    0 24px 60px -18px rgb(0 0 0 / 26%),
+    0 4px 12px rgb(0 0 0 / 8%);
+}
+.copilot-settings-navigation {
+  display: flex;
+  flex: 0 0 238px;
+  min-width: 0;
+  flex-direction: column;
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  background: var(--background);
+  --sidebar-content-inset: 4px;
+}
+.copilot-settings-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+.copilot-settings-header {
+  display: flex;
+  height: 52px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+.copilot-settings-dialog [data-settings-page-scroll] {
+  min-height: 0;
+  mask-image: none;
+  scrollbar-gutter: auto;
+}
+.copilot-settings-dialog [data-settings-page-scroll] > div {
+  padding: 8px 4px 32px;
+  gap: 28px;
+}
+.copilot-settings-dialog [data-settings-section]:first-child > div:first-child:has(> div:empty) {
+  display: none;
+}
+.copilot-settings-dialog [data-settings-row] {
+  border-radius: 6px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.copilot-settings-dialog [data-settings-row]:hover {
+  background: transparent;
+}
+.copilot-settings-dialog [data-settings-row] h3 {
+  font-size: 12px;
+  font-weight: 600;
+}
+.copilot-settings-dialog [data-settings-row] p {
+  font-size: 12px;
+}
+.copilot-settings-dialog [data-settings-row] > div:first-child {
+  gap: 16px;
+}
+.copilot-settings-dialog [data-slot="sidebar-footer"]:empty {
+  display: none;
+}
+.copilot-settings-dialog [data-settings-search] {
+  margin-bottom: 4px;
+}
+.copilot-palette-card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background);
+  text-align: left;
+  cursor: pointer;
+}
+.copilot-palette-card:hover {
+  border-color: var(--muted-foreground);
+}
+.copilot-palette-card[data-active="true"] {
+  border-color: #80bfff;
+}
+.copilot-palette-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+html[data-interface-style="github"] .copilot-account-menu {
+  border-radius: 14px;
+  background: var(--popover);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 14%);
+}
+.copilot-account-menu [data-slot="menu-item"] {
+  min-height: 36px;
+  border-radius: 8px;
+  padding-inline: 10px;
+}
+.copilot-account-menu [data-slot="menu-separator"] {
+  margin: 6px 10px;
+}
+html[data-interface-style="github"]:has(.copilot-settings-dialog)
+  > body
+  [data-slot="dialog-backdrop"] {
+  background: rgb(100 120 140 / 10%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+@media (max-width: 640px) {
+  html[data-interface-style="github"] .copilot-settings-dialog {
+    width: calc(100vw - 32px);
+    height: calc(100dvh - 32px);
+  }
+  .copilot-settings-navigation {
+    flex-basis: 152px;
+    padding: 4px;
+  }
+  .copilot-settings-header {
+    padding-inline: 12px;
+  }
+  .copilot-settings-dialog [data-settings-row] > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+.copilot-settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: var(--foreground);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.copilot-settings-nav-item:hover,
+.copilot-settings-nav-item[aria-current="page"] {
+  background: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+.copilot-settings-nav-item:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/* Keep update notices behind modal surfaces; nested dialogs and confirmation
+   dialogs share the same layer and retain DOM-order stacking. */
+body:has([data-settings-dialog])
+  :is(
+    [data-slot="dialog-backdrop"],
+    [data-slot="dialog-viewport"],
+    [data-slot="alert-dialog-backdrop"],
+    [data-slot="alert-dialog-viewport"]
+  ) {
+  z-index: 120;
+}
+html[data-interface-style="github"]
+  :is([data-slot="dialog-popup"], [data-slot="alert-dialog-popup"]) {
+  background: var(--background);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 12px;
+}
+.copilot-settings-dialog [data-settings-section] > div:first-child h2 {
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.copilot-settings-dialog [data-copilot-palettes] {
+  padding-top: 8px;
+}
+.copilot-account-menu [data-slot="menu-sub-trigger"] {
+  min-height: 36px;
+  padding-inline: 10px;
+  border-radius: 8px;
+}
+.copilot-settings-dialog [data-slot="sidebar-menu-button"] {
+  border-radius: 6px;
+}
+.copilot-settings-dialog [data-provider-instance-card] {
+  margin: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.copilot-settings-dialog [data-provider-instance-card] > div:first-child {
+  padding: 12px;
+}
+
+.copilot-settings-mobile-section {
+  display: none;
+}
+@media (max-width: 560px) {
+  html[data-interface-style="github"] .copilot-settings-dialog {
+    flex-direction: column;
+  }
+  .copilot-settings-navigation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    flex-basis: auto;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .copilot-settings-navigation > [data-settings-account-header] {
+    display: none;
+  }
+  .copilot-settings-navigation > label {
+    margin: 0;
+  }
+  .copilot-settings-mobile-section {
+    display: block;
+    min-width: 0;
+    border: 1px solid var(--input);
+    border-radius: 6px;
+    background: var(--background);
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+  .copilot-settings-navigation nav {
+    display: none;
+    grid-column: 1 / -1;
+  }
+  .copilot-settings-navigation:has(input:not(:placeholder-shown)) nav {
+    display: block;
+    max-height: 160px;
+  }
+}
+
+html.dark [data-provider-style-preview="claude"] {
+  border-color: #30302e;
+  background: #151515;
+  color: #dedddb;
+}
+
+html.dark [data-provider-style-preview="claude"] [data-provider-preview-sidebar] {
+  border-color: #292929;
+  background: #101010;
+}
+
+html.dark [data-provider-style-preview="claude"] [data-provider-preview-composer] {
+  border-color: #3a3937;
+  background: #202020;
+}
+
+html.dark [data-provider-style-preview="codex"] {
+  border-color: #383838;
+  background: #171717;
+  color: #f2f2f2;
+}
+
+html.dark [data-provider-style-preview="codex"] [data-provider-preview-sidebar] {
+  border-color: #303030;
+  background: #1c1c1c;
+}
+
+html.dark [data-provider-style-preview="codex"] [data-provider-preview-composer] {
+  border-color: #383838;
+  background: #252525;
+}
+
+html.dark [data-provider-style-preview="codex"] [data-provider-preview-send] {
+  background: #f2f2f2;
+}
+
+html.dark [data-provider-style-preview="cursor"] {
+  border-color: #343434;
+  background: #181818;
+  color: #e4e4e4;
+}
+
+html.dark [data-provider-style-preview="cursor"] [data-provider-preview-sidebar] {
+  border-color: #303030;
+  background: #202020;
+}
+
+html.dark [data-provider-style-preview="cursor"] [data-provider-preview-composer] {
+  border-color: #343434;
+  background: #202020;
 }

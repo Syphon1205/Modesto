@@ -1,3 +1,4 @@
+import { NotificationSoundSettings } from "./NotificationSoundSettings";
 import {
   ArchiveIcon,
   ArchiveX,
@@ -6,7 +7,7 @@ import {
   LoaderIcon,
   SettingsIcon,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useAppNavigate } from "../../hooks/useAppNavigate";
 import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtomValue } from "@effect/atom-react";
@@ -27,6 +28,7 @@ import {
   DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE,
   DEFAULT_UNIFIED_SETTINGS,
   type EnvironmentIdentificationMode,
+  type InterfaceStyle,
   MAX_APPEARANCE_CONTRAST,
   MAX_CODE_FONT_SIZE,
   MAX_GLASS_OPACITY,
@@ -129,6 +131,8 @@ import { Switch } from "../ui/switch";
 import { stackedThreadToast, toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { ThemeLibrary } from "./ThemeSettings";
+import { ensureBundledPalette } from "../../themes/catalog";
+import { FileIconSettings } from "./FileIconSettings";
 import {
   backgroundActivityOverrideSettings,
   backgroundActivitySharedPolicySettings,
@@ -162,6 +166,145 @@ const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, s
   pill: "Version pill",
   none: "None",
 };
+
+const INTERFACE_STYLE_OPTIONS: ReadonlyArray<{
+  value: InterfaceStyle;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "github",
+    label: "Default",
+    description:
+      "A clean, focused workspace with compact navigation, rounded chat controls, and settings in a dialog.",
+  },
+  {
+    value: "opencode",
+    label: "OpenCode",
+    description: "A dense workspace with OpenCode-style navigation and controls.",
+  },
+  {
+    value: "claude",
+    label: "Claude",
+    description: "Dense project navigation and a quiet, focused task composer.",
+  },
+  {
+    value: "codex",
+    label: "Codex",
+    description: "The ChatGPT Codex task layout with project groups and a bottom task composer.",
+  },
+  {
+    value: "cursor",
+    label: "Cursor",
+    description:
+      "A sparse agent canvas with repository navigation and a compact centered composer.",
+  },
+  {
+    value: "classic",
+    label: "Classic",
+    description:
+      "The classic Modesto workspace: a project tree, conversation tabs, and separate light and dark theme choices.",
+  },
+];
+
+function InterfaceStylePreview({ style }: { style: InterfaceStyle }) {
+  if (style === "claude" || style === "codex" || style === "cursor") {
+    const claude = style === "claude";
+    const cursor = style === "cursor";
+    return (
+      <div
+        aria-hidden="true"
+        data-provider-style-preview={style}
+        className={`flex h-20 overflow-hidden rounded-lg border shadow-sm ${
+          claude
+            ? "border-[#e5e2d9] bg-[#f5f4ef] text-[#292823]"
+            : cursor
+              ? "border-[#343434] bg-[#181818] text-[#e4e4e4]"
+              : "border-[#343434] bg-[#181818] text-[#e4e4e4]"
+        }`}
+      >
+        <div
+          data-provider-preview-sidebar=""
+          className={`w-[30%] shrink-0 border-r p-2 ${claude ? "border-[#292929] bg-[#101010]" : cursor ? "border-[#303030] bg-[#202020]" : "border-[#292929] bg-[#050505]"}`}
+        >
+          <div className="mb-3 h-1.5 w-9 rounded-full bg-current opacity-65" />
+          <div className="space-y-1.5">
+            <div className="h-1.5 w-full rounded-full bg-current opacity-15" />
+            <div className="h-1.5 w-4/5 rounded-full bg-current opacity-25" />
+            <div className="h-1.5 w-3/5 rounded-full bg-current opacity-15" />
+          </div>
+        </div>
+        <div className="relative flex-1 px-3 pt-3">
+          <div
+            className={`mx-auto h-2 w-1/3 rounded-full bg-current ${claude ? "opacity-50" : "opacity-25"}`}
+          />
+          <div className="mx-auto mt-2 h-1.5 w-1/2 rounded-full bg-current opacity-10" />
+          {!cursor ? (
+            <div className="mx-auto mt-3 h-2 w-2/5 rounded-full bg-current opacity-30" />
+          ) : null}
+          <div
+            data-provider-preview-composer=""
+            className={`absolute border ${cursor ? "left-[18%] right-[18%] top-[42%] h-7 rounded-lg border-[#343434] bg-[#202020]" : "bottom-2 left-3 right-3 h-6 rounded-xl border-[#343434] bg-[#202020]"}`}
+          >
+            <div
+              data-provider-preview-send=""
+              className={`absolute bottom-1 right-1 size-3 rounded-full ${claude ? "bg-[#d97757]" : cursor ? "bg-[#f0f0f0]" : "bg-[#8f8f8f]"}`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (style === "github") {
+    return (
+      <div
+        aria-hidden="true"
+        className="flex h-20 flex-col overflow-hidden rounded-lg border border-border/70 bg-muted shadow-sm"
+      >
+        <div className="flex h-3 shrink-0 items-center gap-1 px-1.5">
+          <div className="size-1.5 rounded-sm bg-foreground/25" />
+          <div className="h-2 w-8 rounded-t-sm bg-card" />
+          <div className="size-1 rounded-full bg-foreground/15" />
+        </div>
+        <div className="mx-1 flex min-h-0 flex-1 rounded-t-md border border-border/60 bg-card px-3 py-2">
+          <div className="w-[34%] shrink-0 space-y-1.5 pe-3">
+            <div className="h-1.5 w-2/5 rounded-full bg-foreground/25" />
+            <div className="mt-2 h-2 w-full rounded-sm bg-foreground/15" />
+            <div className="h-1.5 w-4/5 rounded-full bg-foreground/10" />
+            <div className="h-1.5 w-3/5 rounded-full bg-foreground/10" />
+          </div>
+          <div className="flex-1 space-y-2 border-s border-border/40 ps-3">
+            <div className="h-3 rounded-sm bg-foreground/10" />
+            <div className="h-1.5 w-1/4 rounded-full bg-foreground/20" />
+            <div className="h-1.5 w-4/5 rounded-full bg-foreground/15" />
+            <div className="h-1.5 w-3/5 rounded-full bg-foreground/10" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      className="flex h-20 overflow-hidden rounded-lg border border-border/70 bg-background/80 shadow-sm"
+    >
+      <div className="w-[38%] shrink-0 border-r border-border/60 bg-muted/55 p-1.5">
+        <div className="mb-2 h-1.5 w-8 rounded-full bg-foreground/25" />
+        <div className="space-y-1">
+          <div className="h-1.5 w-full rounded-full bg-foreground/15" />
+          <div className="h-1.5 w-4/5 rounded-full bg-foreground/10" />
+          <div className="ml-1.5 h-1.5 w-3/5 rounded-full bg-foreground/10" />
+        </div>
+      </div>
+      <div className="flex-1 bg-card">
+        <div className="h-4 border-b border-border/50" />
+        <div className="mx-auto mt-3 h-1.5 w-3/5 rounded-full bg-foreground/10" />
+        <div className="mx-auto mt-6 h-4 w-4/5 rounded-md border border-border/70 bg-background" />
+      </div>
+    </div>
+  );
+}
 
 const TIMESTAMP_FORMAT_LABELS = {
   locale: "System default",
@@ -232,7 +375,7 @@ function AboutVersionTitle() {
   );
 }
 
-function AboutVersionSection() {
+export function AboutVersionSection() {
   const updateState = useDesktopUpdateState();
   const [isChangingUpdateChannel, setIsChangingUpdateChannel] = useState(false);
   const [isUpdateActionPending, setIsUpdateActionPending] = useState(false);
@@ -485,6 +628,9 @@ export function useSettingsRestore(onRestored?: () => void) {
   const changedSettingLabels = useMemo(
     () => [
       ...(theme !== "system" ? ["Theme"] : []),
+      ...(settings.terminalAppearance !== DEFAULT_UNIFIED_SETTINGS.terminalAppearance
+        ? ["Terminal appearance"]
+        : []),
       ...(!followSystem ? ["Follow system"] : []),
       ...(themeHalves !== null ? ["Theme mix"] : []),
       ...(settings.appearanceContrast !== DEFAULT_UNIFIED_SETTINGS.appearanceContrast
@@ -559,6 +705,19 @@ export function useSettingsRestore(onRestored?: () => void) {
       ...(settings.thinkingSoundEnabled !== DEFAULT_UNIFIED_SETTINGS.thinkingSoundEnabled
         ? ["Thinking sound"]
         : []),
+      ...((
+        [
+          "notificationSoundsEnabled",
+          "notificationSoundVolume",
+          "startSound",
+          "completionSound",
+          "attentionSound",
+          "interruptionSound",
+          "errorSound",
+        ] as const
+      ).some((key) => settings[key] !== DEFAULT_UNIFIED_SETTINGS[key])
+        ? ["Notification sounds"]
+        : []),
       ...(settings.voice.modelId !== DEFAULT_UNIFIED_SETTINGS.voice.modelId
         ? ["Local speech model"]
         : []),
@@ -575,6 +734,13 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.ambientPresenceEnabled,
       settings.voice.speakReplies,
       settings.thinkingSoundEnabled,
+      settings.notificationSoundsEnabled,
+      settings.notificationSoundVolume,
+      settings.startSound,
+      settings.completionSound,
+      settings.attentionSound,
+      settings.interruptionSound,
+      settings.errorSound,
       settings.voice.modelId,
       settings.confirmQuit,
       settings.confirmThreadArchive,
@@ -584,6 +750,7 @@ export function useSettingsRestore(onRestored?: () => void) {
       settings.newWorktreesStartFromOrigin,
       settings.diffIgnoreWhitespace,
       settings.environmentIdentificationMode,
+      settings.terminalAppearance,
       settings.fontFamilyCode,
       settings.fontFamilyComposer,
       settings.fontFamilySans,
@@ -695,6 +862,14 @@ export function useSettingsRestore(onRestored?: () => void) {
       textGenerationModelSelection: DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection,
       fontFamilySans: DEFAULT_UNIFIED_SETTINGS.fontFamilySans,
       fontFamilyComposer: DEFAULT_UNIFIED_SETTINGS.fontFamilyComposer,
+      terminalAppearance: DEFAULT_UNIFIED_SETTINGS.terminalAppearance,
+      notificationSoundsEnabled: DEFAULT_UNIFIED_SETTINGS.notificationSoundsEnabled,
+      notificationSoundVolume: DEFAULT_UNIFIED_SETTINGS.notificationSoundVolume,
+      startSound: DEFAULT_UNIFIED_SETTINGS.startSound,
+      completionSound: DEFAULT_UNIFIED_SETTINGS.completionSound,
+      attentionSound: DEFAULT_UNIFIED_SETTINGS.attentionSound,
+      interruptionSound: DEFAULT_UNIFIED_SETTINGS.interruptionSound,
+      errorSound: DEFAULT_UNIFIED_SETTINGS.errorSound,
       fontFamilyCode: DEFAULT_UNIFIED_SETTINGS.fontFamilyCode,
       fontFamilyTerminal: DEFAULT_UNIFIED_SETTINGS.fontFamilyTerminal,
       fontSizeInterface: DEFAULT_UNIFIED_SETTINGS.fontSizeInterface,
@@ -1005,6 +1180,41 @@ function BackgroundActivityAdvancedDialog({
 }
 
 export function AppearanceSettingsPanel() {
+  const [selectedAppearancePane, setSelectedAppearancePane] = useState<
+    "style" | "themes" | "preferences" | "typography"
+  >("style");
+  const searchTargetId = useSettingsSearchTargetId();
+  const searchAppearancePane =
+    searchTargetId === "appearance" ||
+    searchTargetId === searchableSetting("theme").id ||
+    searchTargetId === searchableSetting("file-icons").id
+      ? "themes"
+      : (
+            [
+              "setting-appearance-contrast",
+              "setting-glass-opacity",
+              "chat-tabs",
+              "ambient-presence",
+              "environment-identification",
+            ] as const
+          ).some((key) => searchableSetting(key).id === searchTargetId)
+        ? "preferences"
+        : (
+              [
+                "interface-font",
+                "prompt-font",
+                "code-font",
+                "terminal-font",
+                "font-smoothing",
+                "word-wrap",
+              ] as const
+            ).some((key) => searchableSetting(key).id === searchTargetId)
+          ? "typography"
+          : null;
+  useEffect(() => {
+    if (searchAppearancePane) setSelectedAppearancePane(searchAppearancePane);
+  }, [searchAppearancePane]);
+  const appearancePane = searchAppearancePane ?? selectedAppearancePane;
   const {
     appearanceMode,
     refreshTheme,
@@ -1035,210 +1245,342 @@ export function AppearanceSettingsPanel() {
     "--settings-slider-progress": `${appearanceContrastRatio * 100}%`,
     "--settings-slider-fill-offset": `${0.5 - appearanceContrastRatio}rem`,
   } as CSSProperties;
+  const interfaceStyle: InterfaceStyle =
+    settings.interfaceStyle === "modesto" && settings.legacySidebarEnabled
+      ? "classic"
+      : settings.interfaceStyle;
 
   return (
     <SettingsPageContainer>
-      <SettingsSection id="appearance" title="Appearance">
-        <div id={searchableSetting("theme").id}>
-          <ThemeLibrary
-            appearanceMode={appearanceMode}
-            customThemes={customThemes}
-            initialAppearance={resolvedTheme}
-            refreshTheme={refreshTheme}
-            isImportOpen={isImportThemeOpen}
-            setAppearanceMode={setAppearanceMode}
-            setTheme={setTheme}
-            setThemeHalf={setThemeHalf}
-            theme={theme}
-            themeHalves={themeHalves}
-            onImportOpenChange={setIsImportThemeOpen}
-          />
-        </div>
-
-        <SettingsRow
-          {...searchableSetting("setting-appearance-contrast")}
-          description="Adjust the contrast of colors and borders across the interface."
-          resetAction={
-            settings.appearanceContrast !== DEFAULT_UNIFIED_SETTINGS.appearanceContrast ? (
-              <SettingResetButton
-                label="contrast"
-                onClick={() =>
-                  updateSettings({
-                    appearanceContrast: DEFAULT_UNIFIED_SETTINGS.appearanceContrast,
-                  })
-                }
-              />
-            ) : null
-          }
-          control={
-            <div className="flex w-full items-center gap-3 sm:w-52">
-              <output
-                className="min-w-12 rounded-md bg-muted px-2 py-1 text-center font-mono text-xs font-medium tabular-nums text-foreground"
-                htmlFor="appearance-contrast"
+      <div
+        aria-label="Appearance sections"
+        className="flex flex-wrap gap-1 rounded-xl bg-muted/55 p-1"
+        role="tablist"
+      >
+        {(["style", "themes", "preferences", "typography"] as const).map((pane) => (
+          <button
+            aria-controls={`appearance-pane-${pane}`}
+            aria-selected={appearancePane === pane}
+            className={`min-h-8 rounded-lg px-3 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${
+              appearancePane === pane
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+            key={pane}
+            onClick={() => setSelectedAppearancePane(pane)}
+            role="tab"
+            type="button"
+          >
+            {pane === "style"
+              ? "Style"
+              : pane === "themes"
+                ? "Themes"
+                : pane === "preferences"
+                  ? "Details"
+                  : "Typography"}
+          </button>
+        ))}
+      </div>
+      {appearancePane !== "typography" ? (
+        <SettingsSection id="appearance" title="Appearance">
+          {appearancePane === "style" ? (
+            <div id="appearance-pane-style" role="tabpanel">
+              <SettingsRow
+                {...searchableSetting("interface-style")}
+                description="Choose how Modesto organizes navigation and frames your workspace. Every style keeps the same projects, chats, tools, and settings."
               >
-                {settings.appearanceContrast}%
-              </output>
-              <input
-                aria-label="Contrast"
-                className="settings-slider min-w-0 flex-1"
-                id="appearance-contrast"
-                max={MAX_APPEARANCE_CONTRAST}
-                min={MIN_APPEARANCE_CONTRAST}
-                onChange={(event) => {
-                  const appearanceContrast = Number(event.currentTarget.value);
-                  if (
-                    Number.isInteger(appearanceContrast) &&
-                    appearanceContrast >= MIN_APPEARANCE_CONTRAST &&
-                    appearanceContrast <= MAX_APPEARANCE_CONTRAST
-                  ) {
-                    updateSettings({ appearanceContrast });
-                  }
-                }}
-                step={5}
-                style={appearanceContrastSliderStyle}
-                type="range"
-                value={settings.appearanceContrast}
-              />
+                <div
+                  className="grid gap-3 pt-3 sm:grid-cols-2 lg:grid-cols-3"
+                  role="radiogroup"
+                  aria-label="Interface style"
+                >
+                  {INTERFACE_STYLE_OPTIONS.map((option) => {
+                    const selected = interfaceStyle === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => {
+                          if (
+                            option.value === "claude" ||
+                            option.value === "codex" ||
+                            option.value === "cursor"
+                          ) {
+                            const paletteId = `${option.value}-default`;
+                            try {
+                              ensureBundledPalette(paletteId);
+                            } catch {
+                              toastManager.add({
+                                type: "error",
+                                title: "Couldn’t install style palette",
+                              });
+                              return;
+                            }
+                            if (!setTheme(paletteId)) {
+                              toastManager.add({
+                                type: "error",
+                                title: "Couldn’t apply style palette",
+                              });
+                              return;
+                            }
+                          }
+                          updateSettings({
+                            interfaceStyle: option.value,
+                            legacySidebarEnabled: false,
+                          });
+                        }}
+                        className={`rounded-xl border p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          selected
+                            ? "border-primary/55 bg-primary/[0.06]"
+                            : "border-border/70 bg-card/35 hover:border-foreground/25 hover:bg-card/65"
+                        }`}
+                      >
+                        <InterfaceStylePreview style={option.value} />
+                        <span className="mt-2 block text-sm font-medium text-foreground">
+                          {option.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                          {option.description}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </SettingsRow>
             </div>
-          }
-        />
+          ) : null}
 
-        <SettingsRow
-          {...searchableSetting("setting-glass-opacity")}
-          description="Control how transparent glass surfaces are. Higher values make menus, dialogs, and the composer more solid."
-          resetAction={
-            settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity ? (
-              <SettingResetButton
-                label="glass opacity"
-                onClick={() =>
-                  updateSettings({ glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity })
-                }
-              />
-            ) : null
-          }
-          control={
-            <div className="flex w-full items-center gap-3 sm:w-52">
-              <output
-                className="min-w-12 rounded-md bg-muted px-2 py-1 text-center font-mono text-xs font-medium tabular-nums text-foreground"
-                htmlFor="glass-opacity"
+          {appearancePane === "themes" ? (
+            <div id="appearance-pane-themes" role="tabpanel">
+              <div id={searchableSetting("theme").id}>
+                <ThemeLibrary
+                  appearanceMode={appearanceMode}
+                  customThemes={customThemes}
+                  initialAppearance={resolvedTheme}
+                  refreshTheme={refreshTheme}
+                  isImportOpen={isImportThemeOpen}
+                  setAppearanceMode={setAppearanceMode}
+                  setTheme={setTheme}
+                  setThemeHalf={setThemeHalf}
+                  theme={theme}
+                  themeHalves={themeHalves}
+                  onImportOpenChange={setIsImportThemeOpen}
+                />
+              </div>
+
+              <SettingsRow
+                {...searchableSetting("file-icons")}
+                description="Choose the icons used for files throughout the workspace. Installed VS Code icon themes appear here automatically."
               >
-                {settings.glassOpacity}%
-              </output>
-              <input
-                aria-label="Glass opacity"
-                className="settings-slider min-w-0 flex-1"
-                id="glass-opacity"
-                max={MAX_GLASS_OPACITY}
-                min={MIN_GLASS_OPACITY}
-                onChange={(event) => {
-                  const glassOpacity = Number(event.currentTarget.value);
-                  if (
-                    Number.isInteger(glassOpacity) &&
-                    glassOpacity >= MIN_GLASS_OPACITY &&
-                    glassOpacity <= MAX_GLASS_OPACITY
-                  ) {
-                    updateSettings({ glassOpacity });
-                  }
-                }}
-                step={5}
-                style={glassOpacitySliderStyle}
-                type="range"
-                value={settings.glassOpacity}
-              />
+                <FileIconSettings />
+              </SettingsRow>
             </div>
-          }
-        />
+          ) : null}
 
-        <SettingsRow
-          {...searchableSetting("chat-tabs")}
-          description="Shows a strip of the threads and drafts you have open above the chat, so you can click between them. Off by default, because the strip mirrors navigation: with it on, every thread you open becomes a tab."
-          control={
-            <Switch
-              checked={settings.chatTabsEnabled}
-              onCheckedChange={(checked) =>
-                updateSettings({
-                  chatTabsEnabled: Boolean(checked),
-                  // Setting it from here is a deliberate choice either way, so
-                  // the in-chat tip has served its purpose and should not
-                  // reappear.
-                  chatTabsTipDismissed: true,
-                })
-              }
-              aria-label="Chat tabs"
-            />
-          }
-        />
-
-        <SettingsRow
-          {...searchableSetting("ambient-presence")}
-          description="A single floating bubble showing what your active threads are doing — drag it anywhere on screen, click to jump in. It's a status layer, not a voice feature: no microphone, no speech. Off by default — a corner presence is an opt-in, not something you have to dismiss."
-          resetAction={
-            settings.ambientPresenceEnabled !== DEFAULT_UNIFIED_SETTINGS.ambientPresenceEnabled ? (
-              <SettingResetButton
-                label="ambient presence"
-                onClick={() =>
-                  updateSettings({
-                    ambientPresenceEnabled: DEFAULT_UNIFIED_SETTINGS.ambientPresenceEnabled,
-                  })
+          {appearancePane === "preferences" ? (
+            <div id="appearance-pane-preferences" role="tabpanel">
+              <SettingsRow
+                {...searchableSetting("setting-appearance-contrast")}
+                description="Adjust the contrast of colors and borders across the interface."
+                resetAction={
+                  settings.appearanceContrast !== DEFAULT_UNIFIED_SETTINGS.appearanceContrast ? (
+                    <SettingResetButton
+                      label="contrast"
+                      onClick={() =>
+                        updateSettings({
+                          appearanceContrast: DEFAULT_UNIFIED_SETTINGS.appearanceContrast,
+                        })
+                      }
+                    />
+                  ) : null
+                }
+                control={
+                  <div className="flex w-full items-center gap-3 sm:w-52">
+                    <output
+                      className="min-w-12 rounded-md bg-muted px-2 py-1 text-center font-mono text-xs font-medium tabular-nums text-foreground"
+                      htmlFor="appearance-contrast"
+                    >
+                      {settings.appearanceContrast}%
+                    </output>
+                    <input
+                      aria-label="Contrast"
+                      className="settings-slider min-w-0 flex-1"
+                      id="appearance-contrast"
+                      max={MAX_APPEARANCE_CONTRAST}
+                      min={MIN_APPEARANCE_CONTRAST}
+                      onChange={(event) => {
+                        const appearanceContrast = Number(event.currentTarget.value);
+                        if (
+                          Number.isInteger(appearanceContrast) &&
+                          appearanceContrast >= MIN_APPEARANCE_CONTRAST &&
+                          appearanceContrast <= MAX_APPEARANCE_CONTRAST
+                        ) {
+                          updateSettings({ appearanceContrast });
+                        }
+                      }}
+                      step={5}
+                      style={appearanceContrastSliderStyle}
+                      type="range"
+                      value={settings.appearanceContrast}
+                    />
+                  </div>
                 }
               />
-            ) : null
-          }
-          control={
-            <Switch
-              checked={settings.ambientPresenceEnabled}
-              onCheckedChange={(checked) =>
-                updateSettings({ ambientPresenceEnabled: Boolean(checked) })
-              }
-              aria-label="Ambient presence"
-            />
-          }
-        />
 
-        {showEnvironmentIdentification ? (
-          <SettingsRow
-            {...searchableSetting("environment-identification")}
-            description="Choose how Dev and Nightly environments are identified."
-            resetAction={
-              settings.environmentIdentificationMode !== DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE ? (
-                <SettingResetButton
-                  label="environment identification"
-                  onClick={() =>
-                    updateSettings({
-                      environmentIdentificationMode: DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE,
-                    })
+              <SettingsRow
+                {...searchableSetting("setting-glass-opacity")}
+                description="Control how transparent glass surfaces are. Higher values make menus, dialogs, and the composer more solid."
+                resetAction={
+                  settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity ? (
+                    <SettingResetButton
+                      label="glass opacity"
+                      onClick={() =>
+                        updateSettings({ glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity })
+                      }
+                    />
+                  ) : null
+                }
+                control={
+                  <div className="flex w-full items-center gap-3 sm:w-52">
+                    <output
+                      className="min-w-12 rounded-md bg-muted px-2 py-1 text-center font-mono text-xs font-medium tabular-nums text-foreground"
+                      htmlFor="glass-opacity"
+                    >
+                      {settings.glassOpacity}%
+                    </output>
+                    <input
+                      aria-label="Glass opacity"
+                      className="settings-slider min-w-0 flex-1"
+                      id="glass-opacity"
+                      max={MAX_GLASS_OPACITY}
+                      min={MIN_GLASS_OPACITY}
+                      onChange={(event) => {
+                        const glassOpacity = Number(event.currentTarget.value);
+                        if (
+                          Number.isInteger(glassOpacity) &&
+                          glassOpacity >= MIN_GLASS_OPACITY &&
+                          glassOpacity <= MAX_GLASS_OPACITY
+                        ) {
+                          updateSettings({ glassOpacity });
+                        }
+                      }}
+                      step={5}
+                      style={glassOpacitySliderStyle}
+                      type="range"
+                      value={settings.glassOpacity}
+                    />
+                  </div>
+                }
+              />
+
+              <SettingsRow
+                {...searchableSetting("chat-tabs")}
+                description="Shows a strip of the threads and drafts you have open above the chat, so you can click between them. Off by default, because the strip mirrors navigation: with it on, every thread you open becomes a tab."
+                control={
+                  <Switch
+                    checked={settings.chatTabsEnabled}
+                    onCheckedChange={(checked) =>
+                      updateSettings({
+                        chatTabsEnabled: Boolean(checked),
+                        // Setting it from here is a deliberate choice either way, so
+                        // the in-chat tip has served its purpose and should not
+                        // reappear.
+                        chatTabsTipDismissed: true,
+                      })
+                    }
+                    aria-label="Chat tabs"
+                  />
+                }
+              />
+
+              <SettingsRow
+                {...searchableSetting("ambient-presence")}
+                description="A single floating bubble showing what your active threads are doing — drag it anywhere on screen, click to jump in. It's a status layer, not a voice feature: no microphone, no speech. Off by default — a corner presence is an opt-in, not something you have to dismiss."
+                resetAction={
+                  settings.ambientPresenceEnabled !==
+                  DEFAULT_UNIFIED_SETTINGS.ambientPresenceEnabled ? (
+                    <SettingResetButton
+                      label="ambient presence"
+                      onClick={() =>
+                        updateSettings({
+                          ambientPresenceEnabled: DEFAULT_UNIFIED_SETTINGS.ambientPresenceEnabled,
+                        })
+                      }
+                    />
+                  ) : null
+                }
+                control={
+                  <Switch
+                    checked={settings.ambientPresenceEnabled}
+                    onCheckedChange={(checked) =>
+                      updateSettings({ ambientPresenceEnabled: Boolean(checked) })
+                    }
+                    aria-label="Ambient presence"
+                  />
+                }
+              />
+
+              {showEnvironmentIdentification ? (
+                <SettingsRow
+                  {...searchableSetting("environment-identification")}
+                  description="Choose how Dev and Nightly environments are identified."
+                  resetAction={
+                    settings.environmentIdentificationMode !==
+                    DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE ? (
+                      <SettingResetButton
+                        label="environment identification"
+                        onClick={() =>
+                          updateSettings({
+                            environmentIdentificationMode: DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE,
+                          })
+                        }
+                      />
+                    ) : null
+                  }
+                  control={
+                    <Select
+                      value={settings.environmentIdentificationMode}
+                      onValueChange={(value) => {
+                        if (value === "artwork" || value === "pill" || value === "none") {
+                          updateSettings({ environmentIdentificationMode: value });
+                        }
+                      }}
+                    >
+                      <SelectTrigger
+                        className="w-full sm:w-40"
+                        aria-label="Environment identification"
+                      >
+                        <SelectValue>
+                          {
+                            ENVIRONMENT_IDENTIFICATION_LABELS[
+                              settings.environmentIdentificationMode
+                            ]
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectPopup align="end" alignItemWithTrigger={false}>
+                        {Object.entries(ENVIRONMENT_IDENTIFICATION_LABELS).map(([value, label]) => (
+                          <SelectItem hideIndicator key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectPopup>
+                    </Select>
                   }
                 />
-              ) : null
-            }
-            control={
-              <Select
-                value={settings.environmentIdentificationMode}
-                onValueChange={(value) => {
-                  if (value === "artwork" || value === "pill" || value === "none") {
-                    updateSettings({ environmentIdentificationMode: value });
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-40" aria-label="Environment identification">
-                  <SelectValue>
-                    {ENVIRONMENT_IDENTIFICATION_LABELS[settings.environmentIdentificationMode]}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectPopup align="end" alignItemWithTrigger={false}>
-                  {Object.entries(ENVIRONMENT_IDENTIFICATION_LABELS).map(([value, label]) => (
-                    <SelectItem hideIndicator key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectPopup>
-              </Select>
-            }
-          />
-        ) : null}
-      </SettingsSection>
+              ) : null}
+            </div>
+          ) : null}
+        </SettingsSection>
+      ) : null}
 
-      <TypographySection />
+      {appearancePane === "typography" ? (
+        <div id="appearance-pane-typography" role="tabpanel">
+          <TypographySection />
+        </div>
+      ) : null}
     </SettingsPageContainer>
   );
 }
@@ -1909,19 +2251,6 @@ function LegacyFeaturesSection() {
                 />
               }
             />
-            <SettingsRow
-              {...searchableSetting("legacy-sidebar")}
-              description="Brings back the original sidebar with per-project thread trees. The default sidebar shows one flat list: active work as rich cards, settled threads as compact rows."
-              control={
-                <Switch
-                  checked={settings.legacySidebarEnabled}
-                  onCheckedChange={(checked) =>
-                    updateSettings({ legacySidebarEnabled: Boolean(checked) })
-                  }
-                  aria-label="Sidebar (legacy)"
-                />
-              }
-            />
           </div>
         </CollapsiblePanel>
       </Collapsible>
@@ -1930,6 +2259,7 @@ function LegacyFeaturesSection() {
 }
 
 export function GeneralSettingsPanel() {
+  const navigate = useAppNavigate();
   const settings = usePrimarySettings();
   const updateSettings = useUpdatePrimarySettings();
   const [backgroundActivityDialogOpen, setBackgroundActivityDialogOpen] = useState(false);
@@ -2538,7 +2868,7 @@ export function GeneralSettingsPanel() {
         />
       </SettingsSection>
 
-      <SettingsSection title="About">
+      <SettingsSection id="about" title="About">
         {isElectron || HOSTED_APP_CHANNEL ? (
           <AboutVersionSection />
         ) : (
@@ -2564,7 +2894,11 @@ export function GeneralSettingsPanel() {
           {...searchableSetting("diagnostics")}
           description={diagnosticsDescription}
           control={
-            <Button render={<Link to="/settings/diagnostics" />} size="xs" variant="outline">
+            <Button
+              onClick={() => void navigate({ to: "/settings/diagnostics" })}
+              size="xs"
+              variant="outline"
+            >
               View diagnostics
             </Button>
           }
@@ -2620,6 +2954,7 @@ export function GeneralSettingsPanel() {
       </SettingsSection>
 
       <LegacyFeaturesSection />
+      <NotificationSoundSettings />
     </SettingsPageContainer>
   );
 }

@@ -168,6 +168,7 @@ function getTraitsSectionVisibility(input: {
   prompt: string;
   modelOptions: ProviderOptions | null | undefined;
   allowPromptInjectedEffort?: boolean;
+  allowedDescriptorIds?: ReadonlySet<string> | undefined;
   planModeEnabled: boolean;
 }) {
   const selected = getSelectedTraits(
@@ -179,15 +180,42 @@ function getTraitsSectionVisibility(input: {
     input.allowPromptInjectedEffort ?? true,
     input.planModeEnabled,
   );
+  const descriptors = input.allowedDescriptorIds
+    ? selected.descriptors.filter((descriptor) => input.allowedDescriptorIds?.has(descriptor.id))
+    : selected.descriptors;
+  const selectDescriptors = descriptors.filter(
+    (descriptor): descriptor is Extract<ProviderOptionDescriptor, { type: "select" }> =>
+      descriptor.type === "select",
+  );
+  const booleanDescriptors = descriptors.filter(
+    (descriptor): descriptor is Extract<ProviderOptionDescriptor, { type: "boolean" }> =>
+      descriptor.type === "boolean",
+  );
+  const primarySelectDescriptor = selectDescriptors[0] ?? null;
+  const contextWindowDescriptor =
+    selectDescriptors.find((descriptor) => descriptor.id === "contextWindow") ?? null;
+  const agentDescriptor = selectDescriptors.find((descriptor) => descriptor.id === "agent") ?? null;
+  const fastModeDescriptor =
+    booleanDescriptors.find((descriptor) => descriptor.id === "fastMode") ?? null;
+  const thinkingDescriptor =
+    booleanDescriptors.find((descriptor) => descriptor.id === "thinking") ?? null;
 
-  const showEffort = selected.primarySelectDescriptor !== null;
-  const showThinking = selected.thinkingDescriptor !== null;
-  const showFastMode = selected.fastModeDescriptor !== null;
-  const showContextWindow = selected.contextWindowDescriptor !== null;
-  const showAgent = selected.agentDescriptor !== null;
+  const showEffort = primarySelectDescriptor !== null;
+  const showThinking = thinkingDescriptor !== null;
+  const showFastMode = fastModeDescriptor !== null;
+  const showContextWindow = contextWindowDescriptor !== null;
+  const showAgent = agentDescriptor !== null;
 
   return {
     ...selected,
+    descriptors,
+    selectDescriptors,
+    booleanDescriptors,
+    primarySelectDescriptor,
+    contextWindowDescriptor,
+    agentDescriptor,
+    fastModeDescriptor,
+    thinkingDescriptor,
     showEffort,
     showThinking,
     showFastMode,
@@ -204,6 +232,7 @@ export function shouldRenderTraitsControls(input: {
   prompt: string;
   modelOptions: ProviderOptions | null | undefined;
   allowPromptInjectedEffort?: boolean;
+  allowedDescriptorIds?: ReadonlySet<string> | undefined;
   planModeEnabled: boolean;
 }): boolean {
   return getTraitsSectionVisibility(input).hasAnyControls;
@@ -218,6 +247,7 @@ export interface TraitsMenuContentProps {
   onPromptChange: (prompt: string) => void;
   modelOptions?: ProviderOptions | null | undefined;
   allowPromptInjectedEffort?: boolean;
+  allowedDescriptorIds?: ReadonlySet<string> | undefined;
   planModeEnabled: boolean;
   triggerVariant?: VariantProps<typeof buttonVariants>["variant"];
   triggerClassName?: string;
@@ -232,6 +262,7 @@ export const TraitsMenuContent = memo(function TraitsMenuContentImpl({
   onPromptChange,
   modelOptions,
   allowPromptInjectedEffort = true,
+  allowedDescriptorIds,
   planModeEnabled,
   ...persistence
 }: TraitsMenuContentProps & TraitsPersistence) {
@@ -269,6 +300,7 @@ export const TraitsMenuContent = memo(function TraitsMenuContentImpl({
     prompt,
     modelOptions,
     allowPromptInjectedEffort,
+    allowedDescriptorIds,
     planModeEnabled,
   });
   const updateDescriptors = (nextDescriptors: ReadonlyArray<ProviderOptionDescriptor>) => {
@@ -461,6 +493,7 @@ export const TraitsPicker = memo(function TraitsPicker({
   onPromptChange,
   modelOptions,
   allowPromptInjectedEffort = true,
+  allowedDescriptorIds,
   planModeEnabled,
   triggerVariant,
   triggerClassName,
@@ -475,6 +508,7 @@ export const TraitsPicker = memo(function TraitsPicker({
       prompt,
       modelOptions,
       allowPromptInjectedEffort,
+      allowedDescriptorIds,
       planModeEnabled,
     });
   if (
@@ -485,6 +519,7 @@ export const TraitsPicker = memo(function TraitsPicker({
       prompt,
       modelOptions,
       allowPromptInjectedEffort,
+      allowedDescriptorIds,
       planModeEnabled,
     })
   ) {
@@ -556,6 +591,7 @@ export const TraitsPicker = memo(function TraitsPicker({
           onPromptChange={onPromptChange}
           modelOptions={modelOptions}
           allowPromptInjectedEffort={allowPromptInjectedEffort}
+          allowedDescriptorIds={allowedDescriptorIds}
           planModeEnabled={planModeEnabled}
           {...persistence}
         />

@@ -182,6 +182,9 @@ const CODING_TASK_NOUNS = new Set(["project", "thread", "repo", "repository", "a
 const CODING_TASK_SIGNAL =
   /\b(?:code|coding|implement|refactor|repo|repository|typescript|javascript|python|golang|rust|bug|feature|component|endpoint|pull request|unit test|typeerror|git|commit|worktree|function|module|package|frontend|backend|auth|login|write (?:the )?code|fix the)\b/iu;
 
+const CODING_TASK_MUTATION =
+  /^(?:fix|implement|refactor|edit|change|modify|update|add|remove|delete|write|build|create)\b/iu;
+
 /**
  * True when the user is asking to start a project or coding task — not when
  * they mention a task/project in passing, ask a question about one, or want
@@ -198,6 +201,10 @@ export function detectCodingTaskIntent(prompt: string): CodingTaskIntent | null 
   if (CODING_TASK_QUESTION.test(stripped)) return null;
 
   if (CODING_TASK_START_WORKING.test(stripped)) {
+    return { task };
+  }
+
+  if (CODING_TASK_MUTATION.test(stripped) && CODING_TASK_SIGNAL.test(stripped)) {
     return { task };
   }
 

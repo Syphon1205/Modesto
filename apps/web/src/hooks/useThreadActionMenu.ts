@@ -280,7 +280,7 @@ export function useThreadActionMenu(input: {
             return;
           }
           case "delete": {
-            const noun = thread.conversationMode === "chat" ? "chat" : "thread";
+            const noun = thread.conversationMode === "chat" ? "chat" : "session";
             if (confirmThreadDelete) {
               const confirmed = await settlePromise(() =>
                 api.dialogs.confirm(
@@ -302,7 +302,7 @@ export function useThreadActionMenu(input: {
               // that itself, and "Failed to delete thread" would be a lie.
               readThreadShell(threadRef) !== null
             ) {
-              failureToast("Failed to delete thread", squashAtomCommandFailure(deleted));
+              failureToast(`Failed to delete ${noun}`, squashAtomCommandFailure(deleted));
             }
             return;
           }

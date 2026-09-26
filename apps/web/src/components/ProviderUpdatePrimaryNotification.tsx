@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { useAtomValue } from "@effect/atom-react";
 import { DownloadIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -102,7 +102,7 @@ function addProviderUpdateToast(input: {
  * per-environment split is gated behind WSL presence.
  */
 export function ProviderUpdatePrimaryNotification() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const providers = useAtomValue(primaryServerProvidersAtom);
   const primaryEnvironment = usePrimaryEnvironment();
   const updateProvider = useAtomCommand(serverEnvironment.updateProvider, {

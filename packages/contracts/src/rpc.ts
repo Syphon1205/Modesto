@@ -277,6 +277,8 @@ import {
   ServerCustomModelEndpointError,
   ServerSetCustomModelEndpointInput,
   ServerSetCustomModelEndpointResult,
+  ServerDiscoverCustomModelEndpointInput,
+  ServerDiscoverCustomModelEndpointResult,
   ServerDeleteCustomModelEndpointInput,
   ServerDeleteCustomModelEndpointResult,
   ServerVoiceTranscriptionInput,
@@ -392,6 +394,7 @@ export const WS_METHODS = {
   serverGetSettings: "server.getSettings",
   serverUpdateSettings: "server.updateSettings",
   serverSetCustomModelEndpoint: "server.setCustomModelEndpoint",
+  serverDiscoverCustomModelEndpoint: "server.discoverCustomModelEndpoint",
   serverDeleteCustomModelEndpoint: "server.deleteCustomModelEndpoint",
   serverDiscoverSourceControl: "server.discoverSourceControl",
   serverTranscribeVoice: "server.transcribeVoice",
@@ -616,6 +619,15 @@ export const WsServerSetCustomModelEndpointRpc = Rpc.make(WS_METHODS.serverSetCu
   success: ServerSetCustomModelEndpointResult,
   error: Schema.Union([ServerCustomModelEndpointError, EnvironmentAuthorizationError]),
 });
+
+export const WsServerDiscoverCustomModelEndpointRpc = Rpc.make(
+  WS_METHODS.serverDiscoverCustomModelEndpoint,
+  {
+    payload: ServerDiscoverCustomModelEndpointInput,
+    success: ServerDiscoverCustomModelEndpointResult,
+    error: Schema.Union([ServerCustomModelEndpointError, EnvironmentAuthorizationError]),
+  },
+);
 
 export const WsServerDeleteCustomModelEndpointRpc = Rpc.make(
   WS_METHODS.serverDeleteCustomModelEndpoint,
@@ -1507,6 +1519,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsServerGetSettingsRpc,
   WsServerUpdateSettingsRpc,
   WsServerSetCustomModelEndpointRpc,
+  WsServerDiscoverCustomModelEndpointRpc,
   WsServerDeleteCustomModelEndpointRpc,
   WsServerDiscoverSourceControlRpc,
   WsServerGetTraceDiagnosticsRpc,

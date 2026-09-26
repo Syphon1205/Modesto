@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useAppNavigate } from "~/hooks/useAppNavigate";
 import { useAtomValue } from "@effect/atom-react";
 import type { ServerProvider } from "@modesto/contracts";
 import { CircleCheckIcon, DownloadIcon, LoaderIcon, TriangleAlertIcon, XIcon } from "lucide-react";
@@ -40,7 +40,7 @@ function latestProviderCheckedAt(
 }
 
 export function SidebarProviderUpdatePill() {
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const providers = useAtomValue(primaryServerProvidersAtom);
   const [dismissedKeys, setDismissedKeys] = useState<ReadonlySet<string>>(() => new Set());
   const [renderedView, setRenderedView] = useState<ProviderUpdateSidebarPillView | null>(null);

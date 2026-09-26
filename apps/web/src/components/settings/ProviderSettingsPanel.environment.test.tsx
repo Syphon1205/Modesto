@@ -67,6 +67,7 @@ vi.mock("../../state/use-atom-command", () => ({
 }));
 
 vi.mock("../../hooks/useSettings", () => ({
+  useInterfaceStyle: () => "t3code",
   useEnvironmentSettings: (environmentId: EnvironmentId) => {
     settingsState.readEnvironmentIds.push(environmentId);
     return settingsState.value;

@@ -87,7 +87,6 @@ describe("searchSettings", () => {
     expect(searchSettings("environment identification")[0]).toMatchObject({
       id: "environment-identification",
       to: "/settings/appearance",
-      targetId: "appearance",
     });
   });
 });

@@ -1,17 +1,18 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { ComposerConversationModeToggle } from "./ComposerConversationModeToggle";
 
+vi.mock("~/hooks/useSettings", () => ({ useInterfaceStyle: () => "github" }));
+
 describe("ComposerConversationModeToggle", () => {
-  it("labels the New Chat landing choice as Chat and Work", () => {
+  it("shows the selected GitHub landing mode in a labeled menu trigger", () => {
     const html = renderToStaticMarkup(
       <ComposerConversationModeToggle value="code" onChange={() => {}} />,
     );
 
-    expect(html).toContain("Chat");
-    expect(html).toContain("Work");
+    expect(html).toContain("Work in a project");
     expect(html).toContain('aria-label="Conversation mode"');
-    expect(html).toContain("rounded-full");
+    expect(html).toContain('aria-haspopup="menu"');
   });
 });

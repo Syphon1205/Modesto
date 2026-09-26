@@ -14,7 +14,7 @@ import {
 
 const cleanConfig: ReleaseUpdatePolicyConfig = {
   lane: "clean",
-  bridgeVersion: "0.4.2",
+  bridgeVersion: "0.3.0",
   channel: "modesto",
   developmentChannel: "modesto-dev",
 };
@@ -22,8 +22,8 @@ const defaultManifestNames = ["latest-mac.yml", "latest.yml", "latest-linux.yml"
 
 describe("release update policy", () => {
   it("publishes the public line to Latest and keeps hidden development builds off it", () => {
-    expect(resolveReleaseUpdatePolicy("0.4.2", { ...cleanConfig, lane: "bridge" })).toMatchObject({
-      tag: "v0.4.2",
+    expect(resolveReleaseUpdatePolicy("0.3.0", { ...cleanConfig, lane: "bridge" })).toMatchObject({
+      tag: "v0.3.0",
       lane: "bridge",
       makeLatest: false,
       mirrorToStableChannel: false,
@@ -33,11 +33,11 @@ describe("release update policy", () => {
       lane: "clean",
       makeLatest: true,
       mirrorToStableChannel: false,
-      bridgeTag: "v0.4.2",
+      bridgeTag: "v0.3.0",
       channel: "modesto",
     });
-    expect(resolveReleaseUpdatePolicy("1.0.0-alpha.1", cleanConfig)).toMatchObject({
-      tag: "v1.0.0-alpha.1",
+    expect(resolveReleaseUpdatePolicy("0.4.0", cleanConfig)).toMatchObject({
+      tag: "v0.4.0",
       isPrerelease: false,
       makeLatest: true,
       mirrorToStableChannel: false,
@@ -63,11 +63,11 @@ describe("release update policy", () => {
     });
     expect(
       resolveReleaseUpdatePolicy(
-        "1.0.0-alpha.1",
+        "0.4.0",
         readReleaseUpdatePolicyConfig(resolve(import.meta.dirname, "..")),
       ),
     ).toMatchObject({
-      tag: "v1.0.0-alpha.1",
+      tag: "v0.4.0",
       isPrerelease: false,
       makeLatest: true,
       channel: "modesto",
@@ -75,9 +75,9 @@ describe("release update policy", () => {
   });
 
   it("keeps public staged versions on the production bundle identity", () => {
-    expect(isHiddenDevelopmentReleaseVersion("1.0.0-alpha.1")).toBe(false);
-    expect(isHiddenDevelopmentReleaseVersion("1.0.0-beta.1")).toBe(false);
-    expect(isHiddenDevelopmentReleaseVersion("1.0.0-rc.1")).toBe(false);
+    expect(isHiddenDevelopmentReleaseVersion("0.4.0")).toBe(false);
+    expect(isHiddenDevelopmentReleaseVersion("0.4.0-beta.1")).toBe(false);
+    expect(isHiddenDevelopmentReleaseVersion("0.4.0-rc.1")).toBe(false);
     expect(isHiddenDevelopmentReleaseVersion("0.4.0")).toBe(false);
     expect(isHiddenDevelopmentReleaseVersion("0.6.0-nightly.20260101.1")).toBe(true);
     expect(isHiddenDevelopmentReleaseVersion("1.0.0-dev.1")).toBe(true);
@@ -87,9 +87,9 @@ describe("release update policy", () => {
     expect(() => resolveReleaseUpdatePolicy("0.5.0", { ...cleanConfig, lane: "bridge" })).toThrow(
       "may publish only",
     );
-    expect(() => resolveReleaseUpdatePolicy("0.4.2", cleanConfig)).toThrow("must be newer");
-    expect(() => resolveReleaseUpdatePolicy("0.4.1", cleanConfig)).toThrow("must be newer");
-    expect(() => resolveReleaseUpdatePolicy("0.4.0", cleanConfig)).toThrow("must be newer");
+    expect(() => resolveReleaseUpdatePolicy("0.3.0", cleanConfig)).toThrow("must be newer");
+    expect(() => resolveReleaseUpdatePolicy("0.2.1", cleanConfig)).toThrow("must be newer");
+    expect(() => resolveReleaseUpdatePolicy("0.2.0", cleanConfig)).toThrow("must be newer");
     expect(() => resolveReleaseUpdatePolicy("0.5.0.not-semver", cleanConfig)).toThrow(
       "Invalid release version",
     );

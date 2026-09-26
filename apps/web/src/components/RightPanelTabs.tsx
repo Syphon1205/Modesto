@@ -3,6 +3,7 @@ import { getTerminalLabel } from "@modesto/shared/terminalLabels";
 import {
   Bot,
   ChartColumn,
+  Gauge,
   FileDiff,
   FileText,
   Files,
@@ -10,6 +11,7 @@ import {
   GitPullRequest,
   Globe2,
   LayoutDashboard,
+  ImageIcon,
   Music2,
   Plus,
   Smartphone,
@@ -46,6 +48,7 @@ import { PreviewPanelShell, type PreviewPanelMode } from "./preview/PreviewPanel
 import { FaviconImage } from "./preview/PreviewFaviconIcon";
 import { previewBridge } from "./preview/previewBridge";
 import { PierreEntryIcon } from "./chat/PierreEntryIcon";
+import { PerformanceEnvironmentSummary } from "./performance/PerformanceMonitorPanel";
 import { previewOpenTabs, type EnvironmentDiffStats } from "./RightPanelEnvironments.logic";
 
 interface RightPanelTabsProps {
@@ -82,8 +85,9 @@ interface RightPanelTabsProps {
   onAddDiff: () => void;
   onAddFiles: () => void;
   onAddPullRequest: () => void;
-  onAddAgents: () => void;
+  onAddAgents?: (() => void) | undefined;
   onAddContext: () => void;
+  onAddPerformance: () => void;
   onAddArtifacts: () => void;
   onAddMusic: () => void;
   onAddCanvas: () => void;
@@ -93,7 +97,7 @@ interface RightPanelTabsProps {
   diffAvailable: boolean;
   filesAvailable: boolean;
   pullRequestAvailable: boolean;
-  agentsAvailable: boolean;
+  agentsAvailable?: boolean | undefined;
   contextAvailable: boolean;
   artifactsAvailable: boolean;
   musicAvailable: boolean;
@@ -101,7 +105,7 @@ interface RightPanelTabsProps {
   deviceAvailable: boolean;
   pullRequestStatuses?: Readonly<Record<string, PullRequestTabStatus>>;
   /** Running + waiting subagents; badges the Agents card in the empty state. */
-  liveAgentCount: number;
+  liveAgentCount?: number | undefined;
   /** Workspace folder shown as "On {name}" in the empty environments list. */
   projectLabel?: string | null;
   diffStats?: EnvironmentDiffStats | null;
@@ -288,8 +292,9 @@ function RightPanelEmptyState(props: {
   onAddDiff: () => void;
   onAddFiles: () => void;
   onAddPullRequest: () => void;
-  onAddAgents: () => void;
+  onAddAgents?: (() => void) | undefined;
   onAddContext: () => void;
+  onAddPerformance: () => void;
   onAddArtifacts: () => void;
   onAddMusic: () => void;
   onAddCanvas: () => void;
@@ -299,13 +304,13 @@ function RightPanelEmptyState(props: {
   diffAvailable: boolean;
   filesAvailable: boolean;
   pullRequestAvailable: boolean;
-  agentsAvailable: boolean;
+  agentsAvailable?: boolean | undefined;
   contextAvailable: boolean;
   artifactsAvailable: boolean;
   musicAvailable: boolean;
   canvasAvailable: boolean;
   deviceAvailable: boolean;
-  liveAgentCount: number;
+  liveAgentCount?: number | undefined;
 }) {
   // -1 means no highlight: it only appears on hover or arrow use.
   const [highlight, setHighlight] = useState(-1);
@@ -390,16 +395,6 @@ function RightPanelEmptyState(props: {
       disabledReason: SURFACE_UNAVAILABLE_HINTS.pullRequest,
       onClick: props.onAddPullRequest,
       badgeCount: 0,
-    },
-    {
-      label: "Agents",
-      description: "Follow sidechats, agents, and workflows.",
-      icon: Bot,
-      shortcut: "A",
-      available: props.agentsAvailable,
-      disabledReason: SURFACE_UNAVAILABLE_HINTS.agents,
-      onClick: props.onAddAgents,
-      badgeCount: props.liveAgentCount,
     },
     {
       label: "Context",
@@ -619,6 +614,7 @@ function RightPanelEmptyState(props: {
           )}
         </div>
       </section>
+      <PerformanceEnvironmentSummary onViewMore={props.onAddPerformance} />
       {moreActions.length > 0 ? (
         <section className="mt-5">
           <h3 className="px-2 pb-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
@@ -652,8 +648,6 @@ function surfaceTitle(
       );
     case "pull-request":
       return `#${surface.number}`;
-    case "agents":
-      return "Agents";
     case "context":
       return "Context";
     case "artifacts":
@@ -662,6 +656,10 @@ function surfaceTitle(
       return "Music";
     case "device":
       return "Simulator";
+    case "performance":
+      return "Performance Monitor";
+    case "visual":
+      return surface.title;
     case "slides":
     case "docs":
     case "sheets":
@@ -750,8 +748,6 @@ function SurfaceIcon({
                 : "text-muted-foreground";
       return <GitPullRequest className={cn("size-3 shrink-0", toneClassName)} />;
     }
-    case "agents":
-      return <Bot className="size-3 shrink-0" />;
     case "context":
       return <ChartColumn className="size-3 shrink-0" />;
     case "artifacts":
@@ -760,6 +756,10 @@ function SurfaceIcon({
       return <Music2 className="size-3 shrink-0" />;
     case "device":
       return <Smartphone className="size-3 shrink-0" />;
+    case "performance":
+      return <Gauge className="size-3 shrink-0" />;
+    case "visual":
+      return <ImageIcon className="size-3 shrink-0" />;
     case "slides":
     case "docs":
     case "sheets":
@@ -841,20 +841,19 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       onClick: props.onAddPullRequest,
     },
     {
-      label: "Agents",
-      icon: Bot,
-      shortcut: "A",
-      available: props.agentsAvailable,
-      disabledReason: SURFACE_DISABLED_REASONS.agents,
-      onClick: props.onAddAgents,
-    },
-    {
       label: "Context",
       icon: ChartColumn,
       shortcut: "C",
       available: props.contextAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.context,
       onClick: props.onAddContext,
+    },
+    {
+      label: "Performance",
+      icon: Gauge,
+      shortcut: "E",
+      available: true,
+      onClick: props.onAddPerformance,
     },
     {
       label: "Artifacts",
@@ -1134,7 +1133,10 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
                         available={action.available}
                         disabledReason={action.disabledReason}
                         shortcut={action.shortcut}
-                        onClick={action.onClick}
+                        onClick={() => {
+                          setAddSurfaceMenuOpen(false);
+                          action.onClick();
+                        }}
                       >
                         <Icon />
                         {action.label}
@@ -1167,6 +1169,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddCanvas={props.onAddCanvas}
             onAddDevice={props.onAddDevice}
             onAddContext={props.onAddContext}
+            onAddPerformance={props.onAddPerformance}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
             diffAvailable={props.diffAvailable}
